@@ -5,8 +5,8 @@ import Head from 'next/head';
 export default function RunwayAutomationApp() {
   const [activeTab, setActiveTab] = useState('setup');
   const [runwayApiKey, setRunwayApiKey] = useState('');
-  const [prompts, setPrompts] = useState(['A serene lake with mountains in the background at sunset']);
-  const [images, setImages] = useState(['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1280&h=720']);
+  const [prompt, setPrompt] = useState('A serene lake with mountains in the background at sunset');
+  const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1280&h=720');
   const [model, setModel] = useState('gen3a_turbo');
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
@@ -28,58 +28,8 @@ export default function RunwayAutomationApp() {
     }
   }, []);
 
-  // Auto-adjust prompts and images when concurrency changes
-  const handleConcurrencyChange = (newConcurrency) => {
-    setConcurrency(newConcurrency);
-    
-    // Adjust prompts to match concurrency
-    if (prompts.length < newConcurrency) {
-      const promptsToAdd = newConcurrency - prompts.length;
-      const newPrompts = [...prompts];
-      for (let i = 0; i < promptsToAdd; i++) {
-        newPrompts.push('');
-      }
-      setPrompts(newPrompts);
-    } else if (prompts.length > newConcurrency) {
-      setPrompts(prompts.slice(0, newConcurrency));
-    }
-    
-    // Adjust images to match concurrency
-    if (images.length < newConcurrency) {
-      const imagesToAdd = newConcurrency - images.length;
-      const newImages = [...images];
-      for (let i = 0; i < imagesToAdd; i++) {
-        newImages.push('');
-      }
-      setImages(newImages);
-    } else if (images.length > newConcurrency) {
-      setImages(images.slice(0, newConcurrency));
-    }
-  };
-
-  // Autofill all prompts with the value from Prompt 1
-  const autofillPrompts = () => {
-    if (prompts[0] && prompts[0].trim()) {
-      const firstPrompt = prompts[0];
-      const newPrompts = prompts.map(() => firstPrompt);
-      setPrompts(newPrompts);
-      addLog('✅ Autofilled all prompts with: "' + firstPrompt.substring(0, 30) + '..."', 'success');
-    } else {
-      addLog('❌ Cannot autofill - Prompt 1 is empty', 'error');
-    }
-  };
-
-  // Autofill all images with the value from Image 1
-  const autofillImages = () => {
-    if (images[0] && images[0].trim()) {
-      const firstImage = images[0];
-      const newImages = images.map(() => firstImage);
-      setImages(newImages);
-      addLog('✅ Autofilled all images with: "' + firstImage.substring(0, 40) + '..."', 'success');
-    } else {
-      addLog('❌ Cannot autofill - Image 1 is empty', 'error');
-    }
-  };
+  // Auto-adjust prompts and images when concurrency changes - REMOVED
+  // Now using single prompt and image for all concurrent generations
 
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
@@ -93,31 +43,27 @@ export default function RunwayAutomationApp() {
   ];
 
   const addPrompt = () => {
-    setPrompts([...prompts, '']);
+    // No longer needed - using single prompt
   };
 
   const removePrompt = (index) => {
-    setPrompts(prompts.filter((_, i) => i !== index));
+    // No longer needed - using single prompt
   };
 
   const updatePrompt = (index, value) => {
-    const newPrompts = [...prompts];
-    newPrompts[index] = value;
-    setPrompts(newPrompts);
+    // No longer needed - using single prompt
   };
 
   const addImage = () => {
-    setImages([...images, '']);
+    // No longer needed - using single image
   };
 
   const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
+    // No longer needed - using single image
   };
 
   const updateImage = (index, value) => {
-    const newImages = [...images];
-    newImages[index] = value;
-    setImages(newImages);
+    // No longer needed - using single image
   };
 
   const addLog = (message, type = 'info') => {
@@ -127,11 +73,11 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
-  const generateVideo = async (prompt, imageUrl = null, jobIndex = 0) => {
+  const generateVideo = async (promptText, imageUrlText, jobIndex = 0) => {
     const jobId = 'job_' + jobIndex + '_' + Date.now();
     
     try {
-      if (!imageUrl || !imageUrl.trim()) {
+      if (!imageUrlText || !imageUrlText.trim()) {
         const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
         addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
         
@@ -143,7 +89,7 @@ export default function RunwayAutomationApp() {
         throw new Error(errorMsg);
       }
 
-      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + prompt.substring(0, 50) + '..." with image', 'info');
+      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
       
       setGenerationProgress(prev => ({
         ...prev,
@@ -151,8 +97,8 @@ export default function RunwayAutomationApp() {
       }));
 
       const payload = {
-        text_prompt: prompt,
-        image_prompt: imageUrl.trim(),
+        text_prompt: promptText,
+        image_prompt: imageUrlText.trim(),
         model: model,
         aspect_ratio: aspectRatio,
         duration: duration,
@@ -185,7 +131,7 @@ export default function RunwayAutomationApp() {
       
       addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
       
-      return await pollTaskCompletion(task.id, jobId, prompt, imageUrl, jobIndex);
+      return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
       
     } catch (error) {
       addLog('✗ Job ' + (jobIndex + 1) + ' failed: ' + error.message, 'error');
@@ -197,7 +143,7 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  const pollTaskCompletion = async (taskId, jobId, prompt, imageUrl, jobIndex) => {
+  const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
     const maxPolls = Math.floor(1800 / 8);
     let pollCount = 0;
     let consecutiveErrors = 0;
@@ -284,10 +230,10 @@ export default function RunwayAutomationApp() {
 
           const completedVideo = {
             id: taskId,
-            prompt: prompt,
+            prompt: promptText,
             video_url: task.output && task.output[0] ? task.output[0] : null,
             thumbnail_url: task.output && task.output[1] ? task.output[1] : null,
-            image_url: imageUrl,
+            image_url: imageUrlText,
             status: 'completed',
             created_at: new Date().toISOString()
           };
@@ -342,17 +288,14 @@ export default function RunwayAutomationApp() {
     addLog('🚀 Starting Runway video generation...', 'info');
     addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
     
-    const activePrompts = prompts.filter(p => p.trim());
-    const activeImages = images.filter(img => img.trim());
-    
-    if (activePrompts.length === 0) {
-      addLog('❌ No prompts provided!', 'error');
+    if (!prompt.trim()) {
+      addLog('❌ No prompt provided!', 'error');
       setIsRunning(false);
       return;
     }
 
-    if (activeImages.length === 0) {
-      addLog('❌ Images are required! The current RunwayML API only supports image-to-video generation. Please add at least one image URL.', 'error');
+    if (!imageUrl.trim()) {
+      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
       setIsRunning(false);
       return;
     }
@@ -363,8 +306,8 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    const totalJobs = Math.max(activePrompts.length, activeImages.length);
-    addLog('📊 Processing ' + totalJobs + ' video generations...', 'info');
+    const totalJobs = concurrency;
+    addLog('📊 Processing ' + totalJobs + ' video generations using the same prompt and image...', 'info');
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
 
     const results = [];
@@ -375,11 +318,6 @@ export default function RunwayAutomationApp() {
       
       for (let j = 0; j < concurrency && (i + j) < totalJobs; j++) {
         const jobIndex = i + j;
-        const promptIndex = jobIndex % activePrompts.length;
-        const imageIndex = jobIndex % activeImages.length;
-        
-        const prompt = activePrompts[promptIndex];
-        const imageUrl = activeImages[imageIndex];
         
         if (jobIndex > 0) {
           const waitTime = Math.random() * (maxWait - minWait) + minWait + 2;
@@ -641,7 +579,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="Auto-creates prompts, i.e. setting this to 3 will create 3 prompt fields."
+                                title="Number of videos to generate concurrently using the same prompt and image."
                               ></i>
                             </label>
                             <input
@@ -650,7 +588,7 @@ export default function RunwayAutomationApp() {
                               max="20"
                               className="form-control"
                               value={concurrency}
-                              onChange={(e) => handleConcurrencyChange(parseInt(e.target.value) || 1)}
+                              onChange={(e) => setConcurrency(parseInt(e.target.value) || 1)}
                               style={{ borderRadius: '12px' }}
                             />
                           </div>
@@ -710,132 +648,39 @@ export default function RunwayAutomationApp() {
                         <h3 className="card-title fw-bold mb-4">Content Configuration</h3>
 
                         <div className="mb-4">
-                          <div className="d-flex justify-content-between align-items-center mb-3">
-                            <label className="form-label fw-bold mb-0">
-                              Video Prompts * ({prompts.length} prompt{prompts.length !== 1 ? 's' : ''})
-                            </label>
-                            <div className="btn-group" role="group">
-                              <button
-                                type="button"
-                                className="btn btn-outline-primary btn-sm"
-                                onClick={autofillPrompts}
-                                disabled={!prompts[0] || !prompts[0].trim() || prompts.length <= 1}
-                                title="Copy Prompt 1 to all other prompts"
-                              >
-                                📝 Autofill All
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-outline-success btn-sm"
-                                onClick={addPrompt}
-                              >
-                                <Plus size={14} className="me-1" />
-                                Add
-                              </button>
-                              {prompts.length > 1 && (
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-danger btn-sm"
-                                  onClick={() => setPrompts(prompts.slice(0, -1))}
-                                >
-                                  <Trash2 size={14} className="me-1" />
-                                  Remove Last
-                                </button>
-                              )}
-                            </div>
+                          <label className="form-label fw-bold">Video Prompt *</label>
+                          <textarea
+                            className="form-control"
+                            rows="3"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
+                            style={{ borderRadius: '12px' }}
+                          />
+                          <div className="form-text">
+                            This prompt will be used for all {concurrency} concurrent video{concurrency !== 1 ? 's' : ''}.
                           </div>
-
-                          <div className="alert alert-info border-0 shadow-sm mb-3" style={{ borderRadius: '12px' }}>
-                            <small>
-                              💡 <strong>Tip:</strong> Concurrency is set to {concurrency}, so you have {prompts.length} prompt field{prompts.length !== 1 ? 's' : ''}. 
-                              Change concurrency above to auto-adjust the number of prompts, or use "Autofill All" to copy Prompt 1 to all fields.
-                            </small>
-                          </div>
-
-                          {prompts.map((prompt, index) => (
-                            <div key={index} className="mb-3">
-                              <div className="d-flex align-items-center mb-2">
-                                <span className="badge bg-secondary me-2">Prompt {index + 1}</span>
-                                {prompts.length > 1 && (
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline-danger btn-sm ms-auto"
-                                    onClick={() => removePrompt(index)}
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                )}
-                              </div>
-                              <textarea
-                                className="form-control"
-                                rows="2"
-                                value={prompt}
-                                onChange={(e) => updatePrompt(index, e.target.value)}
-                                placeholder={`Describe video ${index + 1}... (e.g., "gentle waves flowing, peaceful water movement")`}
-                                style={{ borderRadius: '12px' }}
-                              />
-                            </div>
-                          ))}
                         </div>
 
                         <div className="mb-4">
-                          <div className="d-flex justify-content-between align-items-center mb-3">
-                            <label className="form-label fw-bold mb-0">
-                              Image URLs (Required) * ({images.length} image{images.length !== 1 ? 's' : ''})
-                            </label>
-                            <div className="btn-group" role="group">
-                              <button
-                                type="button"
-                                className="btn btn-outline-primary btn-sm"
-                                onClick={autofillImages}
-                                disabled={!images[0] || !images[0].trim() || images.length <= 1}
-                                title="Copy Image 1 to all other image fields"
-                              >
-                                🖼️ Autofill All
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-outline-success btn-sm"
-                                onClick={addImage}
-                              >
-                                <Plus size={14} className="me-1" />
-                                Add Image URL
-                              </button>
-                            </div>
-                          </div>
-
+                          <label className="form-label fw-bold">Image URL (Required) *</label>
                           <div className="alert alert-primary border-0 shadow-sm mb-3" style={{ borderRadius: '12px' }}>
                             <small>
                               <strong>Important:</strong> The RunwayML API only supports image-to-video generation. 
                               Each video starts with your provided image and animates according to your text prompt.
-                              Use "Autofill All" to copy Image 1 to all fields for consistent starting frames.
                             </small>
                           </div>
-
-                          {images.map((image, index) => (
-                            <div key={index} className="mb-3">
-                              <div className="d-flex align-items-center mb-2">
-                                <span className="badge bg-success me-2">Image {index + 1}</span>
-                                {images.length > 1 && (
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline-danger btn-sm ms-auto"
-                                    onClick={() => removeImage(index)}
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                )}
-                              </div>
-                              <input
-                                type="url"
-                                className="form-control"
-                                value={image}
-                                onChange={(e) => updateImage(index, e.target.value)}
-                                placeholder={`https://example.com/image${index + 1}.jpg`}
-                                style={{ borderRadius: '12px' }}
-                              />
-                            </div>
-                          ))}
+                          <input
+                            type="url"
+                            className="form-control"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/image.jpg"
+                            style={{ borderRadius: '12px' }}
+                          />
+                          <div className="form-text">
+                            This image will be used as the starting frame for all {concurrency} concurrent video{concurrency !== 1 ? 's' : ''}.
+                          </div>
                         </div>
 
                         <div className="row g-3">
@@ -891,7 +736,7 @@ export default function RunwayAutomationApp() {
                               <button
                                 className="btn btn-success btn-lg shadow"
                                 onClick={generateVideos}
-                                disabled={!runwayApiKey || prompts.filter(p => p.trim()).length === 0 || images.filter(img => img.trim()).length === 0}
+                                disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
                                 style={{ borderRadius: '15px' }}
                               >
                                 <Play size={24} className="me-2" />
@@ -925,10 +770,13 @@ export default function RunwayAutomationApp() {
                             <span>API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                           </div>
                           <div className="col-md-3">
-                            <span>Prompts: {prompts.filter(p => p.trim()).length}</span>
+                            <span>Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                           </div>
                           <div className="col-md-3">
-                            <span>Images: {images.filter(img => img.trim()).length}</span>
+                            <span>Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                          </div>
+                          <div className="col-md-3">
+                            <span>Concurrency: {concurrency}</span>
                           </div>
                         </div>
                       </div>
