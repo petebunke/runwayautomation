@@ -30,16 +30,18 @@ export default function RunwayAutomationApp() {
       setPrompts(prompts.slice(0, newConcurrency));
     }
     
-    // Adjust images to match concurrency (optional - ensures at least one image per job)
-    const currentImages = images.filter(img => img.trim() !== '');
-    if (currentImages.length < newConcurrency) {
+    // Adjust images to match concurrency - fix the bug here
+    if (images.length < newConcurrency) {
       // Add more image slots if needed
-      const imagesToAdd = newConcurrency - currentImages.length;
+      const imagesToAdd = newConcurrency - images.length;
       const newImages = [...images];
       for (let i = 0; i < imagesToAdd; i++) {
         newImages.push('');
       }
       setImages(newImages);
+    } else if (images.length > newConcurrency) {
+      // Remove extra image slots when reducing concurrency
+      setImages(images.slice(0, newConcurrency));
     }
   };
 
@@ -152,6 +154,8 @@ export default function RunwayAutomationApp() {
         seed: Math.floor(Math.random() * 1000000)
       };
 
+      console.log('🐛 DEBUG: Sending request for job', jobIndex + 1, payload);
+
       const response = await fetch(API_BASE + '/runway-generate', {
         method: 'POST',
         headers: {
@@ -163,13 +167,18 @@ export default function RunwayAutomationApp() {
         })
       });
 
+      console.log('🐛 DEBUG: Response status for job', jobIndex + 1, response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('🐛 DEBUG: Error response for job', jobIndex + 1, errorData);
         throw new Error(errorData.error || 'API Error: ' + response.status);
       }
 
       const task = await response.json();
-      addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ')', 'success');
+      console.log('🐛 DEBUG: Task created for job', jobIndex + 1, task);
+      
+      addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
       
       return await pollTaskCompletion(task.id, jobId, prompt, imageUrl, jobIndex);
       
