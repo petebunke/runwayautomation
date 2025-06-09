@@ -10,6 +10,38 @@ export default function RunwayAutomationApp() {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
   const [concurrency, setConcurrency] = useState(1);
+
+  // Auto-adjust prompts and images when concurrency changes
+  const handleConcurrencyChange = (newConcurrency) => {
+    setConcurrency(newConcurrency);
+    
+    // Adjust prompts to match concurrency
+    const currentPrompts = prompts.filter(p => p.trim() !== '');
+    if (currentPrompts.length < newConcurrency) {
+      // Add more prompts if needed
+      const promptsToAdd = newConcurrency - currentPrompts.length;
+      const newPrompts = [...prompts];
+      for (let i = 0; i < promptsToAdd; i++) {
+        newPrompts.push('');
+      }
+      setPrompts(newPrompts);
+    } else if (currentPrompts.length > newConcurrency) {
+      // Keep only the first 'newConcurrency' prompts
+      setPrompts(prompts.slice(0, newConcurrency));
+    }
+    
+    // Adjust images to match concurrency (optional - ensures at least one image per job)
+    const currentImages = images.filter(img => img.trim() !== '');
+    if (currentImages.length < newConcurrency) {
+      // Add more image slots if needed
+      const imagesToAdd = newConcurrency - currentImages.length;
+      const newImages = [...images];
+      for (let i = 0; i < imagesToAdd; i++) {
+        newImages.push('');
+      }
+      setImages(newImages);
+    }
+  };
   const [minWait, setMinWait] = useState(2);
   const [maxWait, setMaxWait] = useState(5);
   const [isRunning, setIsRunning] = useState(false);
@@ -458,15 +490,20 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Concurrency</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Concurrency (Auto-creates prompts)
+                    </label>
                     <input
                       type="number"
                       min="1"
-                      max="3"
+                      max="5"
                       value={concurrency}
-                      onChange={(e) => setConcurrency(parseInt(e.target.value) || 1)}
+                      onChange={(e) => handleConcurrencyChange(parseInt(e.target.value) || 1)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Setting this to {concurrency} will create {concurrency} prompt field{concurrency !== 1 ? 's' : ''}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -475,22 +512,55 @@ export default function RunwayAutomationApp() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Content Configuration</h2>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Video Prompts *
-                  </label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Video Prompts * ({prompts.length} prompt{prompts.length !== 1 ? 's' : ''})
+                    </label>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={addPrompt}
+                        className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                      >
+                        <Plus size={14} />
+                        <span>Add</span>
+                      </button>
+                      {prompts.length > 1 && (
+                        <button
+                          onClick={() => setPrompts(prompts.slice(0, -1))}
+                          className="flex items-center space-x-1 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                          <span>Remove Last</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg mb-3">
+                    <p className="text-sm text-green-700">
+                      💡 <strong>Tip:</strong> Concurrency is set to {concurrency}, so you have {prompts.length} prompt field{prompts.length !== 1 ? 's' : ''}. 
+                      Change concurrency above to auto-adjust the number of prompts.
+                    </p>
+                  </div>
                   {prompts.map((prompt, index) => (
                     <div key={index} className="flex space-x-2 mb-3">
-                      <textarea
-                        value={prompt}
-                        onChange={(e) => updatePrompt(index, e.target.value)}
-                        placeholder="Describe the video you want to generate..."
-                        className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        rows="2"
-                      />
+                      <div className="flex-1">
+                        <div className="flex items-center mb-1">
+                          <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            Prompt {index + 1}
+                          </span>
+                        </div>
+                        <textarea
+                          value={prompt}
+                          onChange={(e) => updatePrompt(index, e.target.value)}
+                          placeholder={`Describe video ${index + 1}... (e.g., "gentle waves flowing, peaceful water movement")`}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          rows="2"
+                        />
+                      </div>
                       {prompts.length > 1 && (
                         <button
                           onClick={() => removePrompt(index)}
-                          className="px-3 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          className="px-3 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors self-end"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -502,7 +572,7 @@ export default function RunwayAutomationApp() {
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
                     <Plus size={18} />
-                    <span>Add Prompt</span>
+                    <span>Add Extra Prompt</span>
                   </button>
                 </div>
 
