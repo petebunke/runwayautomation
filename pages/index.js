@@ -641,7 +641,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="Auto-creates prompts, i.e. setting this to 3 will create 3 prompt fields. API Concurrency Limits: Tier 1 = 1, Tier 2 = 3, Tier 3 = 5, Tier 4 = 10, Tier 5 = 20."
+                                title="Auto-creates prompts, i.e. setting this to 3 will create 3 prompt fields."
                               ></i>
                             </label>
                             <input
@@ -696,6 +696,9 @@ export default function RunwayAutomationApp() {
                               </tbody>
                             </table>
                           </div>
+                          <p className="small text-muted mt-2 mb-0">
+                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
+                          </p>
                         </div>
                       </div>
                     </div>
