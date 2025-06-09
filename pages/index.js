@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<brimport React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard } from 'lucide-react';
 import Head from 'next/head';
 
