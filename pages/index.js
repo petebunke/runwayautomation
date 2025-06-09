@@ -20,11 +20,10 @@ export default function RunwayAutomationApp() {
 
   // Initialize Bootstrap tooltips
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Initialize tooltips when component mounts
-      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-      tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new window.bootstrap.Tooltip(tooltipTriggerEl);
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new window.bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
   }, []);
@@ -35,7 +34,6 @@ export default function RunwayAutomationApp() {
     
     // Adjust prompts to match concurrency
     if (prompts.length < newConcurrency) {
-      // Add more prompts if needed
       const promptsToAdd = newConcurrency - prompts.length;
       const newPrompts = [...prompts];
       for (let i = 0; i < promptsToAdd; i++) {
@@ -43,13 +41,11 @@ export default function RunwayAutomationApp() {
       }
       setPrompts(newPrompts);
     } else if (prompts.length > newConcurrency) {
-      // Keep only the first 'newConcurrency' prompts
       setPrompts(prompts.slice(0, newConcurrency));
     }
     
-    // Adjust images to match concurrency - fixed logic
+    // Adjust images to match concurrency
     if (images.length < newConcurrency) {
-      // Add more image slots if needed
       const imagesToAdd = newConcurrency - images.length;
       const newImages = [...images];
       for (let i = 0; i < imagesToAdd; i++) {
@@ -57,7 +53,6 @@ export default function RunwayAutomationApp() {
       }
       setImages(newImages);
     } else if (images.length > newConcurrency) {
-      // Remove extra image slots when reducing concurrency
       setImages(images.slice(0, newConcurrency));
     }
   };
@@ -136,7 +131,6 @@ export default function RunwayAutomationApp() {
     const jobId = 'job_' + jobIndex + '_' + Date.now();
     
     try {
-      // Check if image is provided (required for current API)
       if (!imageUrl || !imageUrl.trim()) {
         const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
         addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
@@ -204,11 +198,10 @@ export default function RunwayAutomationApp() {
   };
 
   const pollTaskCompletion = async (taskId, jobId, prompt, imageUrl, jobIndex) => {
-    // Increased timeouts for throttled jobs - they can take much longer
-    const maxPolls = Math.floor(1800 / 8); // 30 minutes max, 8 second intervals
+    const maxPolls = Math.floor(1800 / 8);
     let pollCount = 0;
     let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 5; // More tolerance for network issues
+    const maxConsecutiveErrors = 5;
     let isThrottled = false;
     let throttledStartTime = null;
 
@@ -219,8 +212,7 @@ export default function RunwayAutomationApp() {
           headers: {
             'Content-Type': 'application/json',
           },
-          // Longer timeout for better reliability
-          signal: AbortSignal.timeout(25000) // 25 second timeout
+          signal: AbortSignal.timeout(25000)
         });
 
         if (!response.ok) {
@@ -229,11 +221,8 @@ export default function RunwayAutomationApp() {
         }
 
         const task = await response.json();
-        
-        // Reset consecutive errors on successful response
         consecutiveErrors = 0;
         
-        // Handle throttled status specifically
         if (task.status === 'THROTTLED') {
           if (!isThrottled) {
             isThrottled = true;
@@ -246,36 +235,31 @@ export default function RunwayAutomationApp() {
             ...prev,
             [jobId]: { 
               status: 'throttled', 
-              progress: 5, // Small progress to show it's active
+              progress: 5,
               message: `Queued for ${throttledDuration}s` 
             }
           }));
           
-          // Log periodic updates for very long waits
           if (throttledDuration > 0 && throttledDuration % 60 === 0) {
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
-          // Use longer polling interval for throttled jobs to reduce API load
-          await new Promise(resolve => setTimeout(resolve, 12000)); // 12 seconds for throttled
+          await new Promise(resolve => setTimeout(resolve, 12000));
           pollCount++;
           continue;
         }
         
-        // If we were throttled but now have a different status, log the transition
         if (isThrottled && task.status !== 'THROTTLED') {
           const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
           addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + queueTime + 's in queue', 'info');
           isThrottled = false;
         }
         
-        // Calculate progress based on status and time
         let progress = 10;
         if (task.status === 'PENDING') {
           progress = 20;
         } else if (task.status === 'RUNNING') {
-          // More dynamic progress for running jobs
-          const runningTime = Math.max(0, pollCount - 5); // Assume it started running after 5 polls
+          const runningTime = Math.max(0, pollCount - 5);
           progress = Math.min(30 + (runningTime * 3), 90);
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
@@ -308,9 +292,7 @@ export default function RunwayAutomationApp() {
             created_at: new Date().toISOString()
           };
 
-          // Add completed video to results immediately for real-time display
           setResults(prev => [...prev, completedVideo]);
-
           return completedVideo;
         }
 
@@ -318,35 +300,30 @@ export default function RunwayAutomationApp() {
           throw new Error(task.failure_reason || 'Generation failed');
         }
 
-        // Normal polling interval for active jobs
-        await new Promise(resolve => setTimeout(resolve, 8000)); // 8 seconds
+        await new Promise(resolve => setTimeout(resolve, 8000));
         pollCount++;
         
       } catch (error) {
         consecutiveErrors++;
         
-        // More specific error handling
         if (error.name === 'AbortError' || error.name === 'TimeoutError') {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('429') || error.message.includes('rate limit')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
-          // Extra delay for rate limits
           await new Promise(resolve => setTimeout(resolve, 15000));
         } else {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         }
         
-        // If we've had too many consecutive errors, fail the task
         if (consecutiveErrors >= maxConsecutiveErrors) {
           const finalError = 'Failed after ' + maxConsecutiveErrors + ' consecutive errors. Last error: ' + error.message;
           addLog('✗ Job ' + (jobIndex + 1) + ' ' + finalError, 'error');
           throw new Error(finalError);
         }
         
-        // Progressive backoff - wait longer after each error
-        const backoffDelay = Math.min(10000 + (consecutiveErrors * 5000), 30000); // 10s to 30s
+        const backoffDelay = Math.min(10000 + (consecutiveErrors * 5000), 30000);
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
         pollCount++;
       }
@@ -374,7 +351,6 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // IMPORTANT: Validate that images are provided
     if (activeImages.length === 0) {
       addLog('❌ Images are required! The current RunwayML API only supports image-to-video generation. Please add at least one image URL.', 'error');
       setIsRunning(false);
@@ -400,14 +376,13 @@ export default function RunwayAutomationApp() {
       for (let j = 0; j < concurrency && (i + j) < totalJobs; j++) {
         const jobIndex = i + j;
         const promptIndex = jobIndex % activePrompts.length;
-        const imageIndex = jobIndex % activeImages.length; // Always use an image
+        const imageIndex = jobIndex % activeImages.length;
         
         const prompt = activePrompts[promptIndex];
-        const imageUrl = activeImages[imageIndex]; // Required
+        const imageUrl = activeImages[imageIndex];
         
         if (jobIndex > 0) {
-          // Longer wait time to prevent API rate limiting
-          const waitTime = Math.random() * (maxWait - minWait) + minWait + 2; // Add 2 seconds base
+          const waitTime = Math.random() * (maxWait - minWait) + minWait + 2;
           addLog('⏱️ Waiting ' + waitTime.toFixed(1) + 's before next job to prevent rate limiting...', 'info');
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
         }
@@ -421,7 +396,6 @@ export default function RunwayAutomationApp() {
         batchResults.forEach((result, index) => {
           if (result.status === 'fulfilled') {
             results.push(result.value);
-            // Don't add to setResults here since it's already added in pollTaskCompletion
           } else {
             errors.push(result.reason);
           }
@@ -512,12 +486,11 @@ export default function RunwayAutomationApp() {
         />
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-        ></script>
+        />
       </Head>
 
       <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
         <div className="container-fluid py-4">
-          {/* Header */}
           <div className="text-center mb-5">
             <h1 className="display-4 fw-bold text-white mb-3">
               🎬 Runway Automation Pro
@@ -527,7 +500,6 @@ export default function RunwayAutomationApp() {
             </p>
           </div>
 
-          {/* Navigation Tabs */}
           <div className="row justify-content-center mb-4">
             <div className="col-auto">
               <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '15px', padding: '8px' }}>
@@ -565,12 +537,10 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
 
-          {/* Configuration Tab */}
           {activeTab === 'setup' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
                 <div className="row g-4">
-                  {/* API Configuration Card */}
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
                       <div className="card-body p-4">
@@ -581,7 +551,6 @@ export default function RunwayAutomationApp() {
                           <h3 className="card-title mb-0 fw-bold">API Configuration</h3>
                         </div>
 
-                        {/* API Key Input */}
                         <div className="mb-4">
                           <label className="form-label fw-bold">RunwayML API Key *</label>
                           <input
@@ -600,7 +569,6 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
 
-                        {/* Billing Information Alert */}
                         <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '12px' }}>
                           <div className="d-flex align-items-center mb-2">
                             <CreditCard size={20} className="text-warning me-2" />
@@ -615,7 +583,6 @@ export default function RunwayAutomationApp() {
                           </ul>
                         </div>
 
-                        {/* Model and Settings */}
                         <div className="row g-3">
                           <div className="col-6">
                             <label className="form-label fw-bold">Model</label>
@@ -690,7 +657,6 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
 
-                        {/* API Limits Table */}
                         <div className="mt-4 p-3 bg-light rounded border">
                           <p className="small fw-bold mb-2">🎯 RunwayML API Concurrency Limits by Tier:</p>
                           <div className="table-responsive">
@@ -732,18 +698,15 @@ export default function RunwayAutomationApp() {
                             </table>
                           </div>
                         </div>
-                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Content Configuration Card */}
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
                       <div className="card-body p-4">
                         <h3 className="card-title fw-bold mb-4">Content Configuration</h3>
 
-                        {/* Video Prompts */}
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-3">
                             <label className="form-label fw-bold mb-0">
@@ -813,7 +776,6 @@ export default function RunwayAutomationApp() {
                           ))}
                         </div>
 
-                        {/* Image URLs */}
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-3">
                             <label className="form-label fw-bold mb-0">
@@ -874,7 +836,6 @@ export default function RunwayAutomationApp() {
                           ))}
                         </div>
 
-                        {/* Wait Times */}
                         <div className="row g-3">
                           <div className="col-6">
                             <label className="form-label fw-bold">Min Wait (seconds)</label>
@@ -909,7 +870,6 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          {/* Generation Tab */}
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
@@ -917,7 +877,6 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4">
                     <h2 className="card-title fw-bold mb-4">Video Generation Control</h2>
 
-                    {/* Status Card */}
                     <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #667eea, #764ba2)', borderRadius: '15px' }}>
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -953,7 +912,9 @@ export default function RunwayAutomationApp() {
                           <div className="col-md-3">
                             <div className="d-flex align-items-center justify-content-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
-                                {isRunning && <div className="w-100 h-100 rounded-circle bg-success" style={{ animation: 'pulse 1s infinite' }}></div>}
+                                {isRunning && (
+                                  <div className="w-100 h-100 rounded-circle bg-success"></div>
+                                )}
                               </div>
                               <span className="fw-bold">{isRunning ? 'Running' : 'Idle'}</span>
                             </div>
@@ -971,7 +932,6 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
-                    {/* Progress Cards */}
                     {Object.keys(generationProgress).length > 0 && (
                       <div className="mb-4">
                         <h4 className="fw-bold mb-3">Generation Progress</h4>
@@ -1013,7 +973,6 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    {/* Live Log */}
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
                       <div className="card-header bg-transparent border-0 pb-0">
                         <h5 className="text-success fw-bold mb-0">🔥 Live Generation Log</h5>
@@ -1042,7 +1001,6 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          {/* Results Tab */}
           {activeTab === 'results' && (
             <div className="row justify-content-center">
               <div className="col-lg-11">
@@ -1176,7 +1134,6 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          {/* Footer */}
           <div className="text-center mt-5">
             <div className="card border-0 shadow-lg mb-4" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.95)' }}>
               <div className="card-body p-4">
@@ -1199,44 +1156,7 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
         </div>
-
-        <style jsx>{`
-          @keyframes pulse {
-            0%, 100% { 
-              opacity: 1; 
-            }
-            50% { 
-              opacity: 0.5; 
-            }
-          }
-          
-          .nav-pills .nav-link.active {
-            background: linear-gradient(45deg, #667eea, #764ba2) !important;
-            border: none;
-          }
-          
-          .nav-pills .nav-link:not(.active):hover {
-            background: rgba(255,255,255,0.2);
-          }
-          
-          .card {
-            transition: transform 0.2s ease-in-out;
-          }
-          
-          .card:hover {
-            transform: translateY(-2px);
-          }
-          
-          .btn {
-            transition: all 0.2s ease-in-out;
-          }
-          
-          .btn:hover {
-            transform: translateY(-1px);
-          }
-        `}</style>
       </div>
     </>
   );
 }
-                
