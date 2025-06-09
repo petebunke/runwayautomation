@@ -42,6 +42,30 @@ export default function RunwayAutomationApp() {
       setImages(newImages);
     }
   };
+
+  // Autofill all prompts with the value from Prompt 1
+  const autofillPrompts = () => {
+    if (prompts[0] && prompts[0].trim()) {
+      const firstPrompt = prompts[0];
+      const newPrompts = prompts.map(() => firstPrompt);
+      setPrompts(newPrompts);
+      addLog('✅ Autofilled all prompts with: "' + firstPrompt.substring(0, 30) + '..."', 'success');
+    } else {
+      addLog('❌ Cannot autofill - Prompt 1 is empty', 'error');
+    }
+  };
+
+  // Autofill all images with the value from Image 1
+  const autofillImages = () => {
+    if (images[0] && images[0].trim()) {
+      const firstImage = images[0];
+      const newImages = images.map(() => firstImage);
+      setImages(newImages);
+      addLog('✅ Autofilled all images with: "' + firstImage.substring(0, 40) + '..."', 'success');
+    } else {
+      addLog('❌ Cannot autofill - Image 1 is empty', 'error');
+    }
+  };
   const [minWait, setMinWait] = useState(2);
   const [maxWait, setMaxWait] = useState(5);
   const [isRunning, setIsRunning] = useState(false);
@@ -508,39 +532,39 @@ export default function RunwayAutomationApp() {
                       </p>
                       <div className="bg-gray-50 border border-gray-200 rounded p-2">
                         <p className="text-xs font-semibold text-gray-700 mb-1">🎯 RunwayML API Concurrency Limits by Tier:</p>
-                        <table className="w-full text-xs">
+                        <table className="w-full text-xs border border-gray-300 rounded">
                           <thead>
-                            <tr className="border-b border-gray-300">
-                              <th className="text-left py-1 font-medium">Tier</th>
-                              <th className="text-left py-1 font-medium">Max Concurrent</th>
-                              <th className="text-left py-1 font-medium">Criteria</th>
+                            <tr className="border-b border-gray-300 bg-gray-100">
+                              <th className="text-left py-1 px-2 font-medium border-r border-gray-300">Tier</th>
+                              <th className="text-left py-1 px-2 font-medium border-r border-gray-300">Max Concurrent</th>
+                              <th className="text-left py-1 px-2 font-medium">Criteria</th>
                             </tr>
                           </thead>
                           <tbody className="text-gray-600">
-                            <tr>
-                              <td className="py-1">1</td>
-                              <td className="py-1">1</td>
-                              <td className="py-1">Default (new accounts)</td>
+                            <tr className="border-b border-gray-200">
+                              <td className="py-1 px-2 border-r border-gray-200">1</td>
+                              <td className="py-1 px-2 border-r border-gray-200">1</td>
+                              <td className="py-1 px-2">Default (new accounts)</td>
+                            </tr>
+                            <tr className="border-b border-gray-200">
+                              <td className="py-1 px-2 border-r border-gray-200">2</td>
+                              <td className="py-1 px-2 border-r border-gray-200">3</td>
+                              <td className="py-1 px-2">1 day after $50 purchased</td>
+                            </tr>
+                            <tr className="border-b border-gray-200">
+                              <td className="py-1 px-2 border-r border-gray-200">3</td>
+                              <td className="py-1 px-2 border-r border-gray-200">5</td>
+                              <td className="py-1 px-2">7 days after $100 purchased</td>
+                            </tr>
+                            <tr className="border-b border-gray-200">
+                              <td className="py-1 px-2 border-r border-gray-200">4</td>
+                              <td className="py-1 px-2 border-r border-gray-200">10</td>
+                              <td className="py-1 px-2">14 days after $1,000 purchased</td>
                             </tr>
                             <tr>
-                              <td className="py-1">2</td>
-                              <td className="py-1">3</td>
-                              <td className="py-1">1 day after $50 purchased</td>
-                            </tr>
-                            <tr>
-                              <td className="py-1">3</td>
-                              <td className="py-1">5</td>
-                              <td className="py-1">7 days after $100 purchased</td>
-                            </tr>
-                            <tr>
-                              <td className="py-1">4</td>
-                              <td className="py-1">10</td>
-                              <td className="py-1">14 days after $1,000 purchased</td>
-                            </tr>
-                            <tr>
-                              <td className="py-1">5</td>
-                              <td className="py-1">20</td>
-                              <td className="py-1">7 days after $5,000 purchased</td>
+                              <td className="py-1 px-2 border-r border-gray-200">5</td>
+                              <td className="py-1 px-2 border-r border-gray-200">20</td>
+                              <td className="py-1 px-2">7 days after $5,000 purchased</td>
                             </tr>
                           </tbody>
                         </table>
@@ -559,6 +583,15 @@ export default function RunwayAutomationApp() {
                       Video Prompts * ({prompts.length} prompt{prompts.length !== 1 ? 's' : ''})
                     </label>
                     <div className="flex space-x-2">
+                      <button
+                        onClick={autofillPrompts}
+                        disabled={!prompts[0] || !prompts[0].trim() || prompts.length <= 1}
+                        className="flex items-center space-x-1 px-3 py-1 bg-purple-500 text-white text-sm rounded hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        title="Copy Prompt 1 to all other prompts"
+                      >
+                        <span>📝</span>
+                        <span>Autofill All</span>
+                      </button>
                       <button
                         onClick={addPrompt}
                         className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
@@ -580,7 +613,7 @@ export default function RunwayAutomationApp() {
                   <div className="p-3 bg-green-50 border border-green-200 rounded-lg mb-3">
                     <p className="text-sm text-green-700">
                       💡 <strong>Tip:</strong> Concurrency is set to {concurrency}, so you have {prompts.length} prompt field{prompts.length !== 1 ? 's' : ''}. 
-                      Change concurrency above to auto-adjust the number of prompts.
+                      Change concurrency above to auto-adjust the number of prompts, or use "Autofill All" to copy Prompt 1 to all fields.
                     </p>
                   </div>
                   {prompts.map((prompt, index) => (
@@ -619,41 +652,62 @@ export default function RunwayAutomationApp() {
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Image URLs (Required for Video Generation) *
-                  </label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Image URLs (Required for Video Generation) * ({images.length} image{images.length !== 1 ? 's' : ''})
+                    </label>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={autofillImages}
+                        disabled={!images[0] || !images[0].trim() || images.length <= 1}
+                        className="flex items-center space-x-1 px-3 py-1 bg-purple-500 text-white text-sm rounded hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        title="Copy Image 1 to all other image fields"
+                      >
+                        <span>🖼️</span>
+                        <span>Autofill All</span>
+                      </button>
+                      <button
+                        onClick={addImage}
+                        className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        <Plus size={18} />
+                        <span>Add Image URL</span>
+                      </button>
+                    </div>
+                  </div>
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-3">
                     <p className="text-sm text-blue-700">
                       <strong>Important:</strong> The RunwayML API only supports image-to-video generation. 
                       Each video starts with your provided image and animates according to your text prompt.
+                      Use "Autofill All" to copy Image 1 to all fields for consistent starting frames.
                     </p>
                   </div>
                   {images.map((image, index) => (
                     <div key={index} className="flex space-x-2 mb-3">
-                      <input
-                        type="url"
-                        value={image}
-                        onChange={(e) => updateImage(index, e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                        className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
+                      <div className="flex-1">
+                        <div className="flex items-center mb-1">
+                          <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            Image {index + 1}
+                          </span>
+                        </div>
+                        <input
+                          type="url"
+                          value={image}
+                          onChange={(e) => updateImage(index, e.target.value)}
+                          placeholder={`https://example.com/image${index + 1}.jpg`}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
                       {images.length > 1 && (
                         <button
                           onClick={() => removeImage(index)}
-                          className="px-3 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          className="px-3 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors self-end"
                         >
                           <Trash2 size={18} />
                         </button>
                       )}
                     </div>
                   ))}
-                  <button
-                    onClick={addImage}
-                    className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                  >
-                    <Plus size={18} />
-                    <span>Add Image URL</span>
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
