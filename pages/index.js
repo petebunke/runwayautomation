@@ -512,7 +512,6 @@ export default function RunwayAutomationApp() {
         />
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-          defer
         ></script>
       </Head>
 
@@ -1203,8 +1202,12 @@ export default function RunwayAutomationApp() {
 
         <style jsx>{`
           @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { 
+              opacity: 1; 
+            }
+            50% { 
+              opacity: 0.5; 
+            }
           }
           
           .nav-pills .nav-link.active {
