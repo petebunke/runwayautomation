@@ -986,7 +986,7 @@ export default function RunwayAutomationApp() {
 
           <div className="text-center mt-5">
             <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><strong>Use at your own risk:</strong> I am not liable for unexpected costs that arise from uncaught bugs or user error 💁🏻‍♂️</small>
+              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><strong>Use at your own risk:</strong> I am not liable for unexpected costs that arise from uncaught bugs or user error ( ╥﹏╥) ノシ</small>
             </div>
           </div>
         </div>
