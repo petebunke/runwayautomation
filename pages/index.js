@@ -484,6 +484,10 @@ export default function RunwayAutomationApp() {
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
           rel="stylesheet" 
         />
+        <link 
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" 
+          rel="stylesheet" 
+        />
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         />
@@ -632,15 +636,13 @@ export default function RunwayAutomationApp() {
                           <div className="col-6">
                             <label className="form-label fw-bold">
                               Concurrency
-                              <span 
-                                className="ms-1 text-primary" 
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
                                 title="Auto-creates prompts, i.e. setting this to 3 will create 3 prompt fields. API Concurrency Limits: Tier 1 = 1, Tier 2 = 3, Tier 3 = 5, Tier 4 = 10, Tier 5 = 20."
-                              >
-                                ℹ️
-                              </span>
+                              ></i>
                             </label>
                             <input
                               type="number"
@@ -651,9 +653,6 @@ export default function RunwayAutomationApp() {
                               onChange={(e) => handleConcurrencyChange(parseInt(e.target.value) || 1)}
                               style={{ borderRadius: '12px' }}
                             />
-                            <div className="form-text small">
-                              <div className="text-primary fw-bold">API Limits: Tier 1=1, Tier 2=3, Tier 3=5, Tier 4=10, Tier 5=20 concurrent</div>
-                            </div>
                           </div>
                         </div>
 
