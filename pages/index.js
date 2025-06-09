@@ -66,8 +66,8 @@ export default function RunwayAutomationApp() {
       addLog('❌ Cannot autofill - Image 1 is empty', 'error');
     }
   };
-  const [minWait, setMinWait] = useState(2);
-  const [maxWait, setMaxWait] = useState(5);
+  const [minWait, setMinWait] = useState(5);
+  const [maxWait, setMaxWait] = useState(10);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -231,6 +231,11 @@ export default function RunwayAutomationApp() {
             }
           }));
           
+          // Log periodic updates for very long waits
+          if (throttledDuration > 0 && throttledDuration % 60 === 0) {
+            addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
+          }
+          
           // Use longer polling interval for throttled jobs to reduce API load
           await new Promise(resolve => setTimeout(resolve, 12000)); // 12 seconds for throttled
           pollCount++;
@@ -381,8 +386,9 @@ export default function RunwayAutomationApp() {
         const imageUrl = activeImages[imageIndex]; // Required
         
         if (jobIndex > 0) {
-          const waitTime = Math.random() * (maxWait - minWait) + minWait;
-          addLog('⏱️ Waiting ' + waitTime.toFixed(1) + 's before next job...', 'info');
+          // Longer wait time to prevent API rate limiting
+          const waitTime = Math.random() * (maxWait - minWait) + minWait + 2; // Add 2 seconds base
+          addLog('⏱️ Waiting ' + waitTime.toFixed(1) + 's before next job to prevent rate limiting...', 'info');
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
         }
         
