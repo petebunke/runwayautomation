@@ -186,10 +186,19 @@ export default function RunwayAutomationApp() {
   const pollTaskCompletion = async (taskId, jobId, prompt, imageUrl, jobIndex) => {
     const maxPolls = Math.floor(300 / 5);
     let pollCount = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
 
     while (pollCount < maxPolls) {
       try {
-        const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey));
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          // Add timeout to prevent hanging requests
+          signal: AbortSignal.timeout(15000) // 15 second timeout
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -198,6 +207,9 @@ export default function RunwayAutomationApp() {
 
         const task = await response.json();
         const progress = Math.min((pollCount / maxPolls) * 90, 90);
+        
+        // Reset consecutive errors on successful response
+        consecutiveErrors = 0;
         
         setGenerationProgress(prev => ({
           ...prev,
@@ -231,12 +243,30 @@ export default function RunwayAutomationApp() {
         pollCount++;
         
       } catch (error) {
-        addLog('✗ Polling error for job ' + (jobIndex + 1) + ': ' + error.message, 'error');
-        throw error;
+        consecutiveErrors++;
+        
+        // Log different types of errors
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else if (error.message.includes('Failed to fetch')) {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' polling error: ' + error.message + ' (' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        }
+        
+        // If we've had too many consecutive errors, fail the task
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed after ' + maxConsecutiveErrors + ' consecutive polling errors', 'error');
+          throw new Error('Too many consecutive polling errors: ' + error.message);
+        }
+        
+        // Wait a bit longer before retrying on error
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        pollCount++;
       }
     }
 
-    throw new Error('Generation timeout');
+    throw new Error('Generation timeout after ' + (pollCount * 5) + ' seconds');
   };
 
   const generateVideos = async () => {
@@ -532,38 +562,38 @@ export default function RunwayAutomationApp() {
                       </p>
                       <div className="bg-gray-50 border border-gray-200 rounded p-2">
                         <p className="text-xs font-semibold text-gray-700 mb-1">🎯 RunwayML API Concurrency Limits by Tier:</p>
-                        <table className="w-full text-xs border border-gray-300 rounded">
+                        <table className="w-full text-xs border border-black rounded">
                           <thead>
-                            <tr className="border-b border-gray-300 bg-gray-100">
-                              <th className="text-left py-1 px-2 font-medium border-r border-gray-300">Tier</th>
-                              <th className="text-left py-1 px-2 font-medium border-r border-gray-300">Max Concurrent</th>
+                            <tr className="border-b border-black bg-gray-100">
+                              <th className="text-left py-1 px-2 font-medium border-r border-black">Tier</th>
+                              <th className="text-left py-1 px-2 font-medium border-r border-black">Max Concurrent</th>
                               <th className="text-left py-1 px-2 font-medium">Criteria</th>
                             </tr>
                           </thead>
                           <tbody className="text-gray-600">
-                            <tr className="border-b border-gray-200">
-                              <td className="py-1 px-2 border-r border-gray-200">1</td>
-                              <td className="py-1 px-2 border-r border-gray-200">1</td>
+                            <tr className="border-b border-black">
+                              <td className="py-1 px-2 border-r border-black">1</td>
+                              <td className="py-1 px-2 border-r border-black">1</td>
                               <td className="py-1 px-2">Default (new accounts)</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
-                              <td className="py-1 px-2 border-r border-gray-200">2</td>
-                              <td className="py-1 px-2 border-r border-gray-200">3</td>
+                            <tr className="border-b border-black">
+                              <td className="py-1 px-2 border-r border-black">2</td>
+                              <td className="py-1 px-2 border-r border-black">3</td>
                               <td className="py-1 px-2">1 day after $50 purchased</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
-                              <td className="py-1 px-2 border-r border-gray-200">3</td>
-                              <td className="py-1 px-2 border-r border-gray-200">5</td>
+                            <tr className="border-b border-black">
+                              <td className="py-1 px-2 border-r border-black">3</td>
+                              <td className="py-1 px-2 border-r border-black">5</td>
                               <td className="py-1 px-2">7 days after $100 purchased</td>
                             </tr>
-                            <tr className="border-b border-gray-200">
-                              <td className="py-1 px-2 border-r border-gray-200">4</td>
-                              <td className="py-1 px-2 border-r border-gray-200">10</td>
+                            <tr className="border-b border-black">
+                              <td className="py-1 px-2 border-r border-black">4</td>
+                              <td className="py-1 px-2 border-r border-black">10</td>
                               <td className="py-1 px-2">14 days after $1,000 purchased</td>
                             </tr>
                             <tr>
-                              <td className="py-1 px-2 border-r border-gray-200">5</td>
-                              <td className="py-1 px-2 border-r border-gray-200">20</td>
+                              <td className="py-1 px-2 border-r border-black">5</td>
+                              <td className="py-1 px-2 border-r border-black">20</td>
                               <td className="py-1 px-2">7 days after $5,000 purchased</td>
                             </tr>
                           </tbody>
