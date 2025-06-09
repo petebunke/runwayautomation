@@ -763,20 +763,20 @@ export default function RunwayAutomationApp() {
                                   <div className="w-100 h-100 rounded-circle bg-success"></div>
                                 )}
                               </div>
-                              <span className="fw-bold">{isRunning ? 'Running' : 'Idle'}</span>
+                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                             </div>
                           </div>
                           <div className="col-md-3">
-                            <span>API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                           </div>
                           <div className="col-md-3">
-                            <span>Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                           </div>
                           <div className="col-md-3">
-                            <span>Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark">Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
                           </div>
                           <div className="col-md-3">
-                            <span>Concurrency: {concurrency}</span>
+                            <span className="text-dark">Concurrency: {concurrency}</span>
                           </div>
                         </div>
                       </div>
@@ -1009,4 +1009,4 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-} 
+}
