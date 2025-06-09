@@ -449,7 +449,7 @@ export default function RunwayAutomationApp() {
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('setup')}
-                    style={{ borderRadius: '10px', fontWeight: '600' }}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
                     <Settings size={20} className="me-2" />
                     Configuration
@@ -459,7 +459,7 @@ export default function RunwayAutomationApp() {
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '10px', fontWeight: '600' }}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
                     <Film size={20} className="me-2" />
                     Generation
@@ -737,7 +737,7 @@ export default function RunwayAutomationApp() {
                                 className="btn btn-success btn-lg shadow"
                                 onClick={generateVideos}
                                 disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                                style={{ borderRadius: '15px' }}
+                                style={{ borderRadius: '6px' }}
                               >
                                 <Play size={24} className="me-2" />
                                 Start Generation
@@ -746,7 +746,7 @@ export default function RunwayAutomationApp() {
                               <button
                                 className="btn btn-danger btn-lg shadow"
                                 onClick={stopGeneration}
-                                style={{ borderRadius: '15px' }}
+                                style={{ borderRadius: '6px' }}
                               >
                                 <AlertCircle size={24} className="me-2" />
                                 Stop Generation
@@ -865,7 +865,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-primary shadow"
                           onClick={exportResults}
-                          style={{ borderRadius: '12px' }}
+                          style={{ borderRadius: '6px' }}
                         >
                           <Download size={20} className="me-2" />
                           Export Results
@@ -883,7 +883,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-primary btn-lg shadow"
                           onClick={() => setActiveTab('setup')}
-                          style={{ borderRadius: '15px' }}
+                          style={{ borderRadius: '6px' }}
                         >
                           Get Started
                         </button>
