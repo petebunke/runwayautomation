@@ -396,7 +396,7 @@ export default function RunwayAutomationApp() {
         const jobIndex = i + j;
         
         if (jobIndex > 0) {
-          const waitTime = Math.random() * 5 + 3; // 3-8 seconds random wait
+          const waitTime = Math.random() * (maxWait - minWait) + minWait + 2;
           addLog('⏱️ Waiting ' + waitTime.toFixed(1) + 's before next job to prevent rate limiting...', 'info');
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
         }
