@@ -184,10 +184,13 @@ export default function RunwayAutomationApp() {
   };
 
   const pollTaskCompletion = async (taskId, jobId, prompt, imageUrl, jobIndex) => {
-    const maxPolls = Math.floor(300 / 5);
+    // Increased timeouts for throttled jobs - they can take much longer
+    const maxPolls = Math.floor(1800 / 8); // 30 minutes max, 8 second intervals
     let pollCount = 0;
     let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 3;
+    const maxConsecutiveErrors = 5; // More tolerance for network issues
+    let isThrottled = false;
+    let throttledStartTime = null;
 
     while (pollCount < maxPolls) {
       try {
@@ -196,8 +199,8 @@ export default function RunwayAutomationApp() {
           headers: {
             'Content-Type': 'application/json',
           },
-          // Add timeout to prevent hanging requests
-          signal: AbortSignal.timeout(15000) // 15 second timeout
+          // Longer timeout for better reliability
+          signal: AbortSignal.timeout(25000) // 25 second timeout
         });
 
         if (!response.ok) {
@@ -206,14 +209,50 @@ export default function RunwayAutomationApp() {
         }
 
         const task = await response.json();
-        const progress = Math.min((pollCount / maxPolls) * 90, 90);
         
         // Reset consecutive errors on successful response
         consecutiveErrors = 0;
         
+        // Handle throttled status specifically
+        if (task.status === 'THROTTLED') {
+          if (!isThrottled) {
+            isThrottled = true;
+            throttledStartTime = Date.now();
+            addLog('⏸️ Job ' + (jobIndex + 1) + ' is queued (throttled) - waiting for available slot...', 'info');
+          }
+          
+          const throttledDuration = Math.floor((Date.now() - throttledStartTime) / 1000);
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { 
+              status: 'throttled', 
+              progress: 5, // Small progress to show it's active
+              message: `Queued for ${throttledDuration}s` 
+            }
+          }));
+          
+          // Use longer polling interval for throttled jobs to reduce API load
+          await new Promise(resolve => setTimeout(resolve, 12000)); // 12 seconds for throttled
+          pollCount++;
+          continue;
+        }
+        
+        // If we were throttled but now have a different status, log the transition
+        if (isThrottled && task.status !== 'THROTTLED') {
+          const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
+          addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + queueTime + 's in queue', 'info');
+          isThrottled = false;
+        }
+        
+        // Calculate progress based on status
+        let progress = 10;
+        if (task.status === 'PENDING') progress = 20;
+        else if (task.status === 'RUNNING') progress = Math.min(30 + (pollCount * 2), 90);
+        else if (task.status === 'SUCCEEDED') progress = 100;
+        
         setGenerationProgress(prev => ({
           ...prev,
-          [jobId]: { status: task.status, progress: progress }
+          [jobId]: { status: task.status.toLowerCase(), progress: progress }
         }));
 
         if (task.status === 'SUCCEEDED') {
@@ -239,34 +278,42 @@ export default function RunwayAutomationApp() {
           throw new Error(task.failure_reason || 'Generation failed');
         }
 
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        // Normal polling interval for active jobs
+        await new Promise(resolve => setTimeout(resolve, 8000)); // 8 seconds
         pollCount++;
         
       } catch (error) {
         consecutiveErrors++;
         
-        // Log different types of errors
+        // More specific error handling
         if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-          addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
-        } else if (error.message.includes('Failed to fetch')) {
-          addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+          // Extra delay for rate limits
+          await new Promise(resolve => setTimeout(resolve, 15000));
         } else {
-          addLog('⚠️ Job ' + (jobIndex + 1) + ' polling error: ' + error.message + ' (' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         }
         
         // If we've had too many consecutive errors, fail the task
         if (consecutiveErrors >= maxConsecutiveErrors) {
-          addLog('✗ Job ' + (jobIndex + 1) + ' failed after ' + maxConsecutiveErrors + ' consecutive polling errors', 'error');
-          throw new Error('Too many consecutive polling errors: ' + error.message);
+          const finalError = 'Failed after ' + maxConsecutiveErrors + ' consecutive errors. Last error: ' + error.message;
+          addLog('✗ Job ' + (jobIndex + 1) + ' ' + finalError, 'error');
+          throw new Error(finalError);
         }
         
-        // Wait a bit longer before retrying on error
-        await new Promise(resolve => setTimeout(resolve, 8000));
+        // Progressive backoff - wait longer after each error
+        const backoffDelay = Math.min(10000 + (consecutiveErrors * 5000), 30000); // 10s to 30s
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
         pollCount++;
       }
     }
 
-    throw new Error('Generation timeout after ' + (pollCount * 5) + ' seconds');
+    const totalTime = Math.floor((pollCount * 8) / 60);
+    throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
   const generateVideos = async () => {
