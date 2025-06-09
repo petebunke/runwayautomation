@@ -431,7 +431,7 @@ export default function RunwayAutomationApp() {
         />
       </Head>
 
-      <div className="min-vh-100" style={{ background: 'black' }}>
+      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
         <div className="container-fluid py-4">
           <div className="text-center mb-5">
             <h1 className="display-4 fw-bold text-white mb-3">
