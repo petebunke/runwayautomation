@@ -1,5 +1,6 @@
             <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<brimport React, { useState, useEffect } from 'react';
+              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br />⚠️ <strong>Use at your own risk:</strong> I am not liable for unexpected costs that arise from uncaught bugs or user error ⚠️</small>
+            </div>import React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard } from 'lucide-react';
 import Head from 'next/head';
 
