@@ -1,10 +1,9 @@
-  const generateVideo = async (promptText, imageUrls, jobIndex = 0) => {
+  const generateVideo = async (promptText, imageUrlText, jobIndex = 0) => {
     const jobId = 'job_' + jobIndex + '_' + Date.now();
     
     try {
-      // Check if at least one image is provided
-      if (!imageUrls.img1 || !imageUrls.img1.trim()) {
-        const errorMsg = 'At least one image URL (@IMG_1) is required for video generation. The current RunwayML API only supports image-to-video generation.';
+      if (!imageUrlText || !imageUrlText.trim()) {
+        const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
         addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
         
         setGenerationProgress(prev => ({
@@ -15,39 +14,16 @@
         throw new Error(errorMsg);
       }
 
-      const imageCount = [imageUrls.img1, imageUrls.img2, imageUrls.img3].filter(url => url && url.trim()).length;
-      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with ' + imageCount + ' reference image(s)', 'info');
+      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
       
       setGenerationProgress(prev => ({
         ...prev,
         [jobId]: { status: 'starting', progress: 0 }
       }));
 
-      // Build reference images array for RunwayML API
-      const referenceImages = [];
-      if (imageUrls.img1 && imageUrls.img1.trim()) {
-        referenceImages.push({
-          uri: imageUrls.img1.trim(),
-          tag: 'IMG_1'
-        });
-      }
-      if (imageUrls.img2 && imageUrls.img2.trim()) {
-        referenceImages.push({
-          uri: imageUrls.img2.trim(),
-          tag: 'IMG_2'
-        });
-      }
-      if (imageUrls.img3 && imageUrls.img3.trim()) {
-        referenceImages.push({
-          uri: imageUrls.img3.trim(),
-          tag: 'IMG_3'
-        });
-      }
-
       const payload = {
         text_prompt: promptText,
-        image_prompt: imageUrls.img1.trim(), // Primary image for image-to-video
-        reference_images: referenceImages,
+        image_prompt: imageUrlText.trim(),
         model: model,
         aspect_ratio: aspectRatio,
         duration: duration,
@@ -72,7 +48,25 @@
       if (!response.ok) {
         const errorData = await response.json();
         console.log('🐛 DEBUG: Error response for job', jobIndex + 1, errorData);
-        throw new Error(errorData.error || 'APIimport React, { useState, useEffect } from 'react';
+        throw new Error(errorData.error || 'API Error: ' + response.status);
+      }
+
+      const task = await response.json();
+      console.log('🐛 DEBUG: Task created for job', jobIndex + 1, task);
+      
+      addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
+      
+      return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
+      
+    } catch (error) {
+      addLog('✗ Job ' + (jobIndex + 1) + ' failed: ' + error.message, 'error');
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'failed', progress: 0, error: error.message }
+      }));
+      throw error;
+    }
+  };import React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard } from 'lucide-react';
 import Head from 'next/head';
 
