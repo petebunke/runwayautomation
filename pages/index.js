@@ -438,10 +438,7 @@ export default function RunwayAutomationApp() {
               🎬 Runway Automation Pro
             </h1>
             <p className="lead text-white-50 mx-auto" style={{ maxWidth: '600px' }}>
-              Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing.
-            </p>
-            <p className="text-white-50 mx-auto" style={{ maxWidth: '600px' }}>
-              Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.
+              Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing. Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.
             </p>
           </div>
 
