@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard } from 'lucide-react';
 
 export default function RunwayAutomationApp() {
   const [activeTab, setActiveTab] = useState('setup');
   const [runwayApiKey, setRunwayApiKey] = useState('');
   const [prompts, setPrompts] = useState(['A serene lake with mountains in the background at sunset']);
-  const [images, setImages] = useState(['']);
-  const [mode, setMode] = useState('fast');
+  const [images, setImages] = useState(['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1280&h=720']);
   const [model, setModel] = useState('gen3a_turbo');
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
@@ -19,8 +18,8 @@ export default function RunwayAutomationApp() {
   const [generationProgress, setGenerationProgress] = useState({});
 
   const modelOptions = [
-    { value: 'gen3a_turbo', label: 'Gen-3 Alpha Turbo (Fast, 5-10s videos)' },
-    { value: 'gen3a', label: 'Gen-3 Alpha (Higher quality, slower)' }
+    { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
+    { value: 'gen3a_turbo', label: 'Gen-3 Alpha Turbo (Fast, reliable)' }
   ];
 
   const aspectRatioOptions = [
@@ -68,7 +67,20 @@ export default function RunwayAutomationApp() {
     const jobId = 'job_' + jobIndex + '_' + Date.now();
     
     try {
-      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + prompt.substring(0, 50) + '..."', 'info');
+      // Check if image is provided (required for current API)
+      if (!imageUrl || !imageUrl.trim()) {
+        const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+
+      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + prompt.substring(0, 50) + '..." with image', 'info');
       
       setGenerationProgress(prev => ({
         ...prev,
@@ -77,15 +89,12 @@ export default function RunwayAutomationApp() {
 
       const payload = {
         text_prompt: prompt,
+        image_prompt: imageUrl.trim(),
         model: model,
         aspect_ratio: aspectRatio,
         duration: duration,
         seed: Math.floor(Math.random() * 1000000)
       };
-
-      if (imageUrl && imageUrl.trim()) {
-        payload.image_prompt = imageUrl.trim();
-      }
 
       const response = await fetch(API_BASE + '/runway-generate', {
         method: 'POST',
@@ -181,7 +190,7 @@ export default function RunwayAutomationApp() {
     setGenerationProgress({});
     
     addLog('🚀 Starting Runway video generation...', 'info');
-    addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's, Mode: ' + mode, 'info');
+    addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
     
     const activePrompts = prompts.filter(p => p.trim());
     const activeImages = images.filter(img => img.trim());
@@ -192,14 +201,22 @@ export default function RunwayAutomationApp() {
       return;
     }
 
+    // IMPORTANT: Validate that images are provided
+    if (activeImages.length === 0) {
+      addLog('❌ Images are required! The current RunwayML API only supports image-to-video generation. Please add at least one image URL.', 'error');
+      setIsRunning(false);
+      return;
+    }
+
     if (!runwayApiKey.trim()) {
       addLog('❌ RunwayML API key is required!', 'error');
       setIsRunning(false);
       return;
     }
 
-    const totalJobs = Math.max(activePrompts.length, activeImages.length || 1);
+    const totalJobs = Math.max(activePrompts.length, activeImages.length);
     addLog('📊 Processing ' + totalJobs + ' video generations...', 'info');
+    addLog('💳 Note: Each generation requires credits from your API account', 'info');
 
     const results = [];
     const errors = [];
@@ -210,10 +227,10 @@ export default function RunwayAutomationApp() {
       for (let j = 0; j < concurrency && (i + j) < totalJobs; j++) {
         const jobIndex = i + j;
         const promptIndex = jobIndex % activePrompts.length;
-        const imageIndex = activeImages.length > 0 ? jobIndex % activeImages.length : null;
+        const imageIndex = jobIndex % activeImages.length; // Always use an image
         
         const prompt = activePrompts[promptIndex];
-        const imageUrl = imageIndex !== null ? activeImages[imageIndex] : null;
+        const imageUrl = activeImages[imageIndex]; // Required
         
         if (jobIndex > 0) {
           const waitTime = Math.random() * (maxWait - minWait) + minWait;
@@ -289,8 +306,7 @@ export default function RunwayAutomationApp() {
       configuration: {
         model,
         aspect_ratio: aspectRatio,
-        duration,
-        mode
+        duration
       },
       videos: results.map(result => ({
         id: result.id,
@@ -369,24 +385,31 @@ export default function RunwayAutomationApp() {
                   />
                   <div className="flex items-center mt-2 text-sm text-blue-600">
                     <ExternalLink size={14} className="mr-1" />
-                    <a href="https://app.runwayml.com/account" target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      Get your API key from RunwayML Dashboard
+                    <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      Get your API key from RunwayML Developer Portal
                     </a>
                   </div>
                 </div>
 
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Generation Mode
+                    API Billing & Credits
                   </label>
-                  <select
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="fast">Fast (Uses credits)</option>
-                    <option value="relax">Relax (Free, slower)</option>
-                  </select>
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <CreditCard size={16} className="text-amber-600 mr-2" />
+                      <span className="text-sm font-medium text-amber-800">Credits Required</span>
+                    </div>
+                    <p className="text-sm text-amber-700 mb-2">
+                      The RunwayML API requires credits for all video generations.
+                    </p>
+                    <div className="text-xs text-amber-600 space-y-1">
+                      <div>• Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">dev.runwayml.com</a></div>
+                      <div>• Minimum $10 (1000 credits)</div>
+                      <div>• ~25-50 credits per 5-10 second video ($0.25-$0.50)</div>
+                      <div>• Credits are separate from web app credits</div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -485,8 +508,14 @@ export default function RunwayAutomationApp() {
 
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Image URLs (Optional - for Image-to-Video)
+                    Image URLs (Required for Video Generation) *
                   </label>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-3">
+                    <p className="text-sm text-blue-700">
+                      <strong>Important:</strong> The RunwayML API only supports image-to-video generation. 
+                      Each video starts with your provided image and animates according to your text prompt.
+                    </p>
+                  </div>
                   {images.map((image, index) => (
                     <div key={index} className="flex space-x-2 mb-3">
                       <input
@@ -559,7 +588,7 @@ export default function RunwayAutomationApp() {
                   {!isRunning ? (
                     <button
                       onClick={generateVideos}
-                      disabled={!runwayApiKey || prompts.filter(p => p.trim()).length === 0}
+                      disabled={!runwayApiKey || prompts.filter(p => p.trim()).length === 0 || images.filter(img => img.trim()).length === 0}
                       className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
                     >
                       <Play size={24} />
@@ -770,19 +799,19 @@ export default function RunwayAutomationApp() {
               <span className="text-lg font-semibold text-green-800">✅ Production-Ready Solution</span>
             </div>
             <p className="text-green-700 mb-2">
-              <strong>🚀 Complete full-stack application</strong> with serverless backend to bypass CORS restrictions and real RunwayML API integration.
+              <strong>🚀 Complete full-stack application</strong> with serverless backend for RunwayML API integration.
             </p>
             <p className="text-green-600 text-sm">
-              Features professional UI, batch processing, progress tracking, and video management.
+              Features professional UI, batch processing, progress tracking, and video management with credits-based billing.
             </p>
           </div>
           
           <div className="flex items-center justify-center space-x-2 mb-3">
-            <AlertCircle size={16} />
+            <CreditCard size={16} />
             <span className="text-sm font-medium">Usage Guidelines</span>
           </div>
           <p className="text-xs max-w-2xl mx-auto">
-            Use responsibly and in accordance with RunwayML terms of service. Monitor your API usage and costs.
+            Purchase credits at dev.runwayml.com to start generating videos. Monitor your API usage and costs.
           </p>
         </div>
       </div>
