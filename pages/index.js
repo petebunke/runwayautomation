@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard } from 'lucide-react';
 import Head from 'next/head';
 
@@ -17,6 +17,17 @@ export default function RunwayAutomationApp() {
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
   const [generationProgress, setGenerationProgress] = useState({});
+
+  // Initialize Bootstrap tooltips
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Initialize tooltips when component mounts
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new window.bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+  }, []);
 
   // Auto-adjust prompts and images when concurrency changes
   const handleConcurrencyChange = (newConcurrency) => {
@@ -653,7 +664,18 @@ export default function RunwayAutomationApp() {
                           </div>
 
                           <div className="col-6">
-                            <label className="form-label fw-bold">Concurrency (Auto-creates prompts)</label>
+                            <label className="form-label fw-bold">
+                              Concurrency
+                              <span 
+                                className="ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="Auto-creates prompts, i.e. setting this to 3 will create 3 prompt fields. API Concurrency Limits: Tier 1 = 1, Tier 2 = 3, Tier 3 = 5, Tier 4 = 10, Tier 5 = 20."
+                              >
+                                ℹ️
+                              </span>
+                            </label>
                             <input
                               type="number"
                               min="1"
@@ -664,53 +686,53 @@ export default function RunwayAutomationApp() {
                               style={{ borderRadius: '12px' }}
                             />
                             <div className="form-text small">
-                              <div>Setting this to {concurrency} will create {concurrency} prompt field{concurrency !== 1 ? 's' : ''}</div>
                               <div className="text-primary fw-bold">API Limits: Tier 1=1, Tier 2=3, Tier 3=5, Tier 4=10, Tier 5=20 concurrent</div>
                             </div>
-                            
-                            {/* API Limits Table */}
-                            <div className="mt-3 p-3 bg-light rounded border">
-                              <p className="small fw-bold mb-2">🎯 RunwayML API Concurrency Limits by Tier:</p>
-                              <div className="table-responsive">
-                                <table className="table table-sm table-bordered border-dark mb-0">
-                                  <thead className="table-secondary">
-                                    <tr>
-                                      <th className="fw-bold border-dark">Tier</th>
-                                      <th className="fw-bold border-dark">Max Concurrent</th>
-                                      <th className="fw-bold border-dark">Criteria</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="small">
-                                    <tr>
-                                      <td className="border-dark">1</td>
-                                      <td className="border-dark">1</td>
-                                      <td className="border-dark">Default (new accounts)</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="border-dark">2</td>
-                                      <td className="border-dark">3</td>
-                                      <td className="border-dark">1 day after $50 purchased</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="border-dark">3</td>
-                                      <td className="border-dark">5</td>
-                                      <td className="border-dark">7 days after $100 purchased</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="border-dark">4</td>
-                                      <td className="border-dark">10</td>
-                                      <td className="border-dark">14 days after $1,000 purchased</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="border-dark">5</td>
-                                      <td className="border-dark">20</td>
-                                      <td className="border-dark">7 days after $5,000 purchased</td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
                           </div>
+                        </div>
+
+                        {/* API Limits Table */}
+                        <div className="mt-4 p-3 bg-light rounded border">
+                          <p className="small fw-bold mb-2">🎯 RunwayML API Concurrency Limits by Tier:</p>
+                          <div className="table-responsive">
+                            <table className="table table-sm table-bordered border-dark mb-0">
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark">Tier</th>
+                                  <th className="fw-bold border-dark">Max Concurrent</th>
+                                  <th className="fw-bold border-dark">Criteria</th>
+                                </tr>
+                              </thead>
+                              <tbody className="small">
+                                <tr>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">Default (new accounts)</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">2</td>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">1 day after $50 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">7 days after $100 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">4</td>
+                                  <td className="border-dark">10</td>
+                                  <td className="border-dark">14 days after $1,000 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">20</td>
+                                  <td className="border-dark">7 days after $5,000 purchased</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                         </div>
                       </div>
                     </div>
