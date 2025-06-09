@@ -438,7 +438,7 @@ export default function RunwayAutomationApp() {
               🎬 Runway Automation Pro
             </h1>
             <p className="lead text-white-50 mx-auto" style={{ maxWidth: '800px' }}>
-              Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing.<br />Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.
+              Professional-grade video generation automation for RunwayML.<br />Generate multiple AI videos with advanced batch processing.<br />Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.
             </p>
           </div>
 
@@ -986,7 +986,7 @@ export default function RunwayAutomationApp() {
 
           <div className="text-center mt-5">
             <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br />Use at your own risk, I am not liable for unexpected costs that arise from uncaught bugs.</small>
+              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br />Use at your own risk: I am not liable for unexpected costs that arise from uncaught bugs or user error ☺</small>
             </div>
           </div>
         </div>
