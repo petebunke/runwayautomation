@@ -1,5 +1,5 @@
-// /pages/api/runway-generate.js (DEBUG VERSION)
-// This version includes extensive logging to diagnose the exact issue
+// /pages/api/runway-generate.js (MINIMAL WORKING TEST)
+// This version uses the exact format from RunwayML documentation
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -21,9 +21,6 @@ export default async function handler(req, res) {
   try {
     const { apiKey, payload } = req.body;
 
-    console.log('=== DEBUG: Full request body ===');
-    console.log(JSON.stringify(req.body, null, 2));
-
     // Validate required fields
     if (!apiKey) {
       return res.status(400).json({ error: 'API key is required' });
@@ -39,45 +36,26 @@ export default async function handler(req, res) {
     if (!hasImage) {
       return res.status(400).json({ 
         error: 'Image required for video generation',
-        message: 'The current RunwayML API only supports image-to-video generation. Please provide an image URL in the Image URLs section.',
-        userFriendly: true
+        message: 'The current RunwayML API only supports image-to-video generation.'
       });
     }
 
-    console.log('=== DEBUG: Processing request ===');
-    console.log('Prompt:', payload.text_prompt);
-    console.log('Image URL:', payload.image_prompt);
-    console.log('Model:', payload.model);
-    console.log('Aspect ratio:', payload.aspect_ratio);
-    console.log('Duration:', payload.duration);
+    console.log('Generating video with prompt:', payload.text_prompt.substring(0, 50) + '...');
+    console.log('Using image:', payload.image_prompt);
 
-    // Convert aspect ratio - ensure we use the exact values from the API docs
-    const aspectRatioMap = {
-      '16:9': '1280:720',   // Landscape
-      '9:16': '720:1280',   // Portrait  
-      '1:1': '960:960'      // Square
-    };
-    
-    const ratio = aspectRatioMap[payload.aspect_ratio] || '1280:720';
-    console.log('=== DEBUG: Mapped ratio ===', payload.aspect_ratio, '->', ratio);
-
-    // Use the exact format from RunwayML documentation
+    // Use the EXACT format from RunwayML documentation
     const requestBody = {
       promptText: payload.text_prompt,
       promptImage: payload.image_prompt.trim(),
-      model: 'gen3a_turbo', // Use the exact model name from the API docs
-      ratio: ratio,
-      duration: parseInt(payload.duration) || 5
+      model: 'gen4_turbo', // Try gen4_turbo instead of gen3a_turbo
+      ratio: '1280:720',   // Use exact pixel dimensions
+      duration: 5          // Use simple integer
     };
 
-    console.log('=== DEBUG: Final request body to RunwayML ===');
-    console.log(JSON.stringify(requestBody, null, 2));
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
-    // Make request to RunwayML API
-    const apiUrl = 'https://api.dev.runwayml.com/v1/image_to_video';
-    console.log('=== DEBUG: Making request to ===', apiUrl);
-
-    const response = await fetch(apiUrl, {
+    // Make request using exact format from docs
+    const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -87,61 +65,42 @@ export default async function handler(req, res) {
       body: JSON.stringify(requestBody)
     });
 
-    console.log('=== DEBUG: Response status ===', response.status);
-    console.log('=== DEBUG: Response headers ===', Object.fromEntries(response.headers.entries()));
-
     const responseText = await response.text();
-    console.log('=== DEBUG: Raw response body ===');
-    console.log(responseText);
+    console.log('RunwayML API response status:', response.status);
+    console.log('RunwayML API response:', responseText);
 
     let data;
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('=== DEBUG: JSON Parse Error ===', parseError);
+      console.error('Failed to parse response as JSON:', parseError);
       return res.status(502).json({
         error: 'Invalid response from RunwayML API',
-        message: 'The API returned an unexpected response format',
-        rawResponse: responseText,
-        parseError: parseError.message
+        rawResponse: responseText.substring(0, 300)
       });
     }
 
-    console.log('=== DEBUG: Parsed response data ===');
-    console.log(JSON.stringify(data, null, 2));
-
-    // Handle API errors with detailed logging
+    // Handle API errors
     if (!response.ok) {
-      console.error('=== DEBUG: API Error Details ===');
-      console.error('Status:', response.status);
-      console.error('Status Text:', response.statusText);
-      console.error('Error Data:', data);
+      console.error('RunwayML API error:', response.status, data);
       
-      // Return detailed error information for debugging
+      // Return the actual error from RunwayML
       return res.status(response.status).json({
-        error: `RunwayML API Error (${response.status})`,
+        error: `RunwayML API Error (${response.status}): ${data.error || data.message || 'Unknown error'}`,
         details: data,
-        status: response.status,
-        statusText: response.statusText,
-        rawResponse: responseText,
-        requestBody: requestBody, // Include what we sent for debugging
-        debug: true
+        rawResponse: responseText.substring(0, 500)
       });
     }
 
-    console.log('=== DEBUG: Success! ===');
+    console.log('Video generation request successful');
     res.status(200).json(data);
 
   } catch (error) {
-    console.error('=== DEBUG: Server Error ===');
-    console.error('Error message:', error.message);
-    console.error('Stack trace:', error.stack);
+    console.error('Proxy error:', error);
     
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      debug: true
+      message: error.message
     });
   }
 }
