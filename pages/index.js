@@ -985,24 +985,8 @@ export default function RunwayAutomationApp() {
           )}
 
           <div className="text-center mt-5">
-            <div className="card border-0 shadow-lg mb-4" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.95)' }}>
-              <div className="card-body p-4">
-                <div className="d-flex align-items-center justify-content-center mb-3">
-                  <AlertCircle size={24} className="text-success me-3" />
-                  <h5 className="fw-bold text-success mb-0">✅ Production-Ready Solution</h5>
-                </div>
-                <p className="mb-2">
-                  <strong>🚀 Complete full-stack application</strong> with serverless backend for RunwayML API integration.
-                </p>
-                <p className="small text-muted mb-0">
-                  Features professional UI, batch processing, progress tracking, and video management with credits-based billing.
-                </p>
-              </div>
-            </div>
-            
             <div className="d-flex align-items-center justify-content-center text-white-50">
-              <CreditCard size={16} className="me-2" />
-              <small>Purchase credits at dev.runwayml.com to start generating videos. Monitor your API usage and costs.</small>
+              <small>Vibe coded by Pete Bunke. All rights reserved.<br />Use at your own risk, I am not liable for unexpected costs that arise from uncaught bugs.</small>
             </div>
           </div>
         </div>
