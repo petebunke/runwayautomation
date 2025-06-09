@@ -501,11 +501,50 @@ export default function RunwayAutomationApp() {
                       onChange={(e) => handleConcurrencyChange(parseInt(e.target.value) || 1)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <div className="text-xs text-gray-500 mt-1 space-y-1">
+                    <div className="text-xs text-gray-500 mt-1 space-y-2">
                       <p>Setting this to {concurrency} will create {concurrency} prompt field{concurrency !== 1 ? 's' : ''}</p>
                       <p className="text-blue-600">
                         <strong>API Limits:</strong> Tier 1=1, Tier 2=3, Tier 3=5, Tier 4=10, Tier 5=20 concurrent
                       </p>
+                      <div className="bg-gray-50 border border-gray-200 rounded p-2">
+                        <p className="text-xs font-semibold text-gray-700 mb-1">🎯 RunwayML API Concurrency Limits by Tier:</p>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b border-gray-300">
+                              <th className="text-left py-1 font-medium">Tier</th>
+                              <th className="text-left py-1 font-medium">Max Concurrent</th>
+                              <th className="text-left py-1 font-medium">Criteria</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-gray-600">
+                            <tr>
+                              <td className="py-1">1</td>
+                              <td className="py-1">1</td>
+                              <td className="py-1">Default (new accounts)</td>
+                            </tr>
+                            <tr>
+                              <td className="py-1">2</td>
+                              <td className="py-1">3</td>
+                              <td className="py-1">1 day after $50 purchased</td>
+                            </tr>
+                            <tr>
+                              <td className="py-1">3</td>
+                              <td className="py-1">5</td>
+                              <td className="py-1">7 days after $100 purchased</td>
+                            </tr>
+                            <tr>
+                              <td className="py-1">4</td>
+                              <td className="py-1">10</td>
+                              <td className="py-1">14 days after $1,000 purchased</td>
+                            </tr>
+                            <tr>
+                              <td className="py-1">5</td>
+                              <td className="py-1">20</td>
+                              <td className="py-1">7 days after $5,000 purchased</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
