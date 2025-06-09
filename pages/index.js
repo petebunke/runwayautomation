@@ -496,14 +496,17 @@ export default function RunwayAutomationApp() {
                     <input
                       type="number"
                       min="1"
-                      max="5"
+                      max="20"
                       value={concurrency}
                       onChange={(e) => handleConcurrencyChange(parseInt(e.target.value) || 1)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Setting this to {concurrency} will create {concurrency} prompt field{concurrency !== 1 ? 's' : ''}
-                    </p>
+                    <div className="text-xs text-gray-500 mt-1 space-y-1">
+                      <p>Setting this to {concurrency} will create {concurrency} prompt field{concurrency !== 1 ? 's' : ''}</p>
+                      <p className="text-blue-600">
+                        <strong>API Limits:</strong> Tier 1=1, Tier 2=3, Tier 3=5, Tier 4=10, Tier 5=20 concurrent
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
