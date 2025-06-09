@@ -1,4 +1,78 @@
-import React, { useState, useEffect } from 'react';
+  const generateVideo = async (promptText, imageUrls, jobIndex = 0) => {
+    const jobId = 'job_' + jobIndex + '_' + Date.now();
+    
+    try {
+      // Check if at least one image is provided
+      if (!imageUrls.img1 || !imageUrls.img1.trim()) {
+        const errorMsg = 'At least one image URL (@IMG_1) is required for video generation. The current RunwayML API only supports image-to-video generation.';
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+
+      const imageCount = [imageUrls.img1, imageUrls.img2, imageUrls.img3].filter(url => url && url.trim()).length;
+      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with ' + imageCount + ' reference image(s)', 'info');
+      
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'starting', progress: 0 }
+      }));
+
+      // Build reference images array for RunwayML API
+      const referenceImages = [];
+      if (imageUrls.img1 && imageUrls.img1.trim()) {
+        referenceImages.push({
+          uri: imageUrls.img1.trim(),
+          tag: 'IMG_1'
+        });
+      }
+      if (imageUrls.img2 && imageUrls.img2.trim()) {
+        referenceImages.push({
+          uri: imageUrls.img2.trim(),
+          tag: 'IMG_2'
+        });
+      }
+      if (imageUrls.img3 && imageUrls.img3.trim()) {
+        referenceImages.push({
+          uri: imageUrls.img3.trim(),
+          tag: 'IMG_3'
+        });
+      }
+
+      const payload = {
+        text_prompt: promptText,
+        image_prompt: imageUrls.img1.trim(), // Primary image for image-to-video
+        reference_images: referenceImages,
+        model: model,
+        aspect_ratio: aspectRatio,
+        duration: duration,
+        seed: Math.floor(Math.random() * 1000000)
+      };
+
+      console.log('🐛 DEBUG: Sending request for job', jobIndex + 1, payload);
+
+      const response = await fetch(API_BASE + '/runway-generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          payload: payload
+        })
+      });
+
+      console.log('🐛 DEBUG: Response status for job', jobIndex + 1, response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('🐛 DEBUG: Error response for job', jobIndex + 1, errorData);
+        throw new Error(errorData.error || 'APIimport React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard } from 'lucide-react';
 import Head from 'next/head';
 
@@ -6,7 +80,9 @@ export default function RunwayAutomationApp() {
   const [activeTab, setActiveTab] = useState('setup');
   const [runwayApiKey, setRunwayApiKey] = useState('');
   const [prompt, setPrompt] = useState('A serene lake with mountains in the background at sunset');
-  const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1280&h=720');
+  const [imageUrl1, setImageUrl1] = useState('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1280&h=720');
+  const [imageUrl2, setImageUrl2] = useState('');
+  const [imageUrl3, setImageUrl3] = useState('');
   const [model, setModel] = useState('gen3a_turbo');
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
@@ -320,7 +396,7 @@ export default function RunwayAutomationApp() {
         const jobIndex = i + j;
         
         if (jobIndex > 0) {
-          const waitTime = Math.random() * (maxWait - minWait) + minWait + 2;
+          const waitTime = Math.random() * 5 + 3; // 3-8 seconds random wait
           addLog('⏱️ Waiting ' + waitTime.toFixed(1) + 's before next job to prevent rate limiting...', 'info');
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
         }
@@ -680,33 +756,6 @@ export default function RunwayAutomationApp() {
                           />
                           <div className="form-text">
                             This image will be used as the starting frame for all {concurrency} concurrent video{concurrency !== 1 ? 's' : ''}.
-                          </div>
-                        </div>
-
-                        <div className="row g-3">
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Min Wait (seconds)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              className="form-control"
-                              value={minWait}
-                              onChange={(e) => setMinWait(parseFloat(e.target.value) || 0)}
-                              style={{ borderRadius: '12px' }}
-                            />
-                          </div>
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Max Wait (seconds)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              className="form-control"
-                              value={maxWait}
-                              onChange={(e) => setMaxWait(parseFloat(e.target.value) || 0)}
-                              style={{ borderRadius: '12px' }}
-                            />
                           </div>
                         </div>
                       </div>
