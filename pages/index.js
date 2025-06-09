@@ -244,15 +244,25 @@ export default function RunwayAutomationApp() {
           isThrottled = false;
         }
         
-        // Calculate progress based on status
+        // Calculate progress based on status and time
         let progress = 10;
-        if (task.status === 'PENDING') progress = 20;
-        else if (task.status === 'RUNNING') progress = Math.min(30 + (pollCount * 2), 90);
-        else if (task.status === 'SUCCEEDED') progress = 100;
+        if (task.status === 'PENDING') {
+          progress = 20;
+        } else if (task.status === 'RUNNING') {
+          // More dynamic progress for running jobs
+          const runningTime = Math.max(0, pollCount - 5); // Assume it started running after 5 polls
+          progress = Math.min(30 + (runningTime * 3), 90);
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+        }
         
         setGenerationProgress(prev => ({
           ...prev,
-          [jobId]: { status: task.status.toLowerCase(), progress: progress }
+          [jobId]: { 
+            status: task.status.toLowerCase(), 
+            progress: progress,
+            message: task.status === 'RUNNING' ? 'Processing...' : task.status.toLowerCase()
+          }
         }));
 
         if (task.status === 'SUCCEEDED') {
@@ -263,7 +273,7 @@ export default function RunwayAutomationApp() {
             [jobId]: { status: 'completed', progress: 100 }
           }));
 
-          return {
+          const completedVideo = {
             id: taskId,
             prompt: prompt,
             video_url: task.output && task.output[0] ? task.output[0] : null,
@@ -272,6 +282,11 @@ export default function RunwayAutomationApp() {
             status: 'completed',
             created_at: new Date().toISOString()
           };
+
+          // Add completed video to results immediately for real-time display
+          setResults(prev => [...prev, completedVideo]);
+
+          return completedVideo;
         }
 
         if (task.status === 'FAILED') {
@@ -380,7 +395,7 @@ export default function RunwayAutomationApp() {
         batchResults.forEach((result, index) => {
           if (result.status === 'fulfilled') {
             results.push(result.value);
-            setResults(prev => [...prev, result.value]);
+            // Don't add to setResults here since it's already added in pollTaskCompletion
           } else {
             errors.push(result.reason);
           }
