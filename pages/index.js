@@ -16,21 +16,20 @@ export default function RunwayAutomationApp() {
     setConcurrency(newConcurrency);
     
     // Adjust prompts to match concurrency
-    const currentPrompts = prompts.filter(p => p.trim() !== '');
-    if (currentPrompts.length < newConcurrency) {
+    if (prompts.length < newConcurrency) {
       // Add more prompts if needed
-      const promptsToAdd = newConcurrency - currentPrompts.length;
+      const promptsToAdd = newConcurrency - prompts.length;
       const newPrompts = [...prompts];
       for (let i = 0; i < promptsToAdd; i++) {
         newPrompts.push('');
       }
       setPrompts(newPrompts);
-    } else if (currentPrompts.length > newConcurrency) {
+    } else if (prompts.length > newConcurrency) {
       // Keep only the first 'newConcurrency' prompts
       setPrompts(prompts.slice(0, newConcurrency));
     }
     
-    // Adjust images to match concurrency - fix the bug here
+    // Adjust images to match concurrency - fixed logic
     if (images.length < newConcurrency) {
       // Add more image slots if needed
       const imagesToAdd = newConcurrency - images.length;
