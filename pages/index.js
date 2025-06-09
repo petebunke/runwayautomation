@@ -431,7 +431,7 @@ export default function RunwayAutomationApp() {
         />
       </Head>
 
-      <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <div className="min-vh-100" style={{ background: 'black' }}>
         <div className="container-fluid py-4">
           <div className="text-center mb-5">
             <h1 className="display-4 fw-bold text-white mb-3">
