@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video, Camera, Clapperboard } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -460,7 +460,7 @@ export default function RunwayAutomationApp() {
                     onClick={() => setActiveTab('generation')}
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
-                    <Clapperboard size={20} className="me-2" />
+                    <Video size={20} className="me-2" />
                     Generation
                   </button>
                 </li>
@@ -488,431 +488,23 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
-                          borderRadius: '12px 12px 0 0'
+                          height: '50px',
+                          borderRadius: '20px 20px 0 0'
                         }}
                       >
                         {/* Icon circle hanging over the blue section */}
                         <div 
                           className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
-                            width: '70px', 
-                            height: '70px',
-                            left: '24px',
-                            top: '25px',
+                            width: '80px', 
+                            height: '80px',
+                            left: '30px',
+                            top: '10px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                           }}
                         >
-                          <Camera className="text-primary" size={28} />
-                        </div>
-                        
-                        {/* Centered header text inside blue section */}
-                        <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Content Configuration</h3>
-                        </div>
-                      </div>
-                      
-                      {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '60px !important' }}>
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt</label>
-                          <textarea
-                            className="form-control"
-                            rows="2"
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
-                            style={{ borderRadius: '12px' }}
-                          />
-                        </div>
-
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Image URL</label>
-                          <input
-                            type="url"
-                            className="form-control"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                            style={{ borderRadius: '12px' }}
-                          />
-                          
-                          <div 
-                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
-                            style={{ 
-                              maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
-                              transition: 'max-height 0.3s ease-in-out'
-                            }}
-                          >
-                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
-                              <img 
-                                src={imageUrl.trim()} 
-                                alt="Preview of input image"
-                                className="img-fluid rounded border"
-                                style={{ width: '100%', objectFit: 'contain' }}
-                                onLoad={handleImageLoad}
-                                onError={handleImageError}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'generation' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                  {/* Blue header with hanging circle */}
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                    style={{ 
-                      height: '60px',
-                      borderRadius: '12px 12px 0 0'
-                    }}
-                  >
-                    {/* Icon circle hanging over the blue section */}
-                    <div 
-                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '70px', 
-                        height: '70px',
-                        left: '24px',
-                        top: '25px',
-                        zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Clapperboard className="text-primary" size={28} />
-                    </div>
-                    
-                    {/* Centered header text inside blue section */}
-                    <div className="text-white text-center flex-grow-1">
-                      <h2 className="mb-0 fw-bold">Video Generation</h2>
-                    </div>
-                    
-                    {/* Action button positioned in the blue header */}
-                    <div style={{ marginRight: '30px' }}>
-                      {!isRunning ? (
-                        <button
-                          className="btn btn-success btn-lg"
-                          onClick={generateVideos}
-                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                          style={{ borderRadius: '12px', fontWeight: '600', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                        >
-                          <Play size={24} className="me-2" />
-                          Start Generation
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-danger btn-lg"
-                          onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                        >
-                          <AlertCircle size={24} className="me-2" />
-                          Stop Generation
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '60px !important' }}>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
-                      <div className="card-body p-3">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
-                          <div className="d-flex gap-5 align-items-center text-center">
-                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Videos:</strong> {concurrency}</span>
-                            <div className="d-flex align-items-center">
-                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
-                                {isRunning && (
-                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
-                                )}
-                              </div>
-                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="fw-bold mb-3">Generation Progress</h4>
-                        <div className="row g-3">
-                          {Object.entries(generationProgress).map(([jobId, progress]) => (
-                            <div key={jobId} className="col-md-6 col-lg-4">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                                <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-center mb-2">
-                                    <span className="fw-bold small">{jobId}</span>
-                                    <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-primary' :
-                                      progress.status === 'failed' ? 'bg-danger' :
-                                      progress.status === 'throttled' ? 'bg-warning' :
-                                      'bg-primary'
-                                    }`}>
-                                      {progress.status}
-                                    </span>
-                                  </div>
-                                  <div className="progress mb-2" style={{ height: '8px' }}>
-                                    <div 
-                                      className={`progress-bar ${
-                                        progress.status === 'completed' ? 'bg-success' :
-                                        progress.status === 'failed' ? 'bg-danger' :
-                                        progress.status === 'throttled' ? 'bg-warning' :
-                                        'bg-primary'
-                                      }`}
-                                      style={{ width: progress.progress + '%' }}
-                                    ></div>
-                                  </div>
-                                  <small className="text-muted">
-                                    {progress.message || progress.status}
-                                  </small>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
-                      <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
-                        <button 
-                          className="btn btn-sm btn-outline-light" 
-                          onClick={copyLogsToClipboard}
-                          title="Copy all logs to clipboard"
-                          style={{ borderRadius: '6px' }}
-                        >
-                          <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                        </button>
-                      </div>
-                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`}>
-                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">
-                            Ready to start generation... Configure your settings and click "Start Generation"
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'results' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-11">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                  {/* Blue header with hanging circle */}
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                    style={{ 
-                      height: '60px',
-                      borderRadius: '12px 12px 0 0'
-                    }}
-                  >
-                    {/* Icon circle hanging over the blue section */}
-                    <div 
-                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '70px', 
-                        height: '70px',
-                        left: '24px',
-                        top: '25px',
-                        zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Download className="text-primary" size={28} />
-                    </div>
-                    
-                    {/* Centered header text inside blue section */}
-                    <div className="text-white text-center flex-grow-1">
-                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
-                    </div>
-                    
-                    {/* Export button positioned in the blue header */}
-                    {results.length > 0 && (
-                      <div style={{ marginRight: '30px' }}>
-                        <button
-                          className="btn btn-light"
-                          onClick={exportResults}
-                          style={{ borderRadius: '12px', fontWeight: '600', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                        >
-                          <Download size={20} className="me-2" />
-                          Export Results
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '60px !important' }}>
-                    <div className="mb-4">
-                      <p className="text-muted small mb-0">{results.length} videos generated</p>
-                    </div>
-                    
-                    {results.length === 0 ? (
-                      <div className="text-center py-5">
-                        <div className="mb-4">
-                          <Film size={80} className="text-muted" />
-                        </div>
-                        <h4 className="text-muted mb-3">No videos generated yet</h4>
-                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
-                        <button
-                          className="btn btn-primary btn-lg shadow"
-                          onClick={() => setActiveTab('setup')}
-                          style={{ borderRadius: '6px' }}
-                        >
-                          Get Started
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="row g-4">
-                        {results.map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-4">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '15px' }}>
-                              <div className="position-relative" style={{ borderRadius: '15px 15px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                {result.video_url ? (
-                                  <video
-                                    src={result.video_url}
-                                    poster={result.thumbnail_url}
-                                    controls
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                    preload="metadata"
-                                  >
-                                    Your browser does not support video playback.
-                                  </video>
-                                ) : result.thumbnail_url ? (
-                                  <img 
-                                    src={result.thumbnail_url}
-                                    alt={'Thumbnail for: ' + result.prompt}
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                  />
-                                ) : (
-                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <div className="text-center">
-                                      <Film size={48} className="text-primary mb-3" />
-                                      <div className="fw-bold text-muted">Processing...</div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                <div className="position-absolute top-0 start-0 m-3">
-                                  <span className={`badge ${
-                                    result.status === 'completed' ? 'bg-success' : 'bg-warning'
-                                  } shadow-sm`}>
-                                    {result.status === 'completed' ? '✅ Complete' : '⏳ Processing'}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="card-body p-3">
-                                <h6 className="card-title fw-bold text-truncate mb-3" title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="small text-muted mb-3">
-                                  <div className="d-flex justify-content-between mb-1">
-                                    <span>Task ID:</span>
-                                    <span className="font-monospace small">{result.id}</span>
-                                  </div>
-                                  <div className="d-flex justify-content-between mb-1">
-                                    <span>Created:</span>
-                                    <span>{new Date(result.created_at).toLocaleString()}</span>
-                                  </div>
-                                  {result.image_url && (
-                                    <div className="d-flex justify-content-between">
-                                      <span>Source Image:</span>
-                                      <span className="text-primary">✓ Provided</span>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group">
-                                      <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => downloadVideo(result.video_url, 'video_' + result.id + '.mp4')}
-                                      >
-                                        <Download size={16} className="me-1" />
-                                        Download
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm"
-                                        onClick={() => window.open(result.video_url, '_blank')}
-                                      >
-                                        <ExternalLink size={16} className="me-1" />
-                                        View
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="text-center mt-5">
-            <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}',
-                          borderRadius: '12px 12px 0 0'
-                        }}
-                      >
-                        {/* Icon circle hanging over the blue section */}
-                        <div 
-                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '70px', 
-                            height: '70px',
-                            left: '24px',
-                            top: '25px',
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          }}
-                        >
-                          <Key className="text-primary" size={28} />
+                          <Key className="text-primary" size={32} />
                         </div>
                         
                         {/* Centered header text inside blue section */}
@@ -922,7 +514,9 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '60px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                        <div className="mb-4">
+                        </div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">RunwayML API Key</label>
                           <input
@@ -1090,4 +684,410 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px
+                          height: '50px',
+                          borderRadius: '20px 20px 0 0'
+                        }}
+                      >
+                        {/* Icon circle hanging over the blue section */}
+                        <div 
+                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '30px',
+                            top: '10px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }}
+                        >
+                          <Film className="text-primary" size={32} />
+                        </div>
+                        
+                        {/* Centered header text inside blue section */}
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">Content Configuration</h3>
+                        </div>
+                      </div>
+                      
+                      {/* Card content with top padding for hanging circle */}
+                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                        <div className="mb-4">
+                        </div>
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Video Prompt</label>
+                          <textarea
+                            className="form-control"
+                            rows="2"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
+                            style={{ borderRadius: '12px' }}
+                          />
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Image URL</label>
+                          <input
+                            type="url"
+                            className="form-control"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/image.jpg"
+                            style={{ borderRadius: '12px' }}
+                          />
+                          
+                          <div 
+                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
+                            style={{ 
+                              maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
+                              transition: 'max-height 0.3s ease-in-out'
+                            }}
+                          >
+                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
+                              <img 
+                                src={imageUrl.trim()} 
+                                alt="Preview of input image"
+                                className="img-fluid rounded border"
+                                style={{ width: '100%', objectFit: 'contain' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'generation' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-10">
+                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                  {/* Blue header with hanging circle */}
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '50px',
+                      borderRadius: '20px 20px 0 0'
+                    }}
+                  >
+                    {/* Icon circle hanging over the blue section */}
+                    <div 
+                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '30px',
+                        top: '10px',
+                        zIndex: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Video className="text-primary" size={32} />
+                    </div>
+                    
+                    {/* Centered header text inside blue section */}
+                    <div className="text-white text-center flex-grow-1">
+                      <h2 className="mb-0 fw-bold">Video Generation</h2>
+                    </div>
+                    
+                    {/* Action button positioned in the blue header */}
+                    <div style={{ marginRight: '30px' }}>
+                      {!isRunning ? (
+                        <button
+                          className="btn btn-light btn-lg shadow"
+                          onClick={generateVideos}
+                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
+                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                        >
+                          <Play size={24} className="me-2" />
+                          Start Generation
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-danger btn-lg shadow"
+                          onClick={stopGeneration}
+                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                        >
+                          <AlertCircle size={24} className="me-2" />
+                          Stop Generation
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Card content with top padding for hanging circle */}
+                  <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                    <div className="mb-4">
+                    </div>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
+                      <div className="card-body p-3">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
+                          <div className="d-flex gap-5 align-items-center text-center">
+                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Videos:</strong> {concurrency}</span>
+                            <div className="d-flex align-items-center">
+                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
+                                {isRunning && (
+                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
+                                )}
+                              </div>
+                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {Object.keys(generationProgress).length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="fw-bold mb-3">Generation Progress</h4>
+                        <div className="row g-3">
+                          {Object.entries(generationProgress).map(([jobId, progress]) => (
+                            <div key={jobId} className="col-md-6 col-lg-4">
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-center mb-2">
+                                    <span className="fw-bold small">{jobId}</span>
+                                    <span className={`badge ${
+                                      progress.status === 'completed' ? 'bg-primary' :
+                                      progress.status === 'failed' ? 'bg-danger' :
+                                      progress.status === 'throttled' ? 'bg-warning' :
+                                      'bg-primary'
+                                    }`}>
+                                      {progress.status}
+                                    </span>
+                                  </div>
+                                  <div className="progress mb-2" style={{ height: '8px' }}>
+                                    <div 
+                                      className={`progress-bar ${
+                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'failed' ? 'bg-danger' :
+                                        progress.status === 'throttled' ? 'bg-warning' :
+                                        'bg-primary'
+                                      }`}
+                                      style={{ width: progress.progress + '%' }}
+                                    ></div>
+                                  </div>
+                                  <small className="text-muted">
+                                    {progress.message || progress.status}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
+                      <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
+                        <button 
+                          className="btn btn-sm btn-outline-light" 
+                          onClick={copyLogsToClipboard}
+                          title="Copy all logs to clipboard"
+                          style={{ borderRadius: '6px' }}
+                        >
+                          <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                        </button>
+                      </div>
+                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
+                        {logs.map((log, index) => (
+                          <div key={index} className={`small mb-1 ${
+                            log.type === 'error' ? 'text-danger' :
+                            log.type === 'success' ? 'text-light' :
+                            log.type === 'warning' ? 'text-warning' :
+                            'text-light'
+                          }`}>
+                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
+                          </div>
+                        ))}
+                        {logs.length === 0 && (
+                          <div className="text-muted small">
+                            Ready to start generation... Configure your settings and click "Start Generation"
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'results' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-11">
+                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                  {/* Blue header with hanging circle */}
+                  <div 
+                    className="bg-primary position-relative" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '20px 20px 0 0'
+                    }}
+                  >
+                    {/* Icon circle hanging over the blue section */}
+                    <div 
+                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center shadow"
+                      style={{ 
+                        width: '60px', 
+                        height: '60px',
+                        left: '30px',
+                        top: '50px',
+                        zIndex: 10
+                      }}
+                    >
+                      <Download className="text-primary" size={28} />
+                    </div>
+                    
+                    {/* Export button positioned in the blue header */}
+                    {results.length > 0 && (
+                      <div className="position-absolute" style={{ right: '30px', top: '20px' }}>
+                        <button
+                          className="btn btn-light shadow"
+                          onClick={exportResults}
+                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                        >
+                          <Download size={20} className="me-2" />
+                          Export Results
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Card content with top padding for hanging circle */}
+                  <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                    <div className="mb-4" style={{ marginLeft: '100px' }}>
+                      <h2 className="fw-bold mb-1">Generated Videos</h2>
+                      <p className="text-muted small mb-0">{results.length} videos generated</p>
+                    </div>
+                    {results.length === 0 ? (
+                      <div className="text-center py-5">
+                        <div className="mb-4">
+                          <Film size={80} className="text-muted" />
+                        </div>
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <button
+                          className="btn btn-primary btn-lg shadow"
+                          onClick={() => setActiveTab('setup')}
+                          style={{ borderRadius: '6px' }}
+                        >
+                          Get Started
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="row g-4">
+                        {results.map((result, index) => (
+                          <div key={index} className="col-md-6 col-lg-4">
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '15px' }}>
+                              <div className="position-relative" style={{ borderRadius: '15px 15px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                {result.video_url ? (
+                                  <video
+                                    src={result.video_url}
+                                    poster={result.thumbnail_url}
+                                    controls
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                    preload="metadata"
+                                  >
+                                    Your browser does not support video playback.
+                                  </video>
+                                ) : result.thumbnail_url ? (
+                                  <img 
+                                    src={result.thumbnail_url}
+                                    alt={'Thumbnail for: ' + result.prompt}
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                    <div className="text-center">
+                                      <Film size={48} className="text-primary mb-3" />
+                                      <div className="fw-bold text-muted">Processing...</div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                <div className="position-absolute top-0 start-0 m-3">
+                                  <span className={`badge ${
+                                    result.status === 'completed' ? 'bg-success' : 'bg-warning'
+                                  } shadow-sm`}>
+                                    {result.status === 'completed' ? '✅ Complete' : '⏳ Processing'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="card-body p-3">
+                                <h6 className="card-title fw-bold text-truncate mb-3" title={result.prompt}>
+                                  {result.prompt}
+                                </h6>
+                                
+                                <div className="small text-muted mb-3">
+                                  <div className="d-flex justify-content-between mb-1">
+                                    <span>Task ID:</span>
+                                    <span className="font-monospace small">{result.id}</span>
+                                  </div>
+                                  <div className="d-flex justify-content-between mb-1">
+                                    <span>Created:</span>
+                                    <span>{new Date(result.created_at).toLocaleString()}</span>
+                                  </div>
+                                  {result.image_url && (
+                                    <div className="d-flex justify-content-between">
+                                      <span>Source Image:</span>
+                                      <span className="text-primary">✓ Provided</span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="d-grid gap-2">
+                                  {result.video_url && (
+                                    <div className="btn-group" role="group">
+                                      <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => downloadVideo(result.video_url, 'video_' + result.id + '.mp4')}
+                                      >
+                                        <Download size={16} className="me-1" />
+                                        Download
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm"
+                                        onClick={() => window.open(result.video_url, '_blank')}
+                                      >
+                                        <ExternalLink size={16} className="me-1" />
+                                        View
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mt-5">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
