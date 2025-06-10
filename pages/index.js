@@ -11,8 +11,8 @@ export default function RunwayAutomationApp() {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
   const [concurrency, setConcurrency] = useState(1);
-  const [minWait, setMinWait] = useState(5);
-  const [maxWait, setMaxWait] = useState(10);
+  const [minWait, setMinWait] = useState(8);
+  const [maxWait, setMaxWait] = useState(15);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -711,33 +711,6 @@ export default function RunwayAutomationApp() {
                           />
                           <div className="form-text">
                             This image will be used as the starting frame for all generated videos.
-                          </div>
-                        </div>
-
-                        <div className="row g-3">
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Min Wait (seconds)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              className="form-control"
-                              value={minWait}
-                              onChange={(e) => setMinWait(parseFloat(e.target.value) || 0)}
-                              style={{ borderRadius: '12px' }}
-                            />
-                          </div>
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Max Wait (seconds)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              className="form-control"
-                              value={maxWait}
-                              onChange={(e) => setMaxWait(parseFloat(e.target.value) || 0)}
-                              style={{ borderRadius: '12px' }}
-                            />
                           </div>
                         </div>
                       </div>
