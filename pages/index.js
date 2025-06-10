@@ -645,7 +645,12 @@ export default function RunwayAutomationApp() {
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
                       <div className="card-body p-4">
-                        <h3 className="card-title fw-bold mb-4">Content Configuration</h3>
+                        <div className="d-flex align-items-center mb-4">
+                          <div className="bg-primary bg-gradient rounded-circle p-3 me-3">
+                            <Film className="text-white" size={24} />
+                          </div>
+                          <h3 className="card-title fw-bold mb-0">Content Configuration</h3>
+                        </div>
 
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt *</label>
