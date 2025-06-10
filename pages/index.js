@@ -777,28 +777,30 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
 
-                        <div className="row g-3 text-center">
-                          <div className="col-md-3">
-                            <div className="d-flex align-items-center justify-content-center">
-                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
-                                {isRunning && (
-                                  <div className="w-100 h-100 rounded-circle bg-success"></div>
-                                )}
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div className="row g-3 text-center flex-grow-1">
+                            <div className="col-md-3">
+                              <div className="d-flex align-items-center justify-content-center">
+                                <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
+                                  {isRunning && (
+                                    <div className="w-100 h-100 rounded-circle bg-success"></div>
+                                  )}
+                                </div>
+                                <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                               </div>
-                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                             </div>
-                          </div>
-                          <div className="col-md-3">
-                            <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                          </div>
-                          <div className="col-md-3">
-                            <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                          </div>
-                          <div className="col-md-3">
-                            <span className="text-dark">Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                          </div>
-                          <div className="col-md-3">
-                            <span className="text-dark">Concurrency: {concurrency}</span>
+                            <div className="col-md-3">
+                              <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            </div>
+                            <div className="col-md-3">
+                              <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            </div>
+                            <div className="col-md-3">
+                              <span className="text-dark">Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            </div>
+                            <div className="col-md-3">
+                              <span className="text-dark">Videos: {concurrency}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
