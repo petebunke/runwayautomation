@@ -706,19 +706,10 @@ export default function RunwayAutomationApp() {
                             placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
                             style={{ borderRadius: '12px' }}
                           />
-                          <div className="form-text">
-                            This prompt will be used for all generated videos.
-                          </div>
                         </div>
 
                         <div className="mb-4">
                           <label className="form-label fw-bold">Image URL</label>
-                          <div className="alert alert-primary border-0 shadow-sm mb-3" style={{ borderRadius: '12px' }}>
-                            <small>
-                              <strong>Important:</strong> The RunwayML API only supports image-to-video generation. 
-                              Each video starts with your provided image and animates according to your text prompt.
-                            </small>
-                          </div>
                           <input
                             type="url"
                             className="form-control"
@@ -727,9 +718,6 @@ export default function RunwayAutomationApp() {
                             placeholder="https://example.com/image.jpg"
                             style={{ borderRadius: '12px' }}
                           />
-                          <div className="form-text">
-                            This image will be used as the starting frame for all generated videos.
-                          </div>
                           
                           {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
                             <div className="mt-3">
