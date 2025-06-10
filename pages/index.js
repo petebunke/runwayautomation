@@ -772,16 +772,13 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #667eea, #764ba2)', borderRadius: '15px' }}>
                       <div className="card-body p-4">
-                        <div className="d-flex justify-content-between align-items-center mb-4">
+                        <div className="d-flex justify-content-between align-items-start mb-4">
                           <div>
                             <h4 className="card-title text-dark mb-2">Generation Status</h4>
                             <p className="card-text text-dark mb-0">Monitor and control your video generation process</p>
                           </div>
-                        </div>
-
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="row g-3 text-center flex-grow-1">
-                            <div className="col-md-3">
+                          <div className="row g-2 text-center" style={{ minWidth: '400px' }}>
+                            <div className="col-6">
                               <div className="d-flex align-items-center justify-content-center">
                                 <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                   {isRunning && (
@@ -791,18 +788,23 @@ export default function RunwayAutomationApp() {
                                 <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                               </div>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-6">
                               <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-6">
                               <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-6">
                               <span className="text-dark">Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-12">
                               <span className="text-dark">Videos: {concurrency}</span>
                             </div>
+                          </div>
+                        </div>
+
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div className="row g-3 text-center flex-grow-1">
                           </div>
                         </div>
                       </div>
