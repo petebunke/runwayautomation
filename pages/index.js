@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -460,7 +460,7 @@ export default function RunwayAutomationApp() {
                     onClick={() => setActiveTab('generation')}
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
-                    <Film size={20} className="me-2" />
+                    <Video size={20} className="me-2" />
                     Generation
                   </button>
                 </li>
@@ -484,7 +484,7 @@ export default function RunwayAutomationApp() {
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                      <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                      <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
                         <div className="d-flex align-items-center">
                           <div className="bg-white rounded-circle p-3 me-3">
                             <Key className="text-primary" size={24} />
@@ -656,7 +656,7 @@ export default function RunwayAutomationApp() {
 
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                      <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                      <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
                         <div className="d-flex align-items-center">
                           <div className="bg-white rounded-circle p-3 me-3">
                             <Film className="text-primary" size={24} />
@@ -719,11 +719,11 @@ export default function RunwayAutomationApp() {
             <div className="row justify-content-center">
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                  <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                  <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
                     <div className="d-flex justify-content-between align-items-center">
                       <div className="d-flex align-items-center">
                         <div className="bg-white rounded-circle p-3 me-3">
-                          <Film className="text-primary" size={24} />
+                          <Video className="text-primary" size={24} />
                         </div>
                         <h2 className="card-title fw-bold mb-0 text-white">Video Generation</h2>
                       </div>
@@ -856,7 +856,7 @@ export default function RunwayAutomationApp() {
             <div className="row justify-content-center">
               <div className="col-lg-11">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                  <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                  <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
                     <div className="d-flex justify-content-between align-items-center">
                       <div className="d-flex align-items-center">
                         <div className="bg-white rounded-circle p-3 me-3">
