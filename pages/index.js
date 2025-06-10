@@ -718,7 +718,7 @@ export default function RunwayAutomationApp() {
                           <div className="position-relative">
                             <textarea
                               className="form-control form-control-lg"
-                              rows="1"
+                              rows="2"
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
                               placeholder=""
