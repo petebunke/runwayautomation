@@ -782,7 +782,7 @@ export default function RunwayAutomationApp() {
                     <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #007bff, #0056b3)', borderRadius: '15px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
-                          <span className="fw-bold text-dark text-uppercase" style={{ fontSize: '0.875rem' }}>CONNECTION STATUS</span>
+                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
                           <div className="d-flex gap-5 align-items-center text-center">
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
@@ -844,7 +844,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="text-primary fw-bold mb-0">Video Generation Log</h5>
+                        <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
                         <button 
                           className="btn btn-sm btn-outline-light" 
                           onClick={copyLogsToClipboard}
