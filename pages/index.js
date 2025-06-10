@@ -679,7 +679,7 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt *</label>
+                          <label className="form-label fw-bold">Video Prompt</label>
                           <textarea
                             className="form-control"
                             rows="3"
@@ -694,7 +694,7 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mb-4">
-                          <label className="form-label fw-bold">Image URL (Required) *</label>
+                          <label className="form-label fw-bold">Image URL</label>
                           <div className="alert alert-primary border-0 shadow-sm mb-3" style={{ borderRadius: '12px' }}>
                             <small>
                               <strong>Important:</strong> The RunwayML API only supports image-to-video generation. 
