@@ -483,15 +483,47 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="row g-4">
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                      <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
-                        <div className="d-flex align-items-center">
-                          <div className="bg-white rounded-circle p-3 me-3">
-                            <Key className="text-primary" size={24} />
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                      {/* Shutterstock-style header with blue gradient */}
+                      <div 
+                        className="position-relative text-white text-center py-5" 
+                        style={{ 
+                          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                          minHeight: '140px'
+                        }}
+                      >
+                        {/* Decorative elements */}
+                        <div className="position-absolute" style={{ top: '20px', left: '20px', opacity: '0.3' }}>
+                          <div style={{ width: '6px', height: '6px', background: 'white', borderRadius: '50%' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ top: '30px', right: '40px', opacity: '0.3' }}>
+                          <div style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ top: '50px', left: '60px', opacity: '0.3' }}>
+                          <div style={{ width: '8px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ top: '40px', right: '80px', opacity: '0.3' }}>
+                          <div style={{ width: '12px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ bottom: '30px', left: '30px', opacity: '0.3' }}>
+                          <div style={{ width: '5px', height: '5px', background: 'white', borderRadius: '50%' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ bottom: '25px', right: '25px', opacity: '0.3' }}>
+                          <div style={{ width: '10px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                        </div>
+                        
+                        {/* Icon circle - left aligned but centered vertically */}
+                        <div className="d-flex align-items-center justify-content-start h-100 px-4">
+                          <div className="bg-white rounded-circle p-3 me-3" style={{ width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Key className="text-primary" size={28} />
                           </div>
-                          <h3 className="card-title mb-0 fw-bold text-white">API Configuration</h3>
+                          <div className="text-start">
+                            <h3 className="mb-0 fw-bold">API Configuration</h3>
+                            <p className="mb-0 opacity-90 small">Configure your RunwayML settings</p>
+                          </div>
                         </div>
                       </div>
+                      
                       <div className="card-body p-4">
                         <div className="mb-4">
                           <label className="form-label fw-bold">RunwayML API Key</label>
@@ -655,15 +687,47 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                      <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
-                        <div className="d-flex align-items-center">
-                          <div className="bg-white rounded-circle p-3 me-3">
-                            <Film className="text-primary" size={24} />
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                      {/* Shutterstock-style header with blue gradient */}
+                      <div 
+                        className="position-relative text-white text-center py-5" 
+                        style={{ 
+                          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                          minHeight: '140px'
+                        }}
+                      >
+                        {/* Decorative elements */}
+                        <div className="position-absolute" style={{ top: '25px', left: '25px', opacity: '0.3' }}>
+                          <div style={{ width: '5px', height: '5px', background: 'white', borderRadius: '50%' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ top: '35px', right: '45px', opacity: '0.3' }}>
+                          <div style={{ width: '7px', height: '7px', background: 'white', borderRadius: '50%' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ top: '55px', left: '70px', opacity: '0.3' }}>
+                          <div style={{ width: '10px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ top: '45px', right: '75px', opacity: '0.3' }}>
+                          <div style={{ width: '6px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ bottom: '35px', left: '35px', opacity: '0.3' }}>
+                          <div style={{ width: '4px', height: '4px', background: 'white', borderRadius: '50%' }}></div>
+                        </div>
+                        <div className="position-absolute" style={{ bottom: '30px', right: '30px', opacity: '0.3' }}>
+                          <div style={{ width: '8px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                        </div>
+                        
+                        {/* Icon circle - left aligned but centered vertically */}
+                        <div className="d-flex align-items-center justify-content-start h-100 px-4">
+                          <div className="bg-white rounded-circle p-3 me-3" style={{ width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Film className="text-primary" size={28} />
                           </div>
-                          <h3 className="card-title fw-bold mb-0 text-white">Content Configuration</h3>
+                          <div className="text-start">
+                            <h3 className="mb-0 fw-bold">Content Configuration</h3>
+                            <p className="mb-0 opacity-90 small">Set up your video content</p>
+                          </div>
                         </div>
                       </div>
+                      
                       <div className="card-body p-4">
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
@@ -718,22 +782,53 @@ export default function RunwayAutomationApp() {
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                  <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
-                    <div className="d-flex justify-content-between align-items-center">
+                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                  {/* Shutterstock-style header with blue gradient */}
+                  <div 
+                    className="position-relative text-white text-center py-5" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                      minHeight: '140px'
+                    }}
+                  >
+                    {/* Decorative elements */}
+                    <div className="position-absolute" style={{ top: '20px', left: '30px', opacity: '0.3' }}>
+                      <div style={{ width: '6px', height: '6px', background: 'white', borderRadius: '50%' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ top: '40px', right: '50px', opacity: '0.3' }}>
+                      <div style={{ width: '8px', height: '8px', background: 'white', borderRadius: '50%' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ top: '60px', left: '80px', opacity: '0.3' }}>
+                      <div style={{ width: '12px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ top: '50px', right: '90px', opacity: '0.3' }}>
+                      <div style={{ width: '14px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ bottom: '40px', left: '40px', opacity: '0.3' }}>
+                      <div style={{ width: '5px', height: '5px', background: 'white', borderRadius: '50%' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ bottom: '35px', right: '35px', opacity: '0.3' }}>
+                      <div style={{ width: '9px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                    </div>
+                    
+                    {/* Icon circle and content - left aligned */}
+                    <div className="d-flex align-items-center justify-content-between h-100 px-4">
                       <div className="d-flex align-items-center">
-                        <div className="bg-white rounded-circle p-3 me-3">
-                          <Video className="text-primary" size={24} />
+                        <div className="bg-white rounded-circle p-3 me-3" style={{ width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Video className="text-primary" size={28} />
                         </div>
-                        <h2 className="card-title fw-bold mb-0 text-white">Video Generation</h2>
+                        <div className="text-start">
+                          <h2 className="mb-0 fw-bold">Video Generation</h2>
+                          <p className="mb-0 opacity-90 small">Generate your AI videos</p>
+                        </div>
                       </div>
                       <div>
                         {!isRunning ? (
                           <button
-                            className="btn btn-success btn-lg shadow"
+                            className="btn btn-light btn-lg shadow"
                             onClick={generateVideos}
                             disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                            style={{ borderRadius: '6px' }}
+                            style={{ borderRadius: '12px', fontWeight: '600' }}
                           >
                             <Play size={24} className="me-2" />
                             Start Generation
@@ -742,7 +837,7 @@ export default function RunwayAutomationApp() {
                           <button
                             className="btn btn-danger btn-lg shadow"
                             onClick={stopGeneration}
-                            style={{ borderRadius: '6px' }}
+                            style={{ borderRadius: '12px', fontWeight: '600' }}
                           >
                             <AlertCircle size={24} className="me-2" />
                             Stop Generation
@@ -751,8 +846,8 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
                   </div>
+                  
                   <div className="card-body p-4">
-
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
@@ -855,23 +950,51 @@ export default function RunwayAutomationApp() {
           {activeTab === 'results' && (
             <div className="row justify-content-center">
               <div className="col-lg-11">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                  <div className="bg-primary bg-gradient px-4 pt-4 pb-2" style={{ borderRadius: '20px 20px 0 0' }}>
-                    <div className="d-flex justify-content-between align-items-center">
+                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                  {/* Shutterstock-style header with blue gradient */}
+                  <div 
+                    className="position-relative text-white text-center py-5" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                      minHeight: '140px'
+                    }}
+                  >
+                    {/* Decorative elements */}
+                    <div className="position-absolute" style={{ top: '25px', left: '35px', opacity: '0.3' }}>
+                      <div style={{ width: '7px', height: '7px', background: 'white', borderRadius: '50%' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ top: '45px', right: '55px', opacity: '0.3' }}>
+                      <div style={{ width: '5px', height: '5px', background: 'white', borderRadius: '50%' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ top: '65px', left: '75px', opacity: '0.3' }}>
+                      <div style={{ width: '11px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ top: '55px', right: '85px', opacity: '0.3' }}>
+                      <div style={{ width: '13px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ bottom: '45px', left: '45px', opacity: '0.3' }}>
+                      <div style={{ width: '6px', height: '6px', background: 'white', borderRadius: '50%' }}></div>
+                    </div>
+                    <div className="position-absolute" style={{ bottom: '40px', right: '40px', opacity: '0.3' }}>
+                      <div style={{ width: '10px', height: '1px', background: 'white', borderRadius: '2px' }}></div>
+                    </div>
+                    
+                    {/* Icon circle and content - left aligned */}
+                    <div className="d-flex align-items-center justify-content-between h-100 px-4">
                       <div className="d-flex align-items-center">
-                        <div className="bg-white rounded-circle p-3 me-3">
-                          <Download className="text-primary" size={24} />
+                        <div className="bg-white rounded-circle p-3 me-3" style={{ width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Download className="text-primary" size={28} />
                         </div>
-                        <div>
-                          <h2 className="card-title fw-bold mb-2 text-white">Generated Videos</h2>
-                          <p className="text-white-50 mb-0">{results.length} videos generated</p>
+                        <div className="text-start">
+                          <h2 className="mb-1 fw-bold">Generated Videos</h2>
+                          <p className="mb-0 opacity-90 small">{results.length} videos generated</p>
                         </div>
                       </div>
                       {results.length > 0 && (
                         <button
                           className="btn btn-light shadow"
                           onClick={exportResults}
-                          style={{ borderRadius: '6px' }}
+                          style={{ borderRadius: '12px', fontWeight: '600' }}
                         >
                           <Download size={20} className="me-2" />
                           Export Results
@@ -879,8 +1002,8 @@ export default function RunwayAutomationApp() {
                       )}
                     </div>
                   </div>
+                  
                   <div className="card-body p-4">
-
                     {results.length === 0 ? (
                       <div className="text-center py-5">
                         <div className="mb-4">
