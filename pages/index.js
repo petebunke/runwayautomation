@@ -713,16 +713,16 @@ export default function RunwayAutomationApp() {
                       <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4">
                         </div>
-                     <div className="mb-4">
+                    <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
                           <div className="position-relative">
                             <textarea
-                              className="form-control form-control-lg"
-                              rows="3"
+                              className="form-control"
+                              rows="1"
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
                               placeholder=""
-                              style={{ borderRadius: '12px'}}
+                              style={{ borderRadius: '12px', height: '40px', minHeight: '40px' }}
                             />
                             {!prompt && (
                               <div 
