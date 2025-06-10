@@ -720,22 +720,21 @@ export default function RunwayAutomationApp() {
                           />
                           
                           <div 
-                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
+                            className="mt-3 overflow-hidden"
                             style={{ 
                               maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
-                              transition: 'max-height 0.3s ease-in-out'
+                              transition: 'max-height 0.3s ease-in-out',
+                              opacity: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '1' : '0'
                             }}
                           >
-                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
-                              <img 
-                                src={imageUrl.trim()} 
-                                alt="Preview of input image"
-                                className="img-fluid rounded border"
-                                style={{ width: '100%', objectFit: 'contain' }}
-                                onLoad={handleImageLoad}
-                                onError={handleImageError}
-                              />
-                            )}
+                            <img 
+                              src={imageUrl.trim() || ''} 
+                              alt="Preview of input image"
+                              className="img-fluid rounded border"
+                              style={{ width: '100%', objectFit: 'contain' }}
+                              onLoad={handleImageLoad}
+                              onError={handleImageError}
+                            />
                           </div>
                         </div>
                       </div>
@@ -959,6 +958,23 @@ export default function RunwayAutomationApp() {
                                 <h6 className="card-title fw-bold text-truncate mb-3" title={result.prompt}>
                                   {result.prompt}
                                 </h6>
+                                
+                                <div className="small text-muted mb-3">
+                                  <div className="d-flex justify-content-between mb-1">
+                                    <span>Task ID:</span>
+                                    <span className="font-monospace small">{result.id}</span>
+                                  </div>
+                                  <div className="d-flex justify-content-between mb-1">
+                                    <span>Created:</span>
+                                    <span>{new Date(result.created_at).toLocaleString()}</span>
+                                  </div>
+                                  {result.image_url && (
+                                    <div className="d-flex justify-content-between">
+                                      <span>Source Image:</span>
+                                      <span className="text-primary">✓ Provided</span>
+                                    </div>
+                                  )}
+                                </div>
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
