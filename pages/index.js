@@ -700,7 +700,7 @@ export default function RunwayAutomationApp() {
                           <label className="form-label fw-bold">Video Prompt</label>
                           <textarea
                             className="form-control"
-                            rows="3"
+                            rows="2"
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
