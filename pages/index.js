@@ -737,7 +737,7 @@ export default function RunwayAutomationApp() {
                                 src={imageUrl.trim()} 
                                 alt="Preview of input image"
                                 className="img-fluid rounded border"
-                                style={{ maxHeight: '200px', width: '100%', objectFit: 'cover' }}
+                                style={{ maxHeight: '200px', width: '100%', objectFit: 'contain' }}
                                 onLoad={handleImageLoad}
                                 onError={handleImageError}
                               />
