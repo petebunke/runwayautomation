@@ -717,7 +717,7 @@ export default function RunwayAutomationApp() {
                           <label className="form-label fw-bold">Video Prompt</label>
                           <div className="position-relative">
                             <textarea
-                              className="form-control"
+                              className="form-control form-control-lg"
                               rows="3"
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
@@ -757,7 +757,7 @@ export default function RunwayAutomationApp() {
                           <label className="form-label fw-bold">Image URL</label>
                           <input
                             type="url"
-                            className="form-control"
+                            className="form-control form-control-lg"
                             value={imageUrl}
                             onChange={(e) => setImageUrl(e.target.value)}
                             placeholder="https://example.com/image.jpg"
