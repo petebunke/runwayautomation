@@ -578,13 +578,13 @@ export default function RunwayAutomationApp() {
 
                           <div className="col-6">
                             <label className="form-label fw-bold">
-                              Concurrency
+                              Generations
                               <i 
                                 className="bi bi-info-circle ms-1 text-primary" 
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="Number of videos to generate concurrently using the same prompt and image."
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
                               ></i>
                             </label>
                             <input
@@ -671,7 +671,7 @@ export default function RunwayAutomationApp() {
                             style={{ borderRadius: '12px' }}
                           />
                           <div className="form-text">
-                            This prompt will be used for all concurrent videos.
+                            This prompt will be used for all generated videos.
                           </div>
                         </div>
 
@@ -692,7 +692,7 @@ export default function RunwayAutomationApp() {
                             style={{ borderRadius: '12px' }}
                           />
                           <div className="form-text">
-                            This image will be used as the starting frame for all concurrent videos.
+                            This image will be used as the starting frame for all generated videos.
                           </div>
                         </div>
 
