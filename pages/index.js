@@ -593,7 +593,10 @@ export default function RunwayAutomationApp() {
                               max="20"
                               className="form-control"
                               value={concurrency}
-                              onChange={(e) => setConcurrency(parseInt(e.target.value) || 1)}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                setConcurrency(Math.min(Math.max(value, 1), 20));
+                              }}
                               style={{ borderRadius: '12px' }}
                             />
                           </div>
