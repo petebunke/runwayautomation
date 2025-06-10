@@ -445,45 +445,6 @@ export default function RunwayAutomationApp() {
             <div className="col-auto">
               <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '15px', padding: '8px' }}>
                 <li className="nav-item">
-                  <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
-                    onClick={() => setActiveTab('setup')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
-                  >
-                    <Settings size={20} className="me-2" />
-                    Configuration
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
-                    onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
-                  >
-                    <Video size={20} className="me-2" />
-                    Generation
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
-                    onClick={() => setActiveTab('results')}
-                    style={{ borderRadius: '10px', fontWeight: '600' }}
-                  >
-                    <Download size={20} className="me-2" />
-                    Results
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {activeTab === 'setup' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="row g-4">
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
                       {/* Blue header with hanging circle */}
@@ -896,7 +857,46 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-} hanging circle */}
+}<button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('setup')}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                  >
+                    <Settings size={20} className="me-2" />
+                    Configuration
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('generation')}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                  >
+                    <Video size={20} className="me-2" />
+                    Generation
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('results')}
+                    style={{ borderRadius: '10px', fontWeight: '600' }}
+                  >
+                    <Download size={20} className="me-2" />
+                    Results
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {activeTab === 'setup' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-10">
+                <div className="row g-4">
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                      {/* Blue header with hanging circle */}
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
@@ -1090,6 +1090,4 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
 
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                      {/* Blue header with
+                  
