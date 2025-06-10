@@ -603,14 +603,14 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
-                          <p className="small fw-bold mb-2">🎯 RunwayML API Video Generation Limits by Tier:</p>
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
                               <thead className="table-secondary">
                                 <tr>
-                                  <th className="fw-bold border-dark">Tier</th>
-                                  <th className="fw-bold border-dark">Videos Generated</th>
-                                  <th className="fw-bold border-dark">Criteria</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
                                 </tr>
                               </thead>
                               <tbody className="small">
