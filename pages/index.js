@@ -722,7 +722,7 @@ export default function RunwayAutomationApp() {
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
                               placeholder=""
-                              style={{ borderRadius: '12px', height: '40px', minHeight: '40px' }}
+                              style={{ borderRadius: '12px'}}
                             />
                             {!prompt && (
                               <div 
