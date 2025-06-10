@@ -722,7 +722,7 @@ export default function RunwayAutomationApp() {
       value={prompt}
       onChange={(e) => setPrompt(e.target.value)}
       placeholder={prompt ? "" : "Add an image then describe your shot. "}
-      style={{ borderRadius: '12px' }}
+      }
     />
     {!prompt && (
       <div 
