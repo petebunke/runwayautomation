@@ -772,12 +772,16 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #667eea, #764ba2)', borderRadius: '15px' }}>
                       <div className="card-body p-4">
-                        <div className="d-flex justify-content-between align-items-start mb-4">
+                        <div className="d-flex justify-content-between align-items-start">
                           <div>
                             <h4 className="card-title text-dark mb-2">Generation Status</h4>
                             <p className="card-text text-dark mb-0">Monitor and control your video generation process</p>
                           </div>
                           <div className="d-flex gap-4 align-items-center text-center">
+                            <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark">Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark">Videos: {concurrency}</span>
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
@@ -786,15 +790,6 @@ export default function RunwayAutomationApp() {
                               </div>
                               <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                             </div>
-                            <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                            <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark">Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark">Videos: {concurrency}</span>
-                          </div>
-                        </div>
-
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="row g-3 text-center flex-grow-1">
                           </div>
                         </div>
                       </div>
