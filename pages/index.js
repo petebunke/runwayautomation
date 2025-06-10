@@ -100,7 +100,9 @@ export default function RunwayAutomationApp() {
         text_prompt: promptText,
         image_prompt: imageUrlText.trim(),
         model: model,
-        aspect_ratio: aspectRatio,
+        aspect_ratio: aspectRatio === '16:9' ? '1280:720' : 
+                     aspectRatio === '9:16' ? '720:1280' : 
+                     aspectRatio === '1:1' ? '1024:1024' : '1280:720',
         duration: duration,
         seed: Math.floor(Math.random() * 1000000)
       };
