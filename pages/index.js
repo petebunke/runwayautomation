@@ -744,7 +744,31 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
                   <div className="card-body p-4">
-                    <h2 className="card-title fw-bold mb-4">Video Generation Control</h2>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                      <h2 className="card-title fw-bold mb-0">Video Generation Control</h2>
+                      <div>
+                        {!isRunning ? (
+                          <button
+                            className="btn btn-success btn-lg shadow"
+                            onClick={generateVideos}
+                            disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <Play size={24} className="me-2" />
+                            Start Generation
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-danger btn-lg shadow"
+                            onClick={stopGeneration}
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <AlertCircle size={24} className="me-2" />
+                            Stop Generation
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
                     <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #667eea, #764ba2)', borderRadius: '15px' }}>
                       <div className="card-body p-4">
@@ -752,28 +776,6 @@ export default function RunwayAutomationApp() {
                           <div>
                             <h4 className="card-title text-white mb-2">Generation Status</h4>
                             <p className="card-text text-white-50 mb-0">Monitor and control your video generation process</p>
-                          </div>
-                          <div>
-                            {!isRunning ? (
-                              <button
-                                className="btn btn-success btn-lg shadow"
-                                onClick={generateVideos}
-                                disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                                style={{ borderRadius: '6px' }}
-                              >
-                                <Play size={24} className="me-2" />
-                                Start Generation
-                              </button>
-                            ) : (
-                              <button
-                                className="btn btn-danger btn-lg shadow"
-                                onClick={stopGeneration}
-                                style={{ borderRadius: '6px' }}
-                              >
-                                <AlertCircle size={24} className="me-2" />
-                                Stop Generation
-                              </button>
-                            )}
                           </div>
                         </div>
 
