@@ -722,8 +722,7 @@ export default function RunwayAutomationApp() {
       value={prompt}
       onChange={(e) => setPrompt(e.target.value)}
       placeholder={prompt ? "" : "Add an image then describe your shot. "}
-      style={{ borderRadius: '12px'
-      textShadow: 'none' }}
+      style={{ borderRadius: '12px' }}
     />
     {!prompt && (
       <div 
@@ -734,7 +733,6 @@ export default function RunwayAutomationApp() {
           pointerEvents: 'none',
           color: '#6c757d',
           fontSize: '16px'
-          textShadow: 'none'
         }}
       >
         Add an image then describe your shot.{' '}
@@ -746,7 +744,6 @@ export default function RunwayAutomationApp() {
           style={{ 
             color: '#6c757d',
             pointerEvents: 'auto'
-            textShadow: 'none'
           }}
         >
           View guide
