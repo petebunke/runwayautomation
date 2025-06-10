@@ -603,7 +603,16 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
+                          <label className="form-label fw-bold mb-2">
+                            Video Generation Limits by Tier
+                            <i 
+                              className="bi bi-info-circle ms-1 text-primary" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="Max number of videos that can be generated at the same time. All tiers can input up to 20 max, but lower tiers will be throttled above the limits listed here until their first generations complete."
+                            ></i>
+                          </label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
                               <thead className="table-secondary">
