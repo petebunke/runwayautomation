@@ -514,7 +514,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '40px !important' }}>
                         <div className="mb-4">
                         </div>
                         <div className="mb-4">
@@ -710,7 +710,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '40px !important' }}>
                         <div className="mb-4">
                         </div>
                       <div className="mb-4">
@@ -732,7 +732,7 @@ export default function RunwayAutomationApp() {
                                   top: '12px', 
                                   pointerEvents: 'none',
                                   color: '#6c757d',
-                                  fontSize: '16px'
+                                  fontSize: '14px'
                                 }}
                               >
                                 Add an image then describe your shot.{' '}
