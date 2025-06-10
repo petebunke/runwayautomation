@@ -1,5 +1,4 @@
-// /pages/api/runway-generate.js (MINIMAL WORKING TEST)
-// This version uses the exact format from RunwayML documentation
+// /pages/api/runway-generate.js (Fixed aspect ratio mapping)
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -42,14 +41,16 @@ export default async function handler(req, res) {
 
     console.log('Generating video with prompt:', payload.text_prompt.substring(0, 50) + '...');
     console.log('Using image:', payload.image_prompt);
+    console.log('Aspect ratio received:', payload.aspect_ratio);
 
     // Use the EXACT format from RunwayML documentation
     const requestBody = {
       promptText: payload.text_prompt,
       promptImage: payload.image_prompt.trim(),
-      model: 'gen4_turbo', // Try gen4_turbo instead of gen3a_turbo
-      ratio: '1280:720',   // Use exact pixel dimensions
-      duration: 5          // Use simple integer
+      model: payload.model || 'gen3a_turbo',
+      ratio: payload.aspect_ratio, // Use the already-mapped aspect ratio from frontend
+      duration: payload.duration || 5,
+      seed: payload.seed || Math.floor(Math.random() * 1000000)
     };
 
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
