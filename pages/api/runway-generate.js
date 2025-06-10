@@ -48,7 +48,9 @@ export default async function handler(req, res) {
       promptText: payload.text_prompt,
       promptImage: payload.image_prompt.trim(),
       model: payload.model || 'gen3a_turbo',
-      ratio: payload.aspect_ratio, // Use the already-mapped aspect ratio from frontend
+      ratio: payload.aspect_ratio === '1024:1024' ? '1:1' : 
+             payload.aspect_ratio === '720:1280' ? '9:16' : 
+             payload.aspect_ratio === '1280:720' ? '16:9' : '16:9',
       duration: payload.duration || 5,
       seed: payload.seed || Math.floor(Math.random() * 1000000)
     };
