@@ -578,7 +578,7 @@ export default function RunwayAutomationApp() {
 
                           <div className="col-6">
                             <label className="form-label fw-bold">
-                              Generations
+                              # of Videos Generated
                               <i 
                                 className="bi bi-info-circle ms-1 text-primary" 
                                 style={{ cursor: 'help' }}
@@ -603,13 +603,13 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
-                          <p className="small fw-bold mb-2">🎯 RunwayML API Concurrency Limits by Tier:</p>
+                          <p className="small fw-bold mb-2">🎯 RunwayML API Video Generation Limits by Tier:</p>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
                               <thead className="table-secondary">
                                 <tr>
                                   <th className="fw-bold border-dark">Tier</th>
-                                  <th className="fw-bold border-dark">Max Concurrent</th>
+                                  <th className="fw-bold border-dark">Videos Generated</th>
                                   <th className="fw-bold border-dark">Criteria</th>
                                 </tr>
                               </thead>
