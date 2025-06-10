@@ -663,7 +663,7 @@ export default function RunwayAutomationApp() {
                             style={{ borderRadius: '12px' }}
                           />
                           <div className="form-text">
-                            This prompt will be used for all {concurrency} concurrent video{concurrency !== 1 ? 's' : ''}.
+                            This prompt will be used for all concurrent videos.
                           </div>
                         </div>
 
@@ -684,7 +684,7 @@ export default function RunwayAutomationApp() {
                             style={{ borderRadius: '12px' }}
                           />
                           <div className="form-text">
-                            This image will be used as the starting frame for all {concurrency} concurrent video{concurrency !== 1 ? 's' : ''}.
+                            This image will be used as the starting frame for all concurrent videos.
                           </div>
                         </div>
 
