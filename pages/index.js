@@ -486,7 +486,7 @@ export default function RunwayAutomationApp() {
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
                       {/* Blue header with hanging circle */}
                       <div 
-                        className="bg-primary position-relative d-flex align-items-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '50px',
                           borderRadius: '20px 20px 0 0'
@@ -494,22 +494,22 @@ export default function RunwayAutomationApp() {
                       >
                         {/* Icon circle hanging over the blue section */}
                         <div 
-                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center shadow"
+                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
                             width: '80px', 
                             height: '80px',
                             left: '30px',
                             top: '10px',
-                            zIndex: 10
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                           }}
                         >
                           <Key className="text-primary" size={32} />
                         </div>
                         
-                        {/* Header text inside blue section */}
-                        <div className="text-white" style={{ marginLeft: '130px' }}>
+                        {/* Centered header text inside blue section */}
+                        <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">API Configuration</h3>
-                          <p className="mb-0 opacity-90 small">Configure your RunwayML settings</p>
                         </div>
                       </div>
                       
@@ -682,7 +682,7 @@ export default function RunwayAutomationApp() {
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
                       {/* Blue header with hanging circle */}
                       <div 
-                        className="bg-primary position-relative d-flex align-items-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '50px',
                           borderRadius: '20px 20px 0 0'
@@ -690,22 +690,22 @@ export default function RunwayAutomationApp() {
                       >
                         {/* Icon circle hanging over the blue section */}
                         <div 
-                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center shadow"
+                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
                             width: '80px', 
                             height: '80px',
                             left: '30px',
                             top: '10px',
-                            zIndex: 10
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                           }}
                         >
                           <Film className="text-primary" size={32} />
                         </div>
                         
-                        {/* Header text inside blue section */}
-                        <div className="text-white" style={{ marginLeft: '130px' }}>
+                        {/* Centered header text inside blue section */}
+                        <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">Content Configuration</h3>
-                          <p className="mb-0 opacity-90 small">Set up your video content</p>
                         </div>
                       </div>
                       
@@ -775,26 +775,24 @@ export default function RunwayAutomationApp() {
                       borderRadius: '20px 20px 0 0'
                     }}
                   >
-                    <div className="d-flex align-items-center">
-                      {/* Icon circle hanging over the blue section */}
-                      <div 
-                        className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center shadow"
-                        style={{ 
-                          width: '80px', 
-                          height: '80px',
-                          left: '30px',
-                          top: '10px',
-                          zIndex: 10
-                        }}
-                      >
-                        <Video className="text-primary" size={32} />
-                      </div>
-                      
-                      {/* Header text inside blue section */}
-                      <div className="text-white" style={{ marginLeft: '130px' }}>
-                        <h2 className="mb-0 fw-bold">Video Generation</h2>
-                        <p className="mb-0 opacity-90 small">Generate your AI videos</p>
-                      </div>
+                    {/* Icon circle hanging over the blue section */}
+                    <div 
+                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '30px',
+                        top: '10px',
+                        zIndex: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Video className="text-primary" size={32} />
+                    </div>
+                    
+                    {/* Centered header text inside blue section */}
+                    <div className="text-white text-center flex-grow-1">
+                      <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
                     {/* Action button positioned in the blue header */}
