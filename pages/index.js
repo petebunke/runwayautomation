@@ -783,20 +783,18 @@ export default function RunwayAutomationApp() {
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-start">
                           <h4 className="card-title text-dark mb-0">Status</h4>
-                          <div className="text-center">
-                            <div className="d-flex align-items-center justify-content-center mb-2">
+                          <div className="d-flex gap-5 align-items-center text-center">
+                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Videos:</strong> {concurrency}</span>
+                            <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
                                   <div className="w-100 h-100 rounded-circle bg-success"></div>
                                 )}
                               </div>
                               <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
-                            </div>
-                            <div className="d-flex gap-4 justify-content-center">
-                              <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                              <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                              <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                              <span className="text-dark"><strong>Videos:</strong> {concurrency}</span>
                             </div>
                           </div>
                         </div>
