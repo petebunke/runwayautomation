@@ -544,7 +544,7 @@ export default function RunwayAutomationApp() {
                           <label className="form-label fw-bold">Video Prompt</label>
                           <div className="position-relative">
                             <textarea
-                              className="form-control form-control-lg"
+                              className="form-control"
                               rows="2"
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
@@ -559,7 +559,7 @@ export default function RunwayAutomationApp() {
                                   top: '8px', 
                                   pointerEvents: 'none',
                                   color: '#6c757d',
-                                  fontSize: '18px',
+                                  fontSize: '16px',
                                   textShadow: 'none'
                                 }}
                               >
