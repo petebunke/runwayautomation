@@ -488,7 +488,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '50px',
+                          height: '80px',
                           borderRadius: '20px 20px 0 0'
                         }}
                       >
@@ -499,7 +499,7 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '30px',
-                            top: '5px',
+                            top: '0px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                           }}
@@ -676,6 +676,4 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div
+                
