@@ -46,9 +46,6 @@ export default function RunwayAutomationApp() {
     }
   }, []);
 
-  // Auto-adjust prompts and images when concurrency changes - REMOVED
-  // Now using single prompt and image for all concurrent generations
-
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
     { value: 'gen3a_turbo', label: 'Gen-3 Alpha Turbo (Fast, reliable)' }
@@ -59,30 +56,6 @@ export default function RunwayAutomationApp() {
     { value: '9:16', label: '9:16 (Portrait)' },
     ...(model === 'gen4_turbo' ? [{ value: '1:1', label: '1:1 (Square)' }] : [])
   ];
-
-  const addPrompt = () => {
-    // No longer needed - using single prompt
-  };
-
-  const removePrompt = (index) => {
-    // No longer needed - using single prompt
-  };
-
-  const updatePrompt = (index, value) => {
-    // No longer needed - using single prompt
-  };
-
-  const addImage = () => {
-    // No longer needed - using single image
-  };
-
-  const removeImage = (index) => {
-    // No longer needed - using single image
-  };
-
-  const updateImage = (index, value) => {
-    // No longer needed - using single image
-  };
 
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString();
@@ -137,8 +110,6 @@ export default function RunwayAutomationApp() {
         seed: Math.floor(Math.random() * 1000000)
       };
 
-      console.log('🐛 DEBUG: Sending request for job', jobIndex + 1, payload);
-
       const response = await fetch(API_BASE + '/runway-generate', {
         method: 'POST',
         headers: {
@@ -150,16 +121,12 @@ export default function RunwayAutomationApp() {
         })
       });
 
-      console.log('🐛 DEBUG: Response status for job', jobIndex + 1, response.status);
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('🐛 DEBUG: Error response for job', jobIndex + 1, errorData);
         throw new Error(errorData.error || 'API Error: ' + response.status);
       }
 
       const task = await response.json();
-      console.log('🐛 DEBUG: Task created for job', jobIndex + 1, task);
       
       addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
       
@@ -520,6 +487,178 @@ export default function RunwayAutomationApp() {
                       <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
                         <div className="d-flex align-items-center">
                           <div className="bg-white rounded-circle p-3 me-3">
+                            <Key className="text-primary" size={24} />
+                          </div>
+                          <h3 className="card-title mb-0 fw-bold text-white">API Configuration</h3>
+                        </div>
+                      </div>
+                      <div className="card-body p-4">
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">RunwayML API Key</label>
+                          <input
+                            type="password"
+                            className="form-control form-control-lg"
+                            value={runwayApiKey}
+                            onChange={(e) => setRunwayApiKey(e.target.value)}
+                            placeholder="rml_xxx..."
+                            style={{ borderRadius: '12px' }}
+                          />
+                          <div className="form-text">
+                            <ExternalLink size={14} className="me-1" />
+                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                              Get your API key from RunwayML Developer Portal
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                          <div className="d-flex align-items-center mb-2">
+                            <CreditCard size={20} className="text-warning me-2" />
+                            <strong>Credits Required</strong>
+                          </div>
+                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
+                          <ul className="small mb-0 ps-3">
+                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Minimum $10 (1000 credits)</li>
+                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li>Credits are separate from web app credits</li>
+                          </ul>
+                        </div>
+
+                        <div className="row g-3">
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Model</label>
+                            <select
+                              className="form-select"
+                              value={model}
+                              onChange={(e) => setModel(e.target.value)}
+                              style={{ borderRadius: '12px' }}
+                            >
+                              {modelOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Aspect Ratio</label>
+                            <select
+                              className="form-select"
+                              value={aspectRatio}
+                              onChange={(e) => setAspectRatio(e.target.value)}
+                              style={{ borderRadius: '12px' }}
+                            >
+                              {aspectRatioOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Duration (seconds)</label>
+                            <select
+                              className="form-select"
+                              value={duration}
+                              onChange={(e) => setDuration(parseInt(e.target.value))}
+                              style={{ borderRadius: '12px' }}
+                            >
+                              <option value={5}>5 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              # of Videos Generated
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
+                              ></i>
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              className="form-control"
+                              value={concurrency}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                setConcurrency(Math.min(Math.max(value, 1), 20));
+                              }}
+                              style={{ borderRadius: '12px' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-light rounded border">
+                          <label className="form-label fw-bold mb-2">
+                            Video Generation Limits by Tier
+                            <i 
+                              className="bi bi-info-circle ms-1 text-primary" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="Max number of videos that can be generated at the same time. All tiers can input up to 20 max, but lower tiers will be throttled above the limits listed here."
+                            ></i>
+                          </label>
+                          <div className="table-responsive">
+                            <table className="table table-sm table-bordered border-dark mb-0">
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
+                                </tr>
+                              </thead>
+                              <tbody className="small">
+                                <tr>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">Default (new accounts)</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">2</td>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">1 day after $50 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">7 days after $100 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">4</td>
+                                  <td className="border-dark">10</td>
+                                  <td className="border-dark">14 days after $1,000 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">20</td>
+                                  <td className="border-dark">7 days after $5,000 purchased</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="small text-muted mt-2 mb-0">
+                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
+                      <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                        <div className="d-flex align-items-center">
+                          <div className="bg-white rounded-circle p-3 me-3">
                             <Film className="text-primary" size={24} />
                           </div>
                           <h3 className="card-title fw-bold mb-0 text-white">Content Configuration</h3>
@@ -848,176 +987,4 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}d shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                      <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
-                        <div className="d-flex align-items-center">
-                          <div className="bg-white rounded-circle p-3 me-3">
-                            <Key className="text-primary" size={24} />
-                          </div>
-                          <h3 className="card-title mb-0 fw-bold text-white">API Configuration</h3>
-                        </div>
-                      </div>
-                      <div className="card-body p-4">
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">RunwayML API Key</label>
-                          <input
-                            type="password"
-                            className="form-control form-control-lg"
-                            value={runwayApiKey}
-                            onChange={(e) => setRunwayApiKey(e.target.value)}
-                            placeholder="rml_xxx..."
-                            style={{ borderRadius: '12px' }}
-                          />
-                          <div className="form-text">
-                            <ExternalLink size={14} className="me-1" />
-                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from RunwayML Developer Portal
-                            </a>
-                          </div>
-                        </div>
-
-                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                          <div className="d-flex align-items-center mb-2">
-                            <CreditCard size={20} className="text-warning me-2" />
-                            <strong>Credits Required</strong>
-                          </div>
-                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
-                          <ul className="small mb-0 ps-3">
-                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
-                            <li>Minimum $10 (1000 credits)</li>
-                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>Credits are separate from web app credits</li>
-                          </ul>
-                        </div>
-
-                        <div className="row g-3">
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Model</label>
-                            <select
-                              className="form-select"
-                              value={model}
-                              onChange={(e) => setModel(e.target.value)}
-                              style={{ borderRadius: '12px' }}
-                            >
-                              {modelOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Aspect Ratio</label>
-                            <select
-                              className="form-select"
-                              value={aspectRatio}
-                              onChange={(e) => setAspectRatio(e.target.value)}
-                              style={{ borderRadius: '12px' }}
-                            >
-                              {aspectRatioOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Duration (seconds)</label>
-                            <select
-                              className="form-select"
-                              value={duration}
-                              onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '12px' }}
-                            >
-                              <option value={5}>5 seconds</option>
-                              <option value={10}>10 seconds</option>
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              # of Videos Generated
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
-                              ></i>
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="20"
-                              className="form-control"
-                              value={concurrency}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value) || 1;
-                                setConcurrency(Math.min(Math.max(value, 1), 20));
-                              }}
-                              style={{ borderRadius: '12px' }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">
-                            Video Generation Limits by Tier
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="Max number of videos that can be generated at the same time. All tiers can input up to 20 max, but lower tiers will be throttled above the limits listed here."
-                            ></i>
-                          </label>
-                          <div className="table-responsive">
-                            <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead className="table-secondary">
-                                <tr>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
-                                </tr>
-                              </thead>
-                              <tbody className="small">
-                                <tr>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">Default (new accounts)</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">2</td>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">1 day after $50 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">7 days after $100 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">4</td>
-                                  <td className="border-dark">10</td>
-                                  <td className="border-dark">14 days after $1,000 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">20</td>
-                                  <td className="border-dark">7 days after $5,000 purchased</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                          <p className="small text-muted mt-2 mb-0">
-                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-lg-6">
-                    <div className="car
+}
