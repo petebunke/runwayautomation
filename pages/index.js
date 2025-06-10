@@ -739,7 +739,6 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
                       </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -804,12 +803,12 @@ export default function RunwayAutomationApp() {
                       <div className="mb-4">
                         <h4 className="fw-bold mb-3">Generation Progress</h4>
                         <div className="row g-3">
-                          {Object.entries(generationProgress).map(([jobId, progress], index) => (
+                          {Object.entries(generationProgress).map(([jobId, progress]) => (
                             <div key={jobId} className="col-md-6 col-lg-4">
                               <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
                                 <div className="card-body p-3">
                                   <div className="d-flex justify-content-between align-items-center mb-2">
-                                    <span className="fw-bold small">Video {index + 1}</span>
+                                    <span className="fw-bold small">{jobId}</span>
                                     <span className={`badge ${
                                       progress.status === 'completed' ? 'bg-primary' :
                                       progress.status === 'failed' ? 'bg-danger' :
