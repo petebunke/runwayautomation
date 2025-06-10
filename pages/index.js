@@ -719,9 +719,14 @@ export default function RunwayAutomationApp() {
             <div className="row justify-content-center">
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                  <div className="card-body p-4">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                      <h2 className="card-title fw-bold mb-0">Video Generation</h2>
+                  <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center">
+                        <div className="bg-white rounded-circle p-3 me-3">
+                          <Film className="text-primary" size={24} />
+                        </div>
+                        <h2 className="card-title fw-bold mb-0 text-white">Video Generation</h2>
+                      </div>
                       <div>
                         {!isRunning ? (
                           <button
@@ -745,6 +750,8 @@ export default function RunwayAutomationApp() {
                         )}
                       </div>
                     </div>
+                  </div>
+                  <div className="card-body p-4">
 
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
                       <div className="card-body p-3">
@@ -849,15 +856,20 @@ export default function RunwayAutomationApp() {
             <div className="row justify-content-center">
               <div className="col-lg-11">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                  <div className="card-body p-4">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                      <div>
-                        <h2 className="card-title fw-bold mb-2">Generated Videos</h2>
-                        <p className="text-muted mb-0">{results.length} videos generated</p>
+                  <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center">
+                        <div className="bg-white rounded-circle p-3 me-3">
+                          <Download className="text-primary" size={24} />
+                        </div>
+                        <div>
+                          <h2 className="card-title fw-bold mb-2 text-white">Generated Videos</h2>
+                          <p className="text-white-50 mb-0">{results.length} videos generated</p>
+                        </div>
                       </div>
                       {results.length > 0 && (
                         <button
-                          className="btn btn-primary shadow"
+                          className="btn btn-light shadow"
                           onClick={exportResults}
                           style={{ borderRadius: '6px' }}
                         >
@@ -866,6 +878,8 @@ export default function RunwayAutomationApp() {
                         </button>
                       )}
                     </div>
+                  </div>
+                  <div className="card-body p-4">
 
                     {results.length === 0 ? (
                       <div className="text-center py-5">
