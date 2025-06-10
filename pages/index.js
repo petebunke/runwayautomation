@@ -751,7 +751,6 @@ export default function RunwayAutomationApp() {
                             )}
                           </div>
                         </div>
-
                         <div className="mb-4">
                           <label className="form-label fw-bold">Image URL</label>
                           <input
