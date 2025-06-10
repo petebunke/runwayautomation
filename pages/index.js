@@ -960,23 +960,6 @@ export default function RunwayAutomationApp() {
                                   {result.prompt}
                                 </h6>
                                 
-                                <div className="small text-muted mb-3">
-                                  <div className="d-flex justify-content-between mb-1">
-                                    <span>Task ID:</span>
-                                    <span className="font-monospace small">{result.id}</span>
-                                  </div>
-                                  <div className="d-flex justify-content-between mb-1">
-                                    <span>Created:</span>
-                                    <span>{new Date(result.created_at).toLocaleString()}</span>
-                                  </div>
-                                  {result.image_url && (
-                                    <div className="d-flex justify-content-between">
-                                      <span>Source Image:</span>
-                                      <span className="text-primary">✓ Provided</span>
-                                    </div>
-                                  )}
-                                </div>
-                                
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
                                     <div className="btn-group" role="group">
