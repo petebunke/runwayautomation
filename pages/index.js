@@ -779,19 +779,19 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
-                    <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #667eea, #764ba2)', borderRadius: '15px' }}>
+                    <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #007bff, #0056b3)', borderRadius: '15px' }}>
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center">
                           <h4 className="card-title text-dark mb-0">Status</h4>
-                          <div className="d-flex gap-5 align-items-center text-center">
+                          <div className="d-flex gap-5 align-items-center text-center" style={{ marginTop: '8px' }}>
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Videos:</strong> {concurrency}</span>
                             <div className="d-flex align-items-center">
-                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
+                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
-                                  <div className="w-100 h-100 rounded-circle bg-success"></div>
+                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
                                 )}
                               </div>
                               <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
@@ -812,7 +812,7 @@ export default function RunwayAutomationApp() {
                                   <div className="d-flex justify-content-between align-items-center mb-2">
                                     <span className="fw-bold small">{jobId}</span>
                                     <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-success' :
+                                      progress.status === 'completed' ? 'bg-primary' :
                                       progress.status === 'failed' ? 'bg-danger' :
                                       progress.status === 'throttled' ? 'bg-warning' :
                                       'bg-primary'
@@ -823,7 +823,7 @@ export default function RunwayAutomationApp() {
                                   <div className="progress mb-2" style={{ height: '8px' }}>
                                     <div 
                                       className={`progress-bar ${
-                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'completed' ? 'bg-primary' :
                                         progress.status === 'failed' ? 'bg-danger' :
                                         progress.status === 'throttled' ? 'bg-warning' :
                                         'bg-primary'
@@ -844,7 +844,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="text-success fw-bold mb-0">Video Generation Log</h5>
+                        <h5 className="text-primary fw-bold mb-0">Video Generation Log</h5>
                         <button 
                           className="btn btn-sm btn-outline-light" 
                           onClick={copyLogsToClipboard}
@@ -858,7 +858,7 @@ export default function RunwayAutomationApp() {
                         {logs.map((log, index) => (
                           <div key={index} className={`small mb-1 ${
                             log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-success' :
+                            log.type === 'success' ? 'text-primary' :
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
@@ -950,7 +950,7 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="position-absolute top-0 start-0 m-3">
                                   <span className={`badge ${
-                                    result.status === 'completed' ? 'bg-success' : 'bg-warning'
+                                    result.status === 'completed' ? 'bg-primary' : 'bg-warning'
                                   } shadow-sm`}>
                                     {result.status === 'completed' ? '✅ Complete' : '⏳ Processing'}
                                   </span>
