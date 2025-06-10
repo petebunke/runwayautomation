@@ -705,7 +705,7 @@ export default function RunwayAutomationApp() {
                         
                         {/* Centered header text inside blue section */}
                         <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Content Configuration</h3>
+                          <h3 className="mb-0 fw-bold">Video Configuration</h3>
                         </div>
                       </div>
                       
@@ -714,44 +714,45 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4">
                         </div>
                        <div className="mb-4">
-  <label className="form-label fw-bold">Video Prompt</label>
-  <div className="position-relative">
-    <textarea
-      className="form-control"
-      rows="1"
-      value={prompt}
-      onChange={(e) => setPrompt(e.target.value)}
-      placeholder={prompt ? "" : "Add an image then describe your shot. "}
-      style={{ borderRadius: '12px' }}
-    />
-    {!prompt && (
-      <div 
-        className="position-absolute" 
-        style={{ 
-          left: '12px', 
-          top: '8px', 
-          pointerEvents: 'none',
-          color: '#6c757d',
-          fontSize: '18px'
-        }}
-      >
-        Add an image then describe your shot.{' '}
-        <a 
-          href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="text-decoration-underline"
-          style={{ 
-            color: '#6c757d',
-            pointerEvents: 'auto'
-          }}
-        >
-          View guide
-        </a>
-      </div>
-    )}
-  </div>
-</div>
+                          <label className="form-label fw-bold">Video Prompt</label>
+                          <div className="position-relative">
+                            <textarea
+                              className="form-control form-control-lg"
+                              rows="1"
+                              value={prompt}
+                              onChange={(e) => setPrompt(e.target.value)}
+                              placeholder=""
+                              style={{ borderRadius: '12px' }}
+                            />
+                            {!prompt && (
+                              <div 
+                                className="position-absolute" 
+                                style={{ 
+                                  left: '16px', 
+                                  top: '12px', 
+                                  pointerEvents: 'none',
+                                  color: '#6c757d',
+                                  fontSize: '16px'
+                                }}
+                              >
+                                Add an image then describe your shot.{' '}
+                                <a 
+                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-decoration-none"
+                                  style={{ 
+                                    color: '#6c757d',
+                                    pointerEvents: 'auto',
+                                    textDecoration: 'underline'
+                                  }}
+                                >
+                                  View guide
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
                         <div className="mb-4">
                           <label className="form-label fw-bold">Image URL</label>
