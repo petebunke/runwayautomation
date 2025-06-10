@@ -71,6 +71,15 @@ export default function RunwayAutomationApp() {
     setLogs(prev => [...prev, { message, type, timestamp }]);
   };
 
+  const copyLogsToClipboard = () => {
+    const logText = logs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
+    navigator.clipboard.writeText(logText).then(() => {
+      addLog('📋 Logs copied to clipboard', 'info');
+    }).catch(() => {
+      addLog('❌ Failed to copy logs to clipboard', 'error');
+    });
+  };
+
   const API_BASE = '/api';
 
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0) => {
@@ -443,7 +452,7 @@ export default function RunwayAutomationApp() {
               🎬 Runway Automation Pro
             </h1>
             <p className="lead text-white-50 mx-auto" style={{ maxWidth: '800px' }}>
-              Professional-grade video generation automation for RunwayML.<br />Generate multiple AI videos with advanced batch processing.<br />Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.
+              Professional-grade video generation automation for RunwayML.<br />Generate up to 20 AI videos at once with advanced batch processing.<br />Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.
             </p>
           </div>
 
@@ -834,8 +843,16 @@ export default function RunwayAutomationApp() {
                     )}
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
-                      <div className="card-header bg-transparent border-0 pb-0">
-                        <h5 className="text-success fw-bold mb-0">🔥 Live Generation Log</h5>
+                      <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 className="text-success fw-bold mb-0">Video Generation Log</h5>
+                        <button 
+                          className="btn btn-sm btn-outline-light" 
+                          onClick={copyLogsToClipboard}
+                          title="Copy all logs to clipboard"
+                          style={{ borderRadius: '6px' }}
+                        >
+                          <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                        </button>
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
                         {logs.map((log, index) => (
