@@ -774,8 +774,8 @@ export default function RunwayAutomationApp() {
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center mb-4">
                           <div>
-                            <h4 className="card-title text-white mb-2">Generation Status</h4>
-                            <p className="card-text text-white-50 mb-0">Monitor and control your video generation process</p>
+                            <h4 className="card-title text-dark mb-2">Generation Status</h4>
+                            <p className="card-text text-dark mb-0">Monitor and control your video generation process</p>
                           </div>
                         </div>
 
