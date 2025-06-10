@@ -783,7 +783,7 @@ export default function RunwayAutomationApp() {
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center">
                           <h4 className="card-title text-dark mb-0">Status</h4>
-                          <div className="d-flex gap-5 align-items-center text-center">
+                          <div className="d-flex gap-5 align-items-center text-center" style={{ marginTop: '8px' }}>
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
