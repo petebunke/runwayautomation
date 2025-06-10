@@ -784,10 +784,10 @@ export default function RunwayAutomationApp() {
                         <div className="d-flex justify-content-between align-items-start">
                           <h4 className="card-title text-dark mb-0">Status</h4>
                           <div className="d-flex gap-4 align-items-center text-center">
-                            <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                            <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark">Image: {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark">Videos: {concurrency}</span>
+                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Videos:</strong> {concurrency}</span>
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
