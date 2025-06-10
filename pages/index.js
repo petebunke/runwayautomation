@@ -443,7 +443,7 @@ export default function RunwayAutomationApp() {
 
           <div className="row justify-content-center mb-4">
             <div className="col-auto">
-              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: '#90D5FF', borderRadius: '12px', padding: '8px' }}>
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(72, 196, 196, 0.15)', borderRadius: '12px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
@@ -494,18 +494,98 @@ export default function RunwayAutomationApp() {
                       >
                         {/* Icon circle hanging over the blue section */}
                         <div 
-                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
-                            width: '70px', 
-                            height: '70px',
+                            width: '55px', 
+                            height: '55px',
                             left: '18px',
-                            top: '25px',
+                            top: '32px',
                             zIndex: 10,
-                            backgroundColor: '#90D5FF',
+                            backgroundColor: 'rgba(72, 196, 196, 0.15)',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                           }}
                         >
-                          <Key className="text-white" size={28} />
+                          <Camera className="text-primary" size={24} />
+                        </div>
+                        
+                        {/* Centered header text inside blue section */}
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">Content Configuration</h3>
+                        </div>
+                      </div>
+                      
+                      {/* Card content with top padding for hanging circle */}
+                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Video Prompt</label>
+                          <textarea
+                            className="form-control"
+                            rows="2"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
+                            style={{ borderRadius: '12px' }}
+                          />
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Image URL</label>
+                          <input
+                            type="url"
+                            className="form-control"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/image.jpg"
+                            style={{ borderRadius: '12px' }}
+                          />
+                          
+                          <div 
+                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
+                            style={{ 
+                              maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
+                              transition: 'max-height 0.3s ease-in-out'
+                            }}
+                          >
+                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
+                              <img 
+                                src={imageUrl.trim()} 
+                                alt="Preview of input image"
+                                className="img-fluid rounded border"
+                                style={{ width: '100%', objectFit: 'contain' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                      {/* Blue header with hanging circle */}
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '60px',
+                          borderRadius: '12px 12px 0 0'
+                        }}
+                      >
+                        {/* Icon circle hanging over the blue section */}
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '55px', 
+                            height: '55px',
+                            left: '18px',
+                            top: '32px',
+                            zIndex: 10,
+                            backgroundColor: 'rgba(72, 196, 196, 0.15)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }}
+                        >
+                          <Key className="text-primary" size={24} />
                         </div>
                         
                         {/* Centered header text inside blue section */}
@@ -515,7 +595,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '70px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
                         <div className="mb-4">
                           <label className="form-label fw-bold">RunwayML API Key</label>
                           <input
@@ -676,86 +756,6 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '12px', overflow: 'hidden' }}>
-                      {/* Blue header with hanging circle */}
-                      <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '60px',
-                          borderRadius: '12px 12px 0 0'
-                        }}
-                      >
-                        {/* Icon circle hanging over the blue section */}
-                        <div 
-                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '70px', 
-                            height: '70px',
-                            left: '18px',
-                            top: '25px',
-                            zIndex: 10,
-                            backgroundColor: '#90D5FF',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          }}
-                        >
-                          <Camera className="text-white" size={28} />
-                        </div>
-                        
-                        {/* Centered header text inside blue section */}
-                        <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Video Configuration</h3>
-                        </div>
-                      </div>
-                      
-                      {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '70px !important' }}>
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt</label>
-                          <textarea
-                            className="form-control"
-                            rows="2"
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
-                            style={{ borderRadius: '12px' }}
-                          />
-                        </div>
-
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Image URL</label>
-                          <input
-                            type="url"
-                            className="form-control"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                            style={{ borderRadius: '12px' }}
-                          />
-                          
-                          <div 
-                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
-                            style={{ 
-                              maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
-                              transition: 'max-height 0.3s ease-in-out'
-                            }}
-                          >
-                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
-                              <img 
-                                src={imageUrl.trim()} 
-                                alt="Preview of input image"
-                                className="img-fluid rounded border"
-                                style={{ width: '100%', objectFit: 'contain' }}
-                                onLoad={handleImageLoad}
-                                onError={handleImageError}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -777,18 +777,18 @@ export default function RunwayAutomationApp() {
                   >
                     {/* Icon circle hanging over the blue section */}
                     <div 
-                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
-                        width: '70px', 
-                        height: '70px',
+                        width: '55px', 
+                        height: '55px',
                         left: '18px',
-                        top: '35px',
+                        top: '38px',
                         zIndex: 10,
-                        backgroundColor: '#90D5FF',
+                        backgroundColor: 'rgba(72, 196, 196, 0.15)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                       }}
                     >
-                      <Film className="text-white" size={28} />
+                      <Film className="text-primary" size={24} />
                     </div>
                     
                     {/* Centered header text inside blue section */}
@@ -803,13 +803,7 @@ export default function RunwayAutomationApp() {
                           className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                          style={{ 
-                            borderRadius: '12px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            backgroundColor: '#28a745',
-                            borderColor: '#28a745'
-                          }}
+                          style={{ borderRadius: '12px', fontWeight: '600' }}
                         >
                           <Play size={24} className="me-2" />
                           Start Generation
@@ -828,22 +822,8 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '75px !important' }}>      ) : (
-                        <button
-                          className="btn btn-danger btn-lg shadow"
-                          onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600' }}
-                        >
-                          <AlertCircle size={24} className="me-2" />
-                          Stop Generation
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '75px !important' }}>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '12px' }}>
+                  <div className="card-body p-4" style={{ paddingTop: '55px !important' }}>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
                           <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
@@ -906,14 +886,14 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '12px' }}>
+                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
                         <button 
                           className="btn btn-sm btn-outline-light" 
                           onClick={copyLogsToClipboard}
                           title="Copy all logs to clipboard"
-                          style={{ borderRadius: '12px' }}
+                          style={{ borderRadius: '6px' }}
                         >
                           <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
                         </button>
@@ -950,24 +930,24 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="bg-primary position-relative" 
                     style={{ 
-                      height: '80px',
+                      height: '60px',
                       borderRadius: '12px 12px 0 0'
                     }}
                   >
                     {/* Icon circle hanging over the blue section */}
                     <div 
-                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
-                        width: '70px', 
-                        height: '70px',
+                        width: '55px', 
+                        height: '55px',
                         left: '18px',
-                        top: '45px',
+                        top: '32px',
                         zIndex: 10,
-                        backgroundColor: '#90D5FF',
+                        backgroundColor: 'rgba(72, 196, 196, 0.15)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                       }}
                     >
-                      <Download className="text-white" size={28} />
+                      <Download className="text-primary" size={24} />
                     </div>
                     
                     {/* Export button positioned in the blue header */}
@@ -986,7 +966,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '65px !important' }}>
+                  <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
                     <div className="mb-4">
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
                       <p className="text-muted small mb-0">{results.length} videos generated</p>
@@ -1001,7 +981,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-primary btn-lg shadow"
                           onClick={() => setActiveTab('setup')}
-                          style={{ borderRadius: '12px' }}
+                          style={{ borderRadius: '6px' }}
                         >
                           Get Started
                         </button>
@@ -1010,8 +990,8 @@ export default function RunwayAutomationApp() {
                       <div className="row g-4">
                         {results.map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-4">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '12px' }}>
-                              <div className="position-relative" style={{ borderRadius: '12px 12px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '15px' }}>
+                              <div className="position-relative" style={{ borderRadius: '15px 15px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
                                     src={result.video_url}
