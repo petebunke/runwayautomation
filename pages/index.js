@@ -782,7 +782,7 @@ export default function RunwayAutomationApp() {
                     <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #007bff, #0056b3)', borderRadius: '15px' }}>
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center">
-                          <h4 className="card-title text-dark mb-0">Status</h4>
+                          <span className="fw-bold text-dark text-uppercase" style={{ fontSize: '0.875rem' }}>CONNECTION STATUS</span>
                           <div className="d-flex gap-5 align-items-center text-center" style={{ marginTop: '8px' }}>
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
@@ -823,7 +823,7 @@ export default function RunwayAutomationApp() {
                                   <div className="progress mb-2" style={{ height: '8px' }}>
                                     <div 
                                       className={`progress-bar ${
-                                        progress.status === 'completed' ? 'bg-primary' :
+                                        progress.status === 'completed' ? 'bg-success' :
                                         progress.status === 'failed' ? 'bg-danger' :
                                         progress.status === 'throttled' ? 'bg-warning' :
                                         'bg-primary'
@@ -858,7 +858,7 @@ export default function RunwayAutomationApp() {
                         {logs.map((log, index) => (
                           <div key={index} className={`small mb-1 ${
                             log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-primary' :
+                            log.type === 'success' ? 'text-light' :
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
@@ -950,7 +950,7 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="position-absolute top-0 start-0 m-3">
                                   <span className={`badge ${
-                                    result.status === 'completed' ? 'bg-primary' : 'bg-warning'
+                                    result.status === 'completed' ? 'bg-success' : 'bg-warning'
                                   } shadow-sm`}>
                                     {result.status === 'completed' ? '✅ Complete' : '⏳ Processing'}
                                   </span>
