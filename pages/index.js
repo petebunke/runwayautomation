@@ -517,14 +517,15 @@ export default function RunwayAutomationApp() {
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                      <div className="card-body p-4">
-                        <div className="d-flex align-items-center mb-4 bg-primary bg-gradient rounded p-3">
+                      <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                        <div className="d-flex align-items-center">
                           <div className="bg-white rounded-circle p-3 me-3">
                             <Film className="text-primary" size={24} />
                           </div>
                           <h3 className="card-title fw-bold mb-0 text-white">Content Configuration</h3>
                         </div>
-
+                      </div>
+                      <div className="card-body p-4">
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
                           <textarea
@@ -847,14 +848,16 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
-                        <div className="d-flex align-items-center mb-4 bg-primary bg-gradient rounded p-3">
+}d shadow-lg border-0" style={{ borderRadius: '20px' }}>
+                      <div className="bg-primary bg-gradient p-4" style={{ borderRadius: '20px 20px 0 0' }}>
+                        <div className="d-flex align-items-center">
                           <div className="bg-white rounded-circle p-3 me-3">
                             <Key className="text-primary" size={24} />
                           </div>
                           <h3 className="card-title mb-0 fw-bold text-white">API Configuration</h3>
                         </div>
-
+                      </div>
+                      <div className="card-body p-4">
                         <div className="mb-4">
                           <label className="form-label fw-bold">RunwayML API Key</label>
                           <input
@@ -1017,6 +1020,4 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
-                      <div className="card-body p-4">
-                
+                    <div className="car
