@@ -17,6 +17,24 @@ export default function RunwayAutomationApp() {
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
   const [generationProgress, setGenerationProgress] = useState({});
+  const [imageError, setImageError] = useState(false);
+
+  const isValidImageUrl = (url) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  const handleImageLoad = () => {
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
 
   // Initialize Bootstrap tooltips
   useEffect(() => {
@@ -712,6 +730,19 @@ export default function RunwayAutomationApp() {
                           <div className="form-text">
                             This image will be used as the starting frame for all generated videos.
                           </div>
+                          
+                          {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
+                            <div className="mt-3">
+                              <img 
+                                src={imageUrl.trim()} 
+                                alt="Preview of input image"
+                                className="img-fluid rounded border"
+                                style={{ maxHeight: '200px', width: '100%', objectFit: 'cover' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
