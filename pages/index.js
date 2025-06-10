@@ -443,7 +443,7 @@ export default function RunwayAutomationApp() {
 
           <div className="row justify-content-center mb-4">
             <div className="col-auto">
-              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(72, 196, 196, 0.15)', borderRadius: '12px', padding: '8px' }}>
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgb(72, 196, 196)', borderRadius: '12px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
@@ -496,16 +496,16 @@ export default function RunwayAutomationApp() {
                         <div 
                           className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
-                            width: '55px', 
-                            height: '55px',
-                            left: '18px',
-                            top: '32px',
+                            width: '80px', 
+                            height: '80px',
+                            left: '30px',
+                            top: '10px',
                             zIndex: 10,
-                            backgroundColor: 'rgba(72, 196, 196, 0.15)',
+                            backgroundColor: 'rgb(72, 196, 196)',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                           }}
                         >
-                          <Camera className="text-primary" size={24} />
+                          <Camera className="text-primary" size={32} />
                         </div>
                         
                         {/* Centered header text inside blue section */}
@@ -797,13 +797,17 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     {/* Action button positioned in the blue header */}
-                    <div style={{ marginRight: '30px' }}>
+                    <div style={{ marginRight: '30px', marginTop: '8px', marginBottom: '8px' }}>
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
-                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                          style={{ 
+                            borderRadius: '12px', 
+                            fontWeight: '600',
+                            opacity: (!runwayApiKey || !prompt.trim() || !imageUrl.trim()) ? '0.6' : '1',
+                            cursor: (!runwayApiKey || !prompt.trim() || !imageUrl.trim()) ? 'not-allowed' : 'pointer'
+                          }}
                         >
                           <Play size={24} className="me-2" />
                           Start Generation
@@ -966,7 +970,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                  <div className="card-body p-4" style={{ paddingTop: '60px !important' }}>
                     <div className="mb-4">
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
                       <p className="text-muted small mb-0">{results.length} videos generated</p>
