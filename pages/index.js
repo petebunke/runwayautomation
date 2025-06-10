@@ -5,8 +5,8 @@ import Head from 'next/head';
 export default function RunwayAutomationApp() {
   const [activeTab, setActiveTab] = useState('setup');
   const [runwayApiKey, setRunwayApiKey] = useState('');
-  const [prompt, setPrompt] = useState('A serene lake with mountains in the background at sunset');
-  const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1280&h=720');
+  const [prompt, setPrompt] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [model, setModel] = useState('gen3a_turbo');
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
