@@ -753,6 +753,44 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
 
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Image URL</label>
+                          <input
+                            type="url"
+                            className="form-control"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/image.jpg"
+                            style={{ borderRadius: '12px' }}
+                          />
+                          
+                          <div 
+                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
+                            style={{ 
+                              maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
+                              transition: 'max-height 0.3s ease-in-out'
+                            }}
+                          >
+                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
+                              <img 
+                                src={imageUrl.trim()} 
+                                alt="Preview of input image"
+                                className="img-fluid rounded border"
+                                style={{ width: '100%', objectFit: 'contain' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
