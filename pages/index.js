@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video, Camera, Clapperboard } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -443,12 +443,12 @@ export default function RunwayAutomationApp() {
 
           <div className="row justify-content-center mb-4">
             <div className="col-auto">
-              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(72, 196, 196, 0.15)', borderRadius: '12px', padding: '8px' }}>
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '15px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('setup')}
-                    style={{ borderRadius: '12px', fontWeight: '600' }}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
                     <Settings size={20} className="me-2" />
                     Configuration
@@ -458,17 +458,17 @@ export default function RunwayAutomationApp() {
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '12px', fontWeight: '600' }}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
-                    <Film size={20} className="me-2" />
-                    Generate
+                    <Video size={20} className="me-2" />
+                    Generation
                   </button>
                 </li>
                 <li className="nav-item">
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('results')}
-                    style={{ borderRadius: '12px', fontWeight: '600' }}
+                    style={{ borderRadius: '10px', fontWeight: '600' }}
                   >
                     <Download size={20} className="me-2" />
                     Results
@@ -483,109 +483,28 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="row g-4">
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
                       {/* Blue header with hanging circle */}
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
-                          borderRadius: '12px 12px 0 0'
+                          height: '50px',
+                          borderRadius: '20px 20px 0 0'
                         }}
                       >
                         {/* Icon circle hanging over the blue section */}
                         <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
-                            width: '55px', 
-                            height: '55px',
-                            left: '18px',
-                            top: '32px',
+                            width: '80px', 
+                            height: '80px',
+                            left: '30px',
+                            top: '10px',
                             zIndex: 10,
-                            backgroundColor: 'rgba(72, 196, 196, 0.15)',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                           }}
                         >
-                          <Camera className="text-primary" size={24} />
-                        </div>
-                        
-                        {/* Centered header text inside blue section */}
-                        <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Content Configuration</h3>
-                        </div>
-                      </div>
-                      
-                      {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt</label>
-                          <textarea
-                            className="form-control"
-                            rows="2"
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
-                            style={{ borderRadius: '12px' }}
-                          />
-                        </div>
-
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Image URL</label>
-                          <input
-                            type="url"
-                            className="form-control"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                            style={{ borderRadius: '12px' }}
-                          />
-                          
-                          <div 
-                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
-                            style={{ 
-                              maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
-                              transition: 'max-height 0.3s ease-in-out'
-                            }}
-                          >
-                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
-                              <img 
-                                src={imageUrl.trim()} 
-                                alt="Preview of input image"
-                                className="img-fluid rounded border"
-                                style={{ width: '100%', objectFit: 'contain' }}
-                                onLoad={handleImageLoad}
-                                onError={handleImageError}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '12px', overflow: 'hidden' }}>
-                      {/* Blue header with hanging circle */}
-                      <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '60px',
-                          borderRadius: '12px 12px 0 0'
-                        }}
-                      >
-                        {/* Icon circle hanging over the blue section */}
-                        <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '55px', 
-                            height: '55px',
-                            left: '18px',
-                            top: '32px',
-                            zIndex: 10,
-                            backgroundColor: 'rgba(72, 196, 196, 0.15)',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          }}
-                        >
-                          <Key className="text-primary" size={24} />
+                          <Key className="text-primary" size={32} />
                         </div>
                         
                         {/* Centered header text inside blue section */}
@@ -596,6 +515,8 @@ export default function RunwayAutomationApp() {
                       
                       {/* Card content with top padding for hanging circle */}
                       <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                        <div className="mb-4">
+                        </div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">RunwayML API Key</label>
                           <input
@@ -756,6 +677,87 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                      {/* Blue header with hanging circle */}
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '50px',
+                          borderRadius: '20px 20px 0 0'
+                        }}
+                      >
+                        {/* Icon circle hanging over the blue section */}
+                        <div 
+                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '30px',
+                            top: '10px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }}
+                        >
+                          <Film className="text-primary" size={32} />
+                        </div>
+                        
+                        {/* Centered header text inside blue section */}
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">Content Configuration</h3>
+                        </div>
+                      </div>
+                      
+                      {/* Card content with top padding for hanging circle */}
+                      <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                        <div className="mb-4">
+                        </div>
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Video Prompt</label>
+                          <textarea
+                            className="form-control"
+                            rows="2"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Describe the video you want to generate... (e.g., 'gentle waves flowing, peaceful water movement')"
+                            style={{ borderRadius: '12px' }}
+                          />
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Image URL</label>
+                          <input
+                            type="url"
+                            className="form-control"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/image.jpg"
+                            style={{ borderRadius: '12px' }}
+                          />
+                          
+                          <div 
+                            className="mt-3 overflow-hidden transition-all duration-300 ease-in-out"
+                            style={{ 
+                              maxHeight: imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError ? '500px' : '0px',
+                              transition: 'max-height 0.3s ease-in-out'
+                            }}
+                          >
+                            {imageUrl.trim() && isValidImageUrl(imageUrl.trim()) && !imageError && (
+                              <img 
+                                src={imageUrl.trim()} 
+                                alt="Preview of input image"
+                                className="img-fluid rounded border"
+                                style={{ width: '100%', objectFit: 'contain' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -764,35 +766,32 @@ export default function RunwayAutomationApp() {
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
                   {/* Blue header with hanging circle */}
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '70px',
-                      borderRadius: '12px 12px 0 0',
-                      paddingTop: '8px',
-                      paddingBottom: '8px'
+                      height: '50px',
+                      borderRadius: '20px 20px 0 0'
                     }}
                   >
                     {/* Icon circle hanging over the blue section */}
                     <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
-                        width: '55px', 
-                        height: '55px',
-                        left: '18px',
-                        top: '38px',
+                        width: '80px', 
+                        height: '80px',
+                        left: '30px',
+                        top: '10px',
                         zIndex: 10,
-                        backgroundColor: 'rgba(72, 196, 196, 0.15)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                       }}
                     >
-                      <Film className="text-primary" size={24} />
+                      <Video className="text-primary" size={32} />
                     </div>
                     
                     {/* Centered header text inside blue section */}
-                    <div className="text-white text-center flex-grow-1 d-flex align-items-center justify-content-center">
+                    <div className="text-white text-center flex-grow-1">
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
@@ -800,7 +799,7 @@ export default function RunwayAutomationApp() {
                     <div style={{ marginRight: '30px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-success btn-lg shadow"
+                          className="btn btn-light btn-lg shadow"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
                           style={{ borderRadius: '12px', fontWeight: '600' }}
@@ -822,7 +821,9 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '55px !important' }}>
+                  <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                    <div className="mb-4">
+                    </div>
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
@@ -925,29 +926,27 @@ export default function RunwayAutomationApp() {
           {activeTab === 'results' && (
             <div className="row justify-content-center">
               <div className="col-lg-11">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
                   {/* Blue header with hanging circle */}
                   <div 
                     className="bg-primary position-relative" 
                     style={{ 
-                      height: '60px',
-                      borderRadius: '12px 12px 0 0'
+                      height: '80px',
+                      borderRadius: '20px 20px 0 0'
                     }}
                   >
                     {/* Icon circle hanging over the blue section */}
                     <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center shadow"
                       style={{ 
-                        width: '55px', 
-                        height: '55px',
-                        left: '18px',
-                        top: '32px',
-                        zIndex: 10,
-                        backgroundColor: 'rgba(72, 196, 196, 0.15)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        width: '60px', 
+                        height: '60px',
+                        left: '30px',
+                        top: '50px',
+                        zIndex: 10
                       }}
                     >
-                      <Download className="text-primary" size={24} />
+                      <Download className="text-primary" size={28} />
                     </div>
                     
                     {/* Export button positioned in the blue header */}
@@ -967,7 +966,7 @@ export default function RunwayAutomationApp() {
                   
                   {/* Card content with top padding for hanging circle */}
                   <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
-                    <div className="mb-4">
+                    <div className="mb-4" style={{ marginLeft: '100px' }}>
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
                       <p className="text-muted small mb-0">{results.length} videos generated</p>
                     </div>
