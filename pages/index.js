@@ -718,7 +718,7 @@ export default function RunwayAutomationApp() {
   <div className="position-relative">
     <textarea
       className="form-control"
-      rows="2"
+      rows="1"
       value={prompt}
       onChange={(e) => setPrompt(e.target.value)}
       placeholder={prompt ? "" : "Add an image then describe your shot. "}
@@ -732,7 +732,7 @@ export default function RunwayAutomationApp() {
           top: '8px', 
           pointerEvents: 'none',
           color: '#6c757d',
-          fontSize: '16px'
+          fontSize: '18px'
         }}
       >
         Add an image then describe your shot.{' '}
