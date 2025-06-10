@@ -740,11 +740,10 @@ export default function RunwayAutomationApp() {
                                   href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
                                   target="_blank" 
                                   rel="noopener noreferrer" 
-                                  className="text-decoration-none"
+                                  className="text-decoration-underline"
                                   style={{ 
                                     color: '#6c757d',
-                                    pointerEvents: 'auto',
-                                    textDecoration: 'underline'
+                                    pointerEvents: 'auto'
                                   }}
                                 >
                                   View guide
