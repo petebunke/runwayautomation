@@ -514,7 +514,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '40px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4">
                         </div>
                         <div className="mb-4">
@@ -710,7 +710,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '40px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4">
                         </div>
                       <div className="mb-4">
@@ -849,7 +849,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4">
                     </div>
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
@@ -993,7 +993,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4" style={{ marginLeft: '100px' }}>
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
                       <p className="text-muted small mb-0">{results.length} videos generated</p>
