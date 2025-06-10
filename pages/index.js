@@ -509,12 +509,12 @@ export default function RunwayAutomationApp() {
                         
                         {/* Centered header text inside blue section */}
                         <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Content Configuration</h3>
+                          <h3 className="mb-0 fw-bold">Video Configuration</h3>
                         </div>
                       </div>
                       
-                      {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '40px !important' }}>
+                      {/* Card content with tighter padding for hanging circle */}
+                      <div className="card-body p-4" style={{ paddingTop: '25px !important' }}>
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
                           <textarea
@@ -573,7 +573,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '70px',
+                      height: '50px',
                       borderRadius: '20px 20px 0 0'
                     }}
                   >
@@ -592,8 +592,17 @@ export default function RunwayAutomationApp() {
                       <Video className="text-primary" size={32} />
                     </div>
                     
-                    {/* Centered header text inside blue section */}
-                    <div className="text-white text-center" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+                    {/* Centered header text inside blue section - using absolute positioning for perfect centering */}
+                    <div 
+                      className="text-white text-center"
+                      style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '100%'
+                      }}
+                    >
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
@@ -644,7 +653,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
+                          style={{ borderRadius: '12px', fontWeight: '600' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
@@ -655,6 +664,8 @@ export default function RunwayAutomationApp() {
                   
                   {/* Card content with top padding for hanging circle */}
                   <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
+                    <div className="mb-4">
+                    </div>
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
@@ -766,7 +777,7 @@ export default function RunwayAutomationApp() {
                       borderRadius: '20px 20px 0 0'
                     }}
                   >
-                    {/* Icon circle hanging over the blue section */}
+                    {/* Icon circle hanging over the blue section - same size as others */}
                     <div 
                       className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center shadow"
                       style={{ 
@@ -921,10 +932,7 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}={{ borderRadius: '20px', overflow: 'hidden' }}>
-                      {/* Blue header with hanging circle */}
-                      <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+}-items-center justify-content-center" 
                         style={{ 
                           height: '50px',
                           borderRadius: '20px 20px 0 0'
@@ -951,8 +959,8 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       
-                      {/* Card content with top padding for hanging circle */}
-                      <div className="card-body p-4" style={{ paddingTop: '40px !important' }}>
+                      {/* Card content with tighter padding for hanging circle */}
+                      <div className="card-body p-4" style={{ paddingTop: '25px !important' }}>
                         <div className="mb-4">
                           <label className="form-label fw-bold">RunwayML API Key</label>
                           <input
@@ -1115,4 +1123,7 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                      {/* Blue header with hanging circle */}
+                      <div 
+                        className="bg-primary position-relative d-flex align
