@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+                    {/* Icon circle hanging over the blue section */}
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80pximport React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video, Camera, Clapperboard } from 'lucide-react';
 import Head from 'next/head';
 
@@ -443,7 +447,7 @@ export default function RunwayAutomationApp() {
 
           <div className="row justify-content-center mb-4">
             <div className="col-auto">
-              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgb(72, 196, 196)', borderRadius: '12px', padding: '8px' }}>
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgb(173, 216, 230)', borderRadius: '12px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
@@ -516,7 +520,7 @@ export default function RunwayAutomationApp() {
                       
                       {/* Card content with top padding for hanging circle */}
                       <div className="card-body p-4" style={{ paddingTop: '50px !important' }}>
-                        <div className="mb-4">
+                        <div className="mb-4" style={{ marginLeft: '100px' }}>
                           <label className="form-label fw-bold">Video Prompt</label>
                           <textarea
                             className="form-control"
@@ -805,7 +809,7 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             borderRadius: '12px', 
                             fontWeight: '600',
-                            opacity: (!runwayApiKey || !prompt.trim() || !imageUrl.trim()) ? '0.6' : '1',
+                            opacity: '1',
                             cursor: (!runwayApiKey || !prompt.trim() || !imageUrl.trim()) ? 'not-allowed' : 'pointer'
                           }}
                         >
@@ -826,7 +830,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   {/* Card content with top padding for hanging circle */}
-                  <div className="card-body p-4" style={{ paddingTop: '55px !important' }}>
+                  <div className="card-body p-4" style={{ paddingTop: '75px !important' }}>
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
