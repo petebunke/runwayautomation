@@ -779,7 +779,7 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
-                    <div className="card text-white mb-4 border border-light" style={{ backgroundColor: '#f8f9fa', borderRadius: '15px' }}>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '15px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
                           <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
