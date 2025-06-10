@@ -762,7 +762,7 @@ export default function RunwayAutomationApp() {
                             onChange={(e) => setImageUrl(e.target.value)}
                             placeholder="https://example.com/image.jpg"
                             style={{ borderRadius: '12px',
-                            fontSize:'14px' }}
+                            fontSize:'16px' }}
                           />
                           
                           <div 
