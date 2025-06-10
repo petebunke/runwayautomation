@@ -745,7 +745,7 @@ export default function RunwayAutomationApp() {
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px' }}>
                   <div className="card-body p-4">
                     <div className="d-flex justify-content-between align-items-center mb-4">
-                      <h2 className="card-title fw-bold mb-0">Video Generation Control</h2>
+                      <h2 className="card-title fw-bold mb-0">Video Generation</h2>
                       <div>
                         {!isRunning ? (
                           <button
@@ -773,10 +773,7 @@ export default function RunwayAutomationApp() {
                     <div className="card bg-gradient text-white mb-4" style={{ background: 'linear-gradient(45deg, #667eea, #764ba2)', borderRadius: '15px' }}>
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-start">
-                          <div>
-                            <h4 className="card-title text-dark mb-2">Generation Status</h4>
-                            <p className="card-text text-dark mb-0">Monitor and control your video generation process</p>
-                          </div>
+                          <h4 className="card-title text-dark mb-0">Status</h4>
                           <div className="d-flex gap-4 align-items-center text-center">
                             <span className="text-dark">API: {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark">Prompt: {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
