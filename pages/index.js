@@ -54,7 +54,12 @@ export default function RunwayAutomationApp() {
   const aspectRatioOptions = [
     { value: '16:9', label: '16:9 (Landscape)' },
     { value: '9:16', label: '9:16 (Portrait)' },
-    ...(model === 'gen4_turbo' ? [{ value: '1:1', label: '1:1 (Square)' }] : [])
+    ...(model === 'gen4_turbo' ? [
+      { value: '1:1', label: '1:1 (Square)' },
+      { value: '4:3', label: '4:3 (Standard)' },
+      { value: '3:4', label: '3:4 (Portrait Standard)' },
+      { value: '21:9', label: '21:9 (Cinematic)' }
+    ] : [])
   ];
 
   const addLog = (message, type = 'info') => {
@@ -103,7 +108,10 @@ export default function RunwayAutomationApp() {
         aspect_ratio: model === 'gen4_turbo' ? 
           (aspectRatio === '16:9' ? '1280:720' : 
            aspectRatio === '9:16' ? '720:1280' : 
-           aspectRatio === '1:1' ? '960:960' : '1280:720') :
+           aspectRatio === '1:1' ? '960:960' : 
+           aspectRatio === '4:3' ? '1104:832' : 
+           aspectRatio === '3:4' ? '832:1104' : 
+           aspectRatio === '21:9' ? '1584:672' : '1280:720') :
           (aspectRatio === '16:9' ? '1280:768' : 
            aspectRatio === '9:16' ? '768:1280' : '1280:768'),
         duration: duration,
@@ -568,7 +576,16 @@ export default function RunwayAutomationApp() {
                           </div>
 
                           <div className="col-6">
-                            <label className="form-label fw-bold">Aspect Ratio</label>
+                            <label className="form-label fw-bold">
+                              Aspect Ratio
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="16:9 (landscape), 9:16 (mobile/social), 1:1 (square), 4:3 (classic TV/monitor), 3:4 (social media portrait), 21:9 (ultra-wide cinematic). More ratios available with Gen-4."
+                              ></i>
+                            </label>
                             <select
                               className="form-select"
                               value={aspectRatio}
