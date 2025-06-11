@@ -257,7 +257,13 @@ export default function RunwayAutomationApp() {
         }
 
         if (task.status === 'FAILED') {
-          throw new Error(task.failure_reason || 'Generation failed');
+          const failureReason = task.failure_reason || task.error || 'Generation failed - no specific reason provided';
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { status: 'failed', progress: 0, error: failureReason }
+          }));
+          throw new Error(failureReason);
         }
 
         await new Promise(resolve => setTimeout(resolve, 8000));
@@ -267,8 +273,12 @@ export default function RunwayAutomationApp() {
         consecutiveErrors++;
         
         // Handle permanent failures that shouldn't be retried
-        if (error.message.includes('Generation failed') && !error.message.includes('timeout') && !error.message.includes('network')) {
+        if (error.message.includes('Generation failed') && !error.message.includes('timeout') && !error.message.includes('network') && !error.message.includes('rate limit')) {
           addLog('✗ Job ' + (jobIndex + 1) + ' permanently failed: ' + error.message, 'error');
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { status: 'failed', progress: 0, error: error.message }
+          }));
           throw error;
         }
         
