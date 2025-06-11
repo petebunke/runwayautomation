@@ -615,7 +615,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '50px',
+                          height: '80px',
                           borderRadius: '20px 20px 0 0'
                         }}
                       >
@@ -626,7 +626,7 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '10px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
@@ -821,7 +821,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '50px',
+                          height: '80px',
                           borderRadius: '20px 20px 0 0'
                         }}
                       >
@@ -832,7 +832,7 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '10px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
