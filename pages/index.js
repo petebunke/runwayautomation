@@ -1,8 +1,4 @@
-                    {/* Centered header text inside blue section */}
-                    <div className="text-white text-center" style={{ marginLeft: '110px' }}>
-                      <h2 className="fw-bold mb-1">Generated Videos</h2>
-                      <p className="small mb-0">{results.length} videos generated</p>
-                    </div>import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video } from 'lucide-react';
 import Head from 'next/head';
 
@@ -996,6 +992,12 @@ export default function RunwayAutomationApp() {
                       }}
                     >
                       <Download className="text-white" size={32} />
+                    </div>
+                    
+                    {/* Centered header text inside blue section */}
+                    <div className="text-white text-center" style={{ marginLeft: '110px' }}>
+                      <h2 className="fw-bold mb-1">Generated Videos</h2>
+                      <p className="small mb-0">{results.length} videos generated</p>
                     </div>
                     
                     {/* Export button positioned in the blue header */}
