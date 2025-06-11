@@ -997,7 +997,7 @@ export default function RunwayAutomationApp() {
                     {/* Centered header text inside blue section */}
                     <div className="text-white" style={{ marginLeft: '115px', marginTop: '8px' }}>
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
-                      <p className="small mb-0">{results.length} videos generated</p>
+                      <p className="small mb-0" style={{ marginLeft: '3px' }}>{results.length} videos generated</p>
                     </div>
                     
                     {/* Export button positioned in the blue header */}
