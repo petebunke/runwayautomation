@@ -494,17 +494,18 @@ export default function RunwayAutomationApp() {
                       >
                         {/* Icon circle hanging over the blue section */}
                         <div 
-                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
                             width: '80px', 
                             height: '80px',
                             left: '30px',
                             top: '10px',
                             zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#00c7fd'
                           }}
                         >
-                          <Key className="text-primary" size={32} />
+                          <Key className="text-white" size={32} />
                         </div>
                         
                         {/* Centered header text inside blue section */}
@@ -690,17 +691,18 @@ export default function RunwayAutomationApp() {
                       >
                         {/* Icon circle hanging over the blue section */}
                         <div 
-                          className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
                             width: '80px', 
                             height: '80px',
                             left: '30px',
                             top: '10px',
                             zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#00c7fd'
                           }}
                         >
-                          <Film className="text-primary" size={32} />
+                          <Film className="text-white" size={32} />
                         </div>
                         
                         {/* Centered header text inside blue section */}
