@@ -824,14 +824,14 @@ export default function RunwayAutomationApp() {
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
-                    {/* Action button positioned in the blue header */}
-                    <div style={{ marginRight: '30px' }}>
+                 {/* Action button positioned in the blue header */}
+                    <div style={{ marginRight: '30px', paddingTop: '8px', paddingBottom: '8px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-light btn-lg shadow"
+                          className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '4px', marginBottom: '4px' }}
                         >
                           <Play size={24} className="me-2" />
                           Start Generation
@@ -840,7 +840,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '4px', marginBottom: '4px' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
