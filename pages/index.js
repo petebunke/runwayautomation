@@ -25,7 +25,15 @@ export default function RunwayAutomationApp() {
   const isValidImageUrl = (url) => {
     try {
       const urlObj = new URL(url);
-      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      const isValidProtocol = urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      const hasImageExtension = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(urlObj.pathname) || 
+                               url.includes('imgur.com') || 
+                               url.includes('googleusercontent.com') ||
+                               url.includes('amazonaws.com') ||
+                               url.includes('cloudinary.com') ||
+                               url.includes('unsplash.com') ||
+                               url.includes('pexels.com');
+      return isValidProtocol && (hasImageExtension || url.length > 20);
     } catch {
       return false;
     }
@@ -98,6 +106,19 @@ export default function RunwayAutomationApp() {
     try {
       if (!imageUrlText || !imageUrlText.trim()) {
         const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+
+      // Validate image URL format
+      if (!isValidImageUrl(imageUrlText.trim())) {
+        const errorMsg = 'Invalid image URL format. Please use a direct link to an image file (jpg, png, gif, etc.) or a supported image hosting service.';
         addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
         
         setGenerationProgress(prev => ({
@@ -479,11 +500,7 @@ export default function RunwayAutomationApp() {
     const MAX_CONCURRENT_JOBS = 20;
     const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
     
-    if (requestedJobs !== totalJobs) {
-      addLog(`⚠️ SAFETY: Requested ${requestedJobs} jobs, limited to ${totalJobs} for cost protection`, 'warning');
-    }
-    
-    if (totalJobs > MAX_CONCURRENT_JOBS) {
+    if (requestedJobs > MAX_CONCURRENT_JOBS) {
       addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
       setIsRunning(false);
       return;
@@ -499,14 +516,14 @@ export default function RunwayAutomationApp() {
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
-    addLog(`💰 Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
+    addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     
-    // Extra confirmation for large batches (10+ videos)
+    // Extra confirmation for large batches (10+ videos) - ALWAYS show popup
     if (totalJobs >= 10) {
       const confirmLargeBatch = window.confirm(
         `⚠️ COST WARNING ⚠️\n\n` +
         `You are about to generate ${totalJobs} videos.\n` +
-        `Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)}\n\n` +
+        `Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}\n\n` +
         `This will use ${totalJobs * 25}-${totalJobs * 50} credits from your RunwayML account.\n\n` +
         `Are you sure you want to proceed?`
       );
@@ -960,47 +977,10 @@ export default function RunwayAutomationApp() {
                               }}
                               style={{ borderRadius: '12px' }}
                             />
-                            <div className="form-text">
-                              <small className="text-muted">
-                                Est. cost: ${((concurrency * 0.25).toFixed(2))} - ${((concurrency * 0.75).toFixed(2))}
-                              </small>
-                            </div>
                           </div>
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">
-                            Cost Protection & Safety Features
-                            <i 
-                              className="bi bi-shield-check ms-1 text-success" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="Multiple safety measures prevent accidental large bills"
-                            ></i>
-                          </label>
-                          <ul className="small mb-3 ps-3">
-                            <li>🔒 <strong>Hard limit:</strong> Maximum 20 videos per batch</li>
-                            <li>💰 <strong>Cost estimation:</strong> Real-time cost preview</li>
-                            <li>⚠️ <strong>Confirmation:</strong> Required for 10+ videos</li>
-                            <li>🛡️ <strong>Input validation:</strong> Prevents invalid values</li>
-                          </ul>
-                          
-                          <div className="alert alert-info border-0 shadow-sm mb-3" style={{ borderRadius: '8px' }}>
-                            <div className="d-flex align-items-center">
-                              <i className="bi bi-calculator me-2"></i>
-                              <strong>Current Batch Cost Estimate</strong>
-                            </div>
-                            <div className="mt-1">
-                              <span className="fw-bold text-primary">
-                                ${((concurrency * 0.25).toFixed(2))} - ${((concurrency * 0.75).toFixed(2))}
-                              </span>
-                              <small className="text-muted ms-2">
-                                ({concurrency} video{concurrency !== 1 ? 's' : ''} × $0.25-$0.75 each)
-                              </small>
-                            </div>
-                          </div>
-                          
                           <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
@@ -1201,14 +1181,7 @@ export default function RunwayAutomationApp() {
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
-                          onClick={() => {
-                            const safeConcurrency = Math.min(Math.max(parseInt(concurrency) || 1, 1), 20);
-                            if (safeConcurrency !== concurrency) {
-                              setConcurrency(safeConcurrency);
-                              addLog(`🔒 SAFETY: Corrected concurrency to ${safeConcurrency}`, 'warning');
-                            }
-                            generateVideos();
-                          }}
+                          onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
                             borderRadius: '12px', 
