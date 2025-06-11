@@ -18,6 +18,7 @@ export default function RunwayAutomationApp() {
   const [logs, setLogs] = useState([]);
   const [generationProgress, setGenerationProgress] = useState({});
   const [imageError, setImageError] = useState(false);
+  const [videoCounter, setVideoCounter] = useState(0);
 
   const isValidImageUrl = (url) => {
     try {
@@ -175,12 +176,20 @@ export default function RunwayAutomationApp() {
           signal: AbortSignal.timeout(25000)
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Polling failed: ' + response.status);
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Failed to parse response as JSON:', parseError);
+          console.log('Raw response:', responseText.substring(0, 300));
+          throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
         }
 
-        const task = await response.json();
+        if (!response.ok) {
+          throw new Error(task.error || 'Polling failed: ' + response.status);
+        }
         consecutiveErrors = 0;
         
         if (task.status === 'THROTTLED') {
