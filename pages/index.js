@@ -42,12 +42,22 @@ export default function RunwayAutomationApp() {
   // Initialize Bootstrap tooltips
   useEffect(() => {
     if (typeof window !== 'undefined' && window.bootstrap) {
+      // Dispose existing tooltips first to prevent duplicates
+      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      existingTooltips.forEach(function (tooltipEl) {
+        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
+        if (existingTooltip) {
+          existingTooltip.dispose();
+        }
+      });
+
+      // Initialize new tooltips
       const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
       tooltipTriggerList.forEach(function (tooltipTriggerEl) {
         new window.bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
-  }, []);
+  }, [activeTab, model]); // Re-run when activeTab or model changes
 
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
