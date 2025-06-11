@@ -131,7 +131,14 @@ export default function RunwayAutomationApp() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'API Error: ' + response.status);
+        let errorMessage = errorData.error || 'API Error: ' + response.status;
+        
+        // Provide helpful guidance for common errors
+        if (errorMessage.includes('Invalid asset aspect ratio')) {
+          errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that\'s closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const task = await response.json();
@@ -773,7 +780,16 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mb-4">
-                          <label className="form-label fw-bold">Image URL</label>
+                          <label className="form-label fw-bold">
+                            Image URL
+                            <i 
+                              className="bi bi-info-circle ms-1 text-primary" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
+                            ></i>
+                          </label>
                           <input
                             type="url"
                             className="form-control form-control-lg"
