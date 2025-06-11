@@ -824,24 +824,24 @@ export default function RunwayAutomationApp() {
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
-               {/* Action button positioned in the blue header */}
-             <div style={{ marginRight: '30px', paddingTop: '20px', paddingBottom: '20px' }}>
-  {!isRunning ? (
-    <button
-      className="btn btn-success btn-lg shadow"
-      onClick={generateVideos}
-      disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-      style={{ 
-        borderRadius: '12px', 
-        fontWeight: '600', 
-        marginTop: '8px', 
-        marginBottom: '8px',
-        opacity: '1',
-        transition: 'opacity 0.2s ease-in-out'
-      }}
-      onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-      onMouseLeave={(e) => e.target.style.opacity = '1'}
-    >
+                {/* Action button positioned in the blue header */}
+                    <div style={{ marginRight: '30px', paddingTop: '20px', paddingBottom: '20px' }}>
+                      {!isRunning ? (
+                        <button
+                          className="btn btn-success btn-lg shadow"
+                          onClick={generateVideos}
+                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
+                          style={{ 
+                            borderRadius: '12px', 
+                            fontWeight: '600', 
+                            marginTop: '8px', 
+                            marginBottom: '8px',
+                            opacity: '1',
+                            transition: 'opacity 0.2s ease-in-out'
+                          }}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                          onMouseLeave={(e) => e.target.style.opacity = '1'}
+                        >
                           <Play size={24} className="me-2" />
                           Start Generation
                         </button>
@@ -855,6 +855,8 @@ export default function RunwayAutomationApp() {
                           Stop Generation
                         </button>
                       )}
+                    </div>
+                  </div>
                   
                   {/* Card content with top padding for hanging circle */}
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
