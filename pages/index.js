@@ -469,27 +469,16 @@ export default function RunwayAutomationApp() {
     try {
       addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
       
-      const response = await fetch(API_BASE + '/runway-upscale', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          taskId: videoId
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upscale API Error: ' + response.status);
-      }
-
-      const upscaleTask = await response.json();
-      addLog('✓ 4K upscale started for ' + videoTitle + ' (Task ID: ' + upscaleTask.id + ')', 'success');
+      // Note: This would need to be implemented with RunwayML's upscale API
+      // For now, we'll show a placeholder message
+      addLog('⚠️ 4K upscaling is not yet implemented in the API. This feature would require RunwayML to add upscaling to their API endpoints.', 'warning');
       
-      // Note: You might want to add polling for upscale completion similar to video generation
-      addLog('💡 4K upscale is processing. Check your RunwayML dashboard for completion status.', 'info');
+      // Placeholder for future API call:
+      // const response = await fetch(API_BASE + '/runway-upscale', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ apiKey: runwayApiKey, taskId: videoId })
+      // });
       
     } catch (error) {
       addLog('❌ 4K upscale failed: ' + error.message, 'error');
