@@ -91,6 +91,7 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
+  // Improved generateVideo function with better error handling
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
@@ -131,35 +132,71 @@ export default function RunwayAutomationApp() {
         seed: Math.floor(Math.random() * 1000000)
       };
 
-      const response = await fetch(API_BASE + '/runway-generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          payload: payload
-        })
-      });
+      // Add retry logic for initial API call
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const response = await fetch(API_BASE + '/runway-generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: runwayApiKey,
+              payload: payload
+            }),
+            signal: AbortSignal.timeout(45000) // 45 second timeout for initial request
+          });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        let errorMessage = errorData.error || 'API Error: ' + response.status;
-        
-        // Provide helpful guidance for common errors
-        if (errorMessage.includes('Invalid asset aspect ratio')) {
-          errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that\'s closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
+          if (!response.ok) {
+            const errorData = await response.json();
+            let errorMessage = errorData.error || 'API Error: ' + response.status;
+            
+            // Handle retryable errors
+            if (response.status === 429 || response.status >= 500) {
+              if (retryCount < maxRetries) {
+                const retryDelay = (retryCount + 1) * 10000; // 10, 20, 30 seconds
+                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                retryCount++;
+                continue;
+              }
+            }
+            
+            // Provide helpful guidance for common errors
+            if (errorMessage.includes('Invalid asset aspect ratio')) {
+              errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that\'s closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
+            }
+            
+            throw new Error(errorMessage);
+          }
+
+          const task = await response.json();
+          
+          addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
+          
+          return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
+          
+        } catch (fetchError) {
+          if (retryCount < maxRetries && (
+            fetchError.name === 'AbortError' || 
+            fetchError.message.includes('fetch') ||
+            fetchError.message.includes('network')
+          )) {
+            const retryDelay = (retryCount + 1) * 5000; // 5, 10, 15 seconds
+            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            retryCount++;
+            continue;
+          }
+          throw fetchError;
         }
-        
-        throw new Error(errorMessage);
       }
-
-      const task = await response.json();
       
-      addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
-      
-      return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
-      
+      throw new Error(`Failed to start generation after ${maxRetries} retries`);
+        
     } catch (error) {
       addLog('✗ Job ' + (jobIndex + 1) + ' failed: ' + error.message, 'error');
       setGenerationProgress(prev => ({
@@ -170,22 +207,29 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Improved polling logic with better error handling and backoff
   const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
-    const maxPolls = Math.floor(1800 / 8);
+    const maxPolls = Math.floor(2400 / 12); // 40 minutes total with 12s intervals
     let pollCount = 0;
     let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 5;
+    const maxConsecutiveErrors = 3; // Reduced from 5
     let isThrottled = false;
     let throttledStartTime = null;
+    let lastKnownStatus = 'unknown';
+    let stuckInPendingCount = 0;
+    const maxStuckInPending = 10; // If stuck in PENDING for 10 polls (2 minutes), increase backoff
 
     while (pollCount < maxPolls) {
       try {
+        // Dynamic timeout based on consecutive errors and throttling
+        const timeoutMs = consecutiveErrors > 0 ? 45000 : (isThrottled ? 60000 : 30000);
+        
         const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          signal: AbortSignal.timeout(25000)
+          signal: AbortSignal.timeout(timeoutMs)
         });
 
         const responseText = await response.text();
@@ -196,14 +240,48 @@ export default function RunwayAutomationApp() {
         } catch (parseError) {
           console.error('Failed to parse response as JSON:', parseError);
           console.log('Raw response:', responseText.substring(0, 300));
+          
+          // If we get invalid JSON, it might be a server error - treat as retryable
+          if (consecutiveErrors < maxConsecutiveErrors) {
+            consecutiveErrors++;
+            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 15000 + (consecutiveErrors * 5000)));
+            pollCount++;
+            continue;
+          }
+          
           throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
         }
 
+        // Handle HTTP errors
         if (!response.ok) {
+          if (response.status === 429) {
+            // Rate limited - back off more aggressively
+            const backoffTime = 30000 + (consecutiveErrors * 15000); // 30s + escalating backoff
+            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${backoffTime/1000}s...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+            consecutiveErrors++;
+            pollCount++;
+            continue;
+          } else if (response.status >= 500) {
+            // Server error - treat as retryable
+            consecutiveErrors++;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
+            }
+            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 20000 + (consecutiveErrors * 10000)));
+            pollCount++;
+            continue;
+          }
+          
           throw new Error(task.error || 'Polling failed: ' + response.status);
         }
+        
+        // Reset consecutive errors on successful response
         consecutiveErrors = 0;
         
+        // Handle THROTTLED status
         if (task.status === 'THROTTLED') {
           if (!isThrottled) {
             isThrottled = true;
@@ -221,27 +299,53 @@ export default function RunwayAutomationApp() {
             }
           }));
           
-          if (throttledDuration > 0 && throttledDuration % 60 === 0) {
+          // Log every 2 minutes instead of every minute for throttled jobs
+          if (throttledDuration > 0 && throttledDuration % 120 === 0) {
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
-          await new Promise(resolve => setTimeout(resolve, 12000));
+          // Use longer polling interval for throttled jobs
+          await new Promise(resolve => setTimeout(resolve, 20000)); // 20 seconds instead of 12
           pollCount++;
           continue;
         }
         
+        // Handle transition from THROTTLED to other states
         if (isThrottled && task.status !== 'THROTTLED') {
           const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
           addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + queueTime + 's in queue', 'info');
           isThrottled = false;
+          stuckInPendingCount = 0; // Reset pending counter
         }
         
+        // Handle jobs stuck in PENDING
+        if (task.status === 'PENDING') {
+          if (lastKnownStatus === 'PENDING') {
+            stuckInPendingCount++;
+          } else {
+            stuckInPendingCount = 1;
+          }
+          
+          // If stuck in PENDING for too long, increase polling interval
+          if (stuckInPendingCount >= maxStuckInPending) {
+            addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING, using longer polling interval...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 30000)); // 30 seconds for stuck jobs
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 15000)); // 15 seconds for normal PENDING
+          }
+        } else {
+          stuckInPendingCount = 0; // Reset if not pending
+        }
+        
+        lastKnownStatus = task.status;
+        
+        // Calculate progress
         let progress = 10;
         if (task.status === 'PENDING') {
-          progress = 20;
+          progress = 20 + Math.min(stuckInPendingCount * 2, 20); // Slowly increase progress for stuck jobs
         } else if (task.status === 'RUNNING') {
           const runningTime = Math.max(0, pollCount - 5);
-          progress = Math.min(30 + (runningTime * 3), 90);
+          progress = Math.min(40 + (runningTime * 2), 90); // Slower progress increase
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
         }
@@ -251,10 +355,13 @@ export default function RunwayAutomationApp() {
           [jobId]: { 
             status: task.status.toLowerCase(), 
             progress: progress,
-            message: task.status === 'RUNNING' ? 'Processing...' : task.status.toLowerCase()
+            message: task.status === 'RUNNING' ? 'Processing...' : 
+                    task.status === 'PENDING' && stuckInPendingCount > 5 ? 'Processing (high load)...' :
+                    task.status.toLowerCase()
           }
         }));
 
+        // Handle completion
         if (task.status === 'SUCCEEDED') {
           addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully', 'success');
           
@@ -271,13 +378,14 @@ export default function RunwayAutomationApp() {
             image_url: imageUrlText,
             status: 'completed',
             created_at: new Date().toISOString(),
-            jobId: jobId // Store the generation info
+            jobId: jobId
           };
 
           setResults(prev => [...prev, completedVideo]);
           return completedVideo;
         }
 
+        // Handle failure
         if (task.status === 'FAILED') {
           const failureReason = task.failure_reason || task.error || 'Generation failed - no specific reason provided';
           addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
@@ -288,14 +396,24 @@ export default function RunwayAutomationApp() {
           throw new Error(failureReason);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 8000));
+        // Use dynamic polling interval based on status
+        const pollInterval = 
+          task.status === 'PENDING' && stuckInPendingCount > 5 ? 25000 : // Longer for stuck jobs
+          task.status === 'RUNNING' ? 10000 : // Faster for running jobs
+          12000; // Default
+        
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
         pollCount++;
         
       } catch (error) {
         consecutiveErrors++;
         
         // Handle permanent failures that shouldn't be retried
-        if (error.message.includes('Generation failed') && !error.message.includes('timeout') && !error.message.includes('network') && !error.message.includes('rate limit')) {
+        if (error.message.includes('Generation failed') && 
+            !error.message.includes('timeout') && 
+            !error.message.includes('network') && 
+            !error.message.includes('rate limit') &&
+            !error.message.includes('server error')) {
           addLog('✗ Job ' + (jobIndex + 1) + ' permanently failed: ' + error.message, 'error');
           setGenerationProgress(prev => ({
             ...prev,
@@ -304,13 +422,14 @@ export default function RunwayAutomationApp() {
           throw error;
         }
         
+        // Categorize errors and handle accordingly
         if (error.name === 'AbortError' || error.name === 'TimeoutError') {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('429') || error.message.includes('rate limit')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
-          await new Promise(resolve => setTimeout(resolve, 15000));
+          await new Promise(resolve => setTimeout(resolve, 60000)); // 1 minute for rate limits
         } else {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         }
@@ -321,24 +440,27 @@ export default function RunwayAutomationApp() {
           throw new Error(finalError);
         }
         
-        const backoffDelay = Math.min(10000 + (consecutiveErrors * 5000), 30000);
+        // Exponential backoff with jitter
+        const baseDelay = 15000;
+        const maxDelay = 120000; // 2 minutes max
+        const jitter = Math.random() * 5000; // Add randomness to prevent thundering herd
+        const backoffDelay = Math.min(baseDelay * Math.pow(1.5, consecutiveErrors) + jitter, maxDelay);
+        
+        addLog(`⏳ Job ${jobIndex + 1} waiting ${Math.round(backoffDelay/1000)}s before retry...`, 'info');
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
         pollCount++;
       }
     }
 
-    const totalTime = Math.floor((pollCount * 8) / 60);
+    const totalTime = Math.floor((pollCount * 12) / 60);
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
+  // Improved generation logic - let RunwayML handle tier-based throttling
   const generateVideos = async () => {
     setIsRunning(true);
-    // Don't clear previous results or generation progress - keep accumulating them
-    // setResults([]);
     setLogs([]);
-    // setGenerationProgress({});
     
-    // Increment generation counter for this new batch
     const currentGeneration = generationCounter + 1;
     setGenerationCounter(currentGeneration);
     
@@ -363,21 +485,70 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    const totalJobs = concurrency;
+    // SAFETY CHECK: Prevent massive API costs
+    const requestedJobs = parseInt(concurrency) || 1;
+    const MAX_CONCURRENT_JOBS = 20;
+    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
+    
+    if (requestedJobs !== totalJobs) {
+      addLog(`⚠️ SAFETY: Requested ${requestedJobs} jobs, limited to ${totalJobs} for cost protection`, 'warning');
+    }
+    
+    if (totalJobs > MAX_CONCURRENT_JOBS) {
+      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
+      setIsRunning(false);
+      return;
+    }
+    
+    // Additional safety check for reasonable values
+    if (isNaN(totalJobs) || totalJobs < 1) {
+      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
+      const safeJobs = 1;
+      addLog(`🔒 SAFETY: Generating ${safeJobs} video for cost protection`, 'info');
+    }
+    
+    // Cost estimation and user confirmation for larger batches
+    const estimatedCostMin = totalJobs * 0.25; // $0.25 minimum per video
+    const estimatedCostMax = totalJobs * 0.75; // $0.75 maximum per video (10s videos)
+    
+    addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
+    
+    // Extra confirmation for large batches (10+ videos)
+    if (totalJobs >= 10) {
+      const confirmLargeBatch = window.confirm(
+        `⚠️ COST WARNING ⚠️\n\n` +
+        `You are about to generate ${totalJobs} videos.\n` +
+        `Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}\n\n` +
+        `This will use ${totalJobs * 25}-${totalJobs * 50} credits from your RunwayML account.\n\n` +
+        `Are you sure you want to proceed?`
+      );
+      
+      if (!confirmLargeBatch) {
+        addLog('🛑 Generation cancelled by user (cost protection)', 'warning');
+        setIsRunning(false);
+        return;
+      }
+      
+      addLog('✅ User confirmed large batch generation', 'info');
+    }
+
     addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
+    addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
 
     const batchResults = [];
     const errors = [];
 
     // Create all video generation promises at once for true concurrency
+    // Let RunwayML API handle the throttling based on user's tier
     const allPromises = [];
     
     for (let i = 0; i < totalJobs; i++) {
       const jobIndex = i;
       const currentVideoNumber = i + 1;
       
-      // Add a small staggered delay only for the initial API calls to prevent overwhelming the server
+      // Light staggering (1-2 seconds) to prevent overwhelming the server with simultaneous requests
+      // This is just to be nice to the API, not to limit concurrency
       const staggerDelay = i * 1000; // 1 second between each initial request
       
       const delayedPromise = new Promise(async (resolve) => {
@@ -390,7 +561,7 @@ export default function RunwayAutomationApp() {
           const result = await generateVideo(prompt, imageUrl, jobIndex, currentGeneration, currentVideoNumber);
           resolve({ status: 'fulfilled', value: result });
         } catch (error) {
-          resolve({ status: 'rejected', reason: error });
+          resolve({ status: 'rejected', reason: error, jobIndex });
         }
       });
       
@@ -398,9 +569,11 @@ export default function RunwayAutomationApp() {
     }
 
     addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
+    addLog('⚡ RunwayML will automatically queue jobs beyond your tier limit', 'info');
 
     try {
       // Wait for all promises to complete (truly concurrent processing)
+      // RunwayML API will handle queuing based on the user's tier limits
       const allResults = await Promise.all(allPromises);
       
       allResults.forEach((result) => {
@@ -419,11 +592,26 @@ export default function RunwayAutomationApp() {
     // Update the video counter for the next batch
     setVideoCounter(prev => prev + totalJobs);
 
-    addLog('🎬 Generation completed! ✅ ' + batchResults.length + (batchResults.length === 1 ? ' video' : ' videos') + ' generated, ❌ ' + errors.length + ' failed', 
-           batchResults.length > 0 ? 'success' : 'error');
+    const successCount = batchResults.length;
+    addLog('🎬 Generation completed! ✅ ' + successCount + (successCount === 1 ? ' video' : ' videos') + ' generated, ❌ ' + errors.length + ' failed', 
+           successCount > 0 ? 'success' : 'error');
     
     if (errors.length > 0) {
-      addLog('⚠️ Failed jobs: ' + errors.map(e => e.message).join(', '), 'warning');
+      // Group similar errors for better readability
+      const errorCounts = {};
+      errors.forEach(e => {
+        const errorType = e.message.includes('timeout') ? 'Generation timeout' :
+                        e.message.includes('rate limit') ? 'Rate limit' :
+                        e.message.includes('failed') ? 'Generation failed' :
+                        e.message.split(':')[0] || e.message;
+        errorCounts[errorType] = (errorCounts[errorType] || 0) + 1;
+      });
+      
+      const errorSummary = Object.entries(errorCounts)
+        .map(([error, count]) => `${error} (${count}x)`)
+        .join(', ');
+      
+      addLog('⚠️ Failed jobs: ' + errorSummary, 'warning');
     }
 
     setIsRunning(false);
@@ -792,7 +980,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
+                                title="Number of videos to generate simultaneously using the same prompt and image. Maximum 20 for cost protection."
                               ></i>
                             </label>
                             <input
@@ -803,16 +991,58 @@ export default function RunwayAutomationApp() {
                               value={concurrency}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value) || 1;
-                                setConcurrency(Math.min(Math.max(value, 1), 20));
+                                const safeValue = Math.min(Math.max(value, 1), 20);
+                                setConcurrency(safeValue);
+                                
+                                // Show warning if user tries to enter more than 20
+                                if (value > 20) {
+                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
+                                }
                               }}
                               style={{ borderRadius: '12px' }}
                             />
+                            <div className="form-text">
+                              <small className="text-muted">
+                                Est. cost: ${((concurrency * 0.25).toFixed(2))} - ${((concurrency * 0.75).toFixed(2))}
+                              </small>
+                            </div>
                           </div>
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
                           <label className="form-label fw-bold mb-2">
-                            Video Generation Limits by Tier
+                            Cost Protection & Safety Features
+                            <i 
+                              className="bi bi-shield-check ms-1 text-success" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="Multiple safety measures prevent accidental large bills"
+                            ></i>
+                          </label>
+                          <ul className="small mb-3 ps-3">
+                            <li>🔒 <strong>Hard limit:</strong> Maximum 20 videos per batch</li>
+                            <li>💰 <strong>Cost estimation:</strong> Real-time cost preview</li>
+                            <li>⚠️ <strong>Confirmation:</strong> Required for 10+ videos</li>
+                            <li>🛡️ <strong>Input validation:</strong> Prevents invalid values</li>
+                          </ul>
+                          
+                          <div className="alert alert-info border-0 shadow-sm mb-3" style={{ borderRadius: '8px' }}>
+                            <div className="d-flex align-items-center">
+                              <i className="bi bi-calculator me-2"></i>
+                              <strong>Current Batch Cost Estimate</strong>
+                            </div>
+                            <div className="mt-1">
+                              <span className="fw-bold text-primary">
+                                ${((concurrency * 0.25).toFixed(2))} - ${((concurrency * 0.75).toFixed(2))}
+                              </span>
+                              <small className="text-muted ms-2">
+                                ({concurrency} video{concurrency !== 1 ? 's' : ''} × $0.25-$0.75 each)
+                              </small>
+                            </div>
+                          </div>
+                          
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
                             <i 
                               className="bi bi-info-circle ms-1 text-primary" 
                               style={{ cursor: 'help' }}
@@ -1029,8 +1259,16 @@ export default function RunwayAutomationApp() {
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
-                          onClick={generateVideos}
-                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
+                          onClick={() => {
+                            // Final safety check before generation
+                            const safeConcurrency = Math.min(Math.max(parseInt(concurrency) || 1, 1), 20);
+                            if (safeConcurrency !== concurrency) {
+                              setConcurrency(safeConcurrency);
+                              addLog(`🔒 SAFETY: Corrected concurrency to ${safeConcurrency}`, 'warning');
+                            }
+                            generateVideos();
+                          }}
+                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
                             borderRadius: '12px', 
                             fontWeight: '600', 
@@ -1046,6 +1284,11 @@ export default function RunwayAutomationApp() {
                         >
                           <Play size={24} className="me-2" />
                           Start Generation
+                          {concurrency > 1 && (
+                            <span className="ms-2 badge bg-light text-dark">
+                              {concurrency} videos
+                            </span>
+                          )}
                         </button>
                       ) : (
                         <button
