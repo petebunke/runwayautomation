@@ -79,8 +79,8 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
-  const generateVideo = async (promptText, imageUrlText, jobIndex = 0) => {
-    const jobId = 'job_' + jobIndex + '_' + Date.now();
+  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, videoNumber) => {
+    const jobId = 'Video ' + videoNumber;
     
     try {
       if (!imageUrlText || !imageUrlText.trim()) {
@@ -358,6 +358,7 @@ export default function RunwayAutomationApp() {
       
       for (let j = 0; j < concurrency && (i + j) < totalJobs; j++) {
         const jobIndex = i + j;
+        const currentVideoNumber = videoCounter + jobIndex + 1;
         
         if (jobIndex > 0) {
           const waitTime = Math.random() * (maxWait - minWait) + minWait + 2;
@@ -365,7 +366,7 @@ export default function RunwayAutomationApp() {
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
         }
         
-        batch.push(generateVideo(prompt, imageUrl, jobIndex));
+        batch.push(generateVideo(prompt, imageUrl, jobIndex, currentVideoNumber));
       }
 
       try {
@@ -384,6 +385,9 @@ export default function RunwayAutomationApp() {
         errors.push(error);
       }
     }
+
+    // Update the video counter for the next batch
+    setVideoCounter(prev => prev + totalJobs);
 
     addLog('🎬 Generation completed! ✅ ' + batchResults.length + (batchResults.length === 1 ? ' video' : ' videos') + ' generated, ❌ ' + errors.length + ' failed', 
            batchResults.length > 0 ? 'success' : 'error');
