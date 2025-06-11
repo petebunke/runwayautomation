@@ -1127,7 +1127,8 @@ export default function RunwayAutomationApp() {
                               </div>
                               
                               <div className="card-body p-3">
-                                <h6 className="card-title fw-bold text-truncate mb-3" title={result.prompt}>
+                                <div className="fw-bold text-primary mb-2">Video {index + 1}</div>
+                                <h6 className="card-title fw-bold mb-3" title={result.prompt}>
                                   {result.prompt}
                                 </h6>
                                 
