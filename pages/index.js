@@ -498,7 +498,7 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             width: '80px', 
                             height: '80px',
-                            left: '30px',
+                            left: '20px',
                             top: '10px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
