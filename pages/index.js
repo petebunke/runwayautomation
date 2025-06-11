@@ -823,7 +823,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     {/* Centered header text inside blue section */}
-                    <div className="text-white text-center" style={{ marginLeft: '110px' }}>
+                    <div className="text-white text-center" style={{ marginLeft: '120px' }}>
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
@@ -995,7 +995,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     {/* Centered header text inside blue section */}
-                    <div className="text-white" style={{ marginLeft: '110px', marginTop: '8px' }}>
+                    <div className="text-white" style={{ marginLeft: '120px', marginTop: '8px' }}>
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
                       <p className="small mb-0">{results.length} videos generated</p>
                     </div>
