@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+                    {/* Centered header text inside blue section */}
+                    <div className="text-white text-center" style={{ marginLeft: '110px' }}>
+                      <h2 className="fw-bold mb-1">Generated Videos</h2>
+                      <p className="small mb-0">{results.length} videos generated</p>
+                    </div>import React, { useState, useEffect } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video } from 'lucide-react';
 import Head from 'next/head';
 
@@ -980,14 +984,15 @@ export default function RunwayAutomationApp() {
                   >
                     {/* Icon circle hanging over the blue section */}
                     <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center shadow"
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
                         width: '80px', 
                         height: '80px',
                         left: '30px',
                         top: '40px',
                         zIndex: 10,
-                        backgroundColor: '#4dd0ff'
+                        backgroundColor: '#4dd0ff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                       }}
                     >
                       <Download className="text-white" size={32} />
@@ -1010,9 +1015,7 @@ export default function RunwayAutomationApp() {
                   
                   {/* Card content with top padding for hanging circle */}
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4" style={{ marginLeft: '100px' }}>
-                      <h2 className="fw-bold mb-1">Generated Videos</h2>
-                      <p className="text-muted small mb-0">{results.length} videos generated</p>
+                    <div className="mb-4">
                     </div>
                     {results.length === 0 ? (
                       <div className="text-center py-5">
