@@ -502,7 +502,7 @@ export default function RunwayAutomationApp() {
                             top: '10px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#00c7fd'
+                            backgroundColor: '#4dd0ff'
                           }}
                         >
                           <Key className="text-white" size={32} />
@@ -699,7 +699,7 @@ export default function RunwayAutomationApp() {
                             top: '10px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#00c7fd'
+                            backgroundColor: '#4dd0ff'
                           }}
                         >
                           <Film className="text-white" size={32} />
@@ -808,17 +808,18 @@ export default function RunwayAutomationApp() {
                   >
                     {/* Icon circle hanging over the blue section */}
                     <div 
-                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
                         width: '80px', 
                         height: '80px',
                         left: '30px',
                         top: '40px',
                         zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        backgroundColor: '#4dd0ff'
                       }}
                     >
-                      <Video className="text-primary" size={32} />
+                      <Video className="text-white" size={32} />
                     </div>
                     
                     {/* Centered header text inside blue section */}
@@ -979,16 +980,17 @@ export default function RunwayAutomationApp() {
                   >
                     {/* Icon circle hanging over the blue section */}
                     <div 
-                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center shadow"
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center shadow"
                       style={{ 
                         width: '60px', 
                         height: '60px',
                         left: '30px',
                         top: '50px',
-                        zIndex: 10
+                        zIndex: 10,
+                        backgroundColor: '#00c7fd'
                       }}
                     >
-                      <Download className="text-primary" size={28} />
+                      <Download className="text-white" size={28} />
                     </div>
                     
                     {/* Export button positioned in the blue header */}
