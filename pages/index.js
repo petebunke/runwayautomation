@@ -20,6 +20,7 @@ export default function RunwayAutomationApp() {
   const [imageError, setImageError] = useState(false);
   const [videoCounter, setVideoCounter] = useState(0);
   const [generationCounter, setGenerationCounter] = useState(0);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   const isValidImageUrl = (url) => {
     try {
@@ -433,6 +434,61 @@ export default function RunwayAutomationApp() {
     } catch (error) {
       addLog('❌ Download failed: ' + error.message, 'error');
     }
+  };
+
+  const downloadAllVideos = async () => {
+    setIsDownloadingAll(true);
+    
+    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
+    
+    if (videosWithUrls.length === 0) {
+      addLog('❌ No completed videos available for download', 'error');
+      setIsDownloadingAll(false);
+      return;
+    }
+
+    addLog('📦 Starting download of ' + videosWithUrls.length + ' videos...', 'info');
+
+    const downloadPromises = videosWithUrls.map(async (result, index) => {
+      const filename = 'runway_video_' + (index + 1) + '_' + result.id + '.mp4';
+      
+      try {
+        const response = await fetch(result.video_url);
+        const blob = await response.blob();
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        
+        document.body.appendChild(a);
+        a.click();
+        
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Small delay between downloads to prevent browser blocking
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        return filename;
+      } catch (error) {
+        addLog('❌ Failed to download video ' + (index + 1) + ': ' + error.message, 'error');
+        throw error;
+      }
+    });
+
+    try {
+      const downloadedFiles = await Promise.allSettled(downloadPromises);
+      const successful = downloadedFiles.filter(result => result.status === 'fulfilled').length;
+      const failed = downloadedFiles.filter(result => result.status === 'rejected').length;
+      
+      addLog('✅ Download complete! ' + successful + ' videos downloaded successfully' + (failed > 0 ? ', ' + failed + ' failed' : ''), 'success');
+    } catch (error) {
+      addLog('❌ Batch download error: ' + error.message, 'error');
+    }
+
+    setIsDownloadingAll(false);
   };
 
   const exportResults = () => {
@@ -1089,16 +1145,28 @@ export default function RunwayAutomationApp() {
                       <p className="small mb-0" style={{ marginLeft: '3px' }}>{results.length} {results.length === 1 ? 'video' : 'videos'} generated</p>
                     </div>
                     
-                    {/* Export button positioned in the blue header */}
-                    {results.length > 0 && (
+                    {/* Download All Videos button positioned in the blue header */}
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
                       <div className="position-absolute" style={{ right: '30px', top: '20px' }}>
                         <button
                           className="btn btn-light shadow"
-                          onClick={exportResults}
+                          onClick={downloadAllVideos}
+                          disabled={isDownloadingAll}
                           style={{ borderRadius: '12px', fontWeight: '600' }}
                         >
-                          <Download size={20} className="me-2" />
-                          Export Results
+                          {isDownloadingAll ? (
+                            <>
+                              <div className="spinner-border spinner-border-sm me-2" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                              </div>
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <Download size={20} className="me-2" />
+                              Download All Videos
+                            </>
+                          )}
                         </button>
                       </div>
                     )}
