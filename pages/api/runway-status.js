@@ -1,4 +1,4 @@
-// /pages/api/runway-status.js (Vercel serverless function)
+// /pages/api/runway-status.js (Enhanced version)
 // This file handles task status polling requests to RunwayML API
 
 export default async function handler(req, res) {
@@ -32,15 +32,21 @@ export default async function handler(req, res) {
 
     console.log('Checking status for task:', taskId);
 
-    // Make request to RunwayML API with correct endpoint
+    // Make request to RunwayML API with correct endpoint and longer timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const response = await fetch(`https://api.dev.runwayml.com/v1/tasks/${taskId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'X-Runway-Version': '2024-11-06'
-      }
+      },
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const responseText = await response.text();
     console.log('Status response:', responseText.substring(0, 300));
@@ -53,7 +59,8 @@ export default async function handler(req, res) {
       return res.status(502).json({
         error: 'Invalid response from RunwayML API',
         message: 'The API returned an unexpected response format',
-        rawResponse: responseText.substring(0, 200)
+        rawResponse: responseText.substring(0, 200),
+        taskId: taskId
       });
     }
 
@@ -76,6 +83,23 @@ export default async function handler(req, res) {
         });
       }
 
+      if (response.status === 429) {
+        return res.status(429).json({
+          error: 'Rate limit exceeded',
+          message: 'Too many requests. Please wait before trying again.',
+          retryAfter: response.headers.get('Retry-After') || '60'
+        });
+      }
+
+      if (response.status >= 500) {
+        return res.status(response.status).json({
+          error: 'RunwayML server error',
+          message: 'RunwayML API is experiencing issues. This is usually temporary.',
+          status: response.status,
+          retryable: true
+        });
+      }
+
       return res.status(response.status).json({
         error: data.error || 'RunwayML API error',
         details: data,
@@ -91,26 +115,29 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Status polling error:', error);
     
+    // Handle specific error types
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ 
+        error: 'Request timeout',
+        message: 'RunwayML API took too long to respond (30s)',
+        retryable: true
+      });
+    }
+    
     // Handle network errors
     if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       return res.status(503).json({ 
         error: 'Unable to connect to RunwayML API',
-        message: 'Please check your internet connection and try again'
-      });
-    }
-
-    // Handle timeout errors
-    if (error.code === 'ETIMEDOUT') {
-      return res.status(504).json({ 
-        error: 'Request timeout',
-        message: 'RunwayML API took too long to respond'
+        message: 'Please check your internet connection and try again',
+        retryable: true
       });
     }
 
     // Handle other errors
     res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message 
+      message: error.message,
+      retryable: true
     });
   }
 }
