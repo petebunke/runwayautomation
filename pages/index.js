@@ -695,7 +695,7 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             width: '80px', 
                             height: '80px',
-                            left: '30px',
+                            left: '20px',
                             top: '10px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -812,7 +812,7 @@ export default function RunwayAutomationApp() {
                       style={{ 
                         width: '80px', 
                         height: '80px',
-                        left: '30px',
+                        left: '20px',
                         top: '40px',
                         zIndex: 10,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -823,7 +823,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     {/* Centered header text inside blue section */}
-                    <div className="text-white text-center" style={{ marginLeft: '115px' }}>
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
@@ -984,7 +984,7 @@ export default function RunwayAutomationApp() {
                       style={{ 
                         width: '80px', 
                         height: '80px',
-                        left: '30px',
+                        left: '20px',
                         top: '40px',
                         zIndex: 10,
                         backgroundColor: '#4dd0ff',
@@ -995,7 +995,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     {/* Centered header text inside blue section */}
-                    <div className="text-white" style={{ marginLeft: '115px', marginTop: '8px' }}>
+                    <div className="text-white" style={{ marginLeft: '105px', marginTop: '8px' }}>
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
                       <p className="small mb-0" style={{ marginLeft: '3px' }}>{results.length} videos generated</p>
                     </div>
