@@ -823,7 +823,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     {/* Centered header text inside blue section */}
-                    <div className="text-white text-center flex-grow-1">
+                    <div className="text-white text-center" style={{ marginLeft: '110px' }}>
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
