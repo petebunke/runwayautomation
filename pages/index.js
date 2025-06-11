@@ -465,6 +465,26 @@ export default function RunwayAutomationApp() {
     addLog('📊 Results exported to JSON', 'success');
   };
 
+  const upscaleVideo = async (videoId, videoTitle) => {
+    try {
+      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
+      
+      // Note: This would need to be implemented with RunwayML's upscale API
+      // For now, we'll show a placeholder message
+      addLog('⚠️ 4K upscaling is not yet implemented in the API. This feature would require RunwayML to add upscaling to their API endpoints.', 'warning');
+      
+      // Placeholder for future API call:
+      // const response = await fetch(API_BASE + '/runway-upscale', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ apiKey: runwayApiKey, taskId: videoId })
+      // });
+      
+    } catch (error) {
+      addLog('❌ 4K upscale failed: ' + error.message, 'error');
+    }
+  };
+
   return (
     <>
       <Head>
@@ -1167,6 +1187,20 @@ export default function RunwayAutomationApp() {
                                       >
                                         <ExternalLink size={16} className="me-1" />
                                         View
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => upscaleVideo(result.id, result.jobId)}
+                                        title="Upscale to 4K (requires RunwayML API support)"
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1">
+                                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                          <polyline points="7.5 4.21,12 6.81,16.5 4.21"/>
+                                          <polyline points="7.5 19.79,7.5 14.6,3 12"/>
+                                          <polyline points="21 12,16.5 14.6,16.5 19.79"/>
+                                          <polyline points="12 22.81,12 17"/>
+                                        </svg>
+                                        4K
                                       </button>
                                     </div>
                                   )}
