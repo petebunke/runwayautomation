@@ -295,7 +295,8 @@ export default function RunwayAutomationApp() {
 
   const generateVideos = async () => {
     setIsRunning(true);
-    setResults([]);
+    // Don't clear previous results - keep accumulating them
+    // setResults([]);
     setLogs([]);
     setGenerationProgress({});
     
@@ -324,7 +325,7 @@ export default function RunwayAutomationApp() {
     addLog('📊 Processing ' + totalJobs + ' video generations using the same prompt and image...', 'info');
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
 
-    const results = [];
+    const batchResults = [];
     const errors = [];
 
     for (let i = 0; i < totalJobs; i += concurrency) {
@@ -347,7 +348,7 @@ export default function RunwayAutomationApp() {
         
         batchResults.forEach((result, index) => {
           if (result.status === 'fulfilled') {
-            results.push(result.value);
+            batchResults.push(result.value);
           } else {
             errors.push(result.reason);
           }
@@ -359,8 +360,8 @@ export default function RunwayAutomationApp() {
       }
     }
 
-    addLog('🎬 Generation completed! ✅ ' + results.length + ' videos generated, ❌ ' + errors.length + ' failed', 
-           results.length > 0 ? 'success' : 'error');
+    addLog('🎬 Generation completed! ✅ ' + batchResults.length + ' videos generated, ❌ ' + errors.length + ' failed', 
+           batchResults.length > 0 ? 'success' : 'error');
     
     if (errors.length > 0) {
       addLog('⚠️ Failed jobs: ' + errors.map(e => e.message).join(', '), 'warning');
