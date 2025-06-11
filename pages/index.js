@@ -350,9 +350,9 @@ export default function RunwayAutomationApp() {
       }
 
       try {
-        const batchResults = await Promise.allSettled(batch);
+        const batchResultsArray = await Promise.allSettled(batch);
         
-        batchResults.forEach((result, index) => {
+        batchResultsArray.forEach((result, index) => {
           if (result.status === 'fulfilled') {
             batchResults.push(result.value);
           } else {
@@ -1037,7 +1037,7 @@ export default function RunwayAutomationApp() {
                     {/* Centered header text inside blue section */}
                     <div className="text-white" style={{ marginLeft: '105px', marginTop: '8px' }}>
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
-                      <p className="small mb-0" style={{ marginLeft: '3px' }}>{results.length} videos generated</p>
+                      <p className="small mb-0" style={{ marginLeft: '3px' }}>{results.length} {results.length === 1 ? 'video' : 'videos'} generated</p>
                     </div>
                     
                     {/* Export button positioned in the blue header */}
@@ -1123,17 +1123,14 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="small text-muted mb-3">
                                   <div className="d-flex justify-content-between mb-1">
-                                    <span>Task ID:</span>
                                     <span className="font-monospace small">{result.id}</span>
                                   </div>
                                   <div className="d-flex justify-content-between mb-1">
-                                    <span>Created:</span>
                                     <span>{new Date(result.created_at).toLocaleString()}</span>
                                   </div>
                                   {result.image_url && (
                                     <div className="d-flex justify-content-between">
-                                      <span>Source Image:</span>
-                                      <span className="text-primary">✓ Provided</span>
+                                      <span className="text-primary">✓ Image provided</span>
                                     </div>
                                   )}
                                 </div>
