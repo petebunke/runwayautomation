@@ -266,6 +266,12 @@ export default function RunwayAutomationApp() {
       } catch (error) {
         consecutiveErrors++;
         
+        // Handle permanent failures that shouldn't be retried
+        if (error.message.includes('Generation failed') && !error.message.includes('timeout') && !error.message.includes('network')) {
+          addLog('✗ Job ' + (jobIndex + 1) + ' permanently failed: ' + error.message, 'error');
+          throw error;
+        }
+        
         if (error.name === 'AbortError' || error.name === 'TimeoutError') {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
