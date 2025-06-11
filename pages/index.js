@@ -851,7 +851,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '8px', marginBottom: '8px' }}
+                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '20px', marginBottom: '20px' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
