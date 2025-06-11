@@ -1247,13 +1247,13 @@ export default function RunwayAutomationApp() {
                                   </div>
                                 )}
                                 
-                                <div className="position-absolute top-0 start-0 m-3">
-                                  <span className={`badge ${
-                                    result.status === 'completed' ? 'bg-success' : 'bg-warning'
-                                  } shadow-sm`}>
-                                    {result.status === 'completed' ? '✅ Complete' : '⏳ Processing'}
-                                  </span>
-                                </div>
+                                {result.status !== 'completed' && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-warning shadow-sm">
+                                      ⏳ Processing
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="card-body p-3">
@@ -1282,7 +1282,9 @@ export default function RunwayAutomationApp() {
                                       <button
                                         className="btn btn-outline-secondary btn-sm"
                                         onClick={() => upscaleVideo(result.id, result.jobId)}
-                                        title="Upscale to 4K (requires RunwayML API support)"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="4K upscaling API endpoints are not yet documented by RunwayML. This feature will be available when the API is officially released."
                                       >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1">
                                           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
