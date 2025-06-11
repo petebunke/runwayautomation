@@ -825,7 +825,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                 {/* Action button positioned in the blue header */}
-                    <div style={{ marginRight: '30px', paddingTop: '20px', paddingBottom: '20px' }}>
+                    <div style={{ marginRight: '30px', paddingTop: '40px', paddingBottom: '40px' }}>
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
@@ -834,16 +834,18 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             borderRadius: '12px', 
                             fontWeight: '600', 
-                            marginTop: '8px', 
-                            marginBottom: '8px',
+                            marginTop: '15px', 
+                            marginBottom: '15px',
                             opacity: '1',
-                            transition: 'opacity 0.2s ease-in-out'
+                            transition: 'opacity 0.2s ease-in-out',
+                            backgroundColor: '#28a745',
+                            borderColor: '#28a745'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.8'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
-                          Start Generation
+                          🚀 Start Generation
                         </button>
                       ) : (
                         <button
