@@ -57,7 +57,7 @@ export default function RunwayAutomationApp() {
         new window.bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
-  }, [activeTab, model]); // Re-run when activeTab or model changes
+  }, [activeTab, model, results]); // Re-run when activeTab, model, or results change
 
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
@@ -459,6 +459,24 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Helper function to convert jobId to filename format
+  const generateFilename = (jobId, taskId) => {
+    if (!jobId) return 'video_' + taskId + '.mp4';
+    
+    // Parse "Generation X - Video Y" format
+    const genMatch = jobId.match(/Generation (\d+)/);
+    const vidMatch = jobId.match(/Video (\d+)/);
+    
+    if (genMatch && vidMatch) {
+      const generation = genMatch[1];
+      const video = vidMatch[1];
+      return `gen-${generation}-video-${video}.mp4`;
+    }
+    
+    // Fallback to original format if parsing fails
+    return 'video_' + taskId + '.mp4';
+  };
+
   const downloadAllVideos = async () => {
     setIsDownloadingAll(true);
     
@@ -473,7 +491,7 @@ export default function RunwayAutomationApp() {
     addLog('📦 Starting download of ' + videosWithUrls.length + ' videos...', 'info');
 
     const downloadPromises = videosWithUrls.map(async (result, index) => {
-      const filename = 'runway_video_' + (index + 1) + '_' + result.id + '.mp4';
+      const filename = generateFilename(result.jobId, result.id);
       
       try {
         const response = await fetch(result.video_url);
@@ -578,6 +596,17 @@ export default function RunwayAutomationApp() {
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         />
+        <style>{`
+          .tooltip .tooltip-inner {
+            background-color: rgba(0, 0, 0, 0.9) !important;
+          }
+          .tooltip.bs-tooltip-top .tooltip-arrow::before,
+          .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+          .tooltip.bs-tooltip-start .tooltip-arrow::before,
+          .tooltip.bs-tooltip-end .tooltip-arrow::before {
+            border-color: rgba(0, 0, 0, 0.9) transparent !important;
+          }
+        `}</style>
       </Head>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
@@ -587,7 +616,7 @@ export default function RunwayAutomationApp() {
               🎬 Runway Automation Pro
             </h1>
             <p className="lead text-white-50 mx-auto" style={{ maxWidth: '800px' }}>
-              Professional-grade video generation automation for RunwayML.<br />Generate up to 20 AI videos at once with advanced batch processing.
+              A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
             </p>
           </div>
 
@@ -1062,7 +1091,7 @@ export default function RunwayAutomationApp() {
                         <h4 className="fw-bold mb-3">Generation Progress</h4>
                         <div className="row g-3">
                           {Object.entries(generationProgress).map(([jobId, progress]) => (
-                            <div key={jobId} className="col-md-6 col-lg-4">
+                            <div key={jobId} className="col-md-6 col-xl-3">
                               <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
                                 <div className="card-body p-3">
                                   <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1216,7 +1245,33 @@ export default function RunwayAutomationApp() {
                       </div>
                     ) : (
                       <div className="row g-4">
-                        {results.map((result, index) => (
+                        {results
+                          .slice() // Create a copy to avoid mutating the original array
+                          .sort((a, b) => {
+                            // Parse the jobId to extract generation and video numbers for sorting
+                            const parseJobId = (jobId) => {
+                              if (!jobId) return { generation: 0, video: 0 };
+                              
+                              // Extract numbers from "Generation X - Video Y" format
+                              const genMatch = jobId.match(/Generation (\d+)/);
+                              const vidMatch = jobId.match(/Video (\d+)/);
+                              
+                              return {
+                                generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                video: vidMatch ? parseInt(vidMatch[1]) : 0
+                              };
+                            };
+                            
+                            const aData = parseJobId(a.jobId);
+                            const bData = parseJobId(b.jobId);
+                            
+                            // Sort by generation first, then by video number
+                            if (aData.generation !== bData.generation) {
+                              return aData.generation - bData.generation;
+                            }
+                            return aData.video - bData.video;
+                          })
+                          .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-4">
                             <div className="card border-0 shadow h-100" style={{ borderRadius: '15px' }}>
                               <div className="position-relative" style={{ borderRadius: '15px 15px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
@@ -1267,7 +1322,7 @@ export default function RunwayAutomationApp() {
                                     <div className="btn-group" role="group">
                                       <button
                                         className="btn btn-primary btn-sm"
-                                        onClick={() => downloadVideo(result.video_url, 'video_' + result.id + '.mp4')}
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
                                       >
                                         <Download size={16} className="me-1" />
                                         Download
