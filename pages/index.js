@@ -370,37 +370,50 @@ export default function RunwayAutomationApp() {
     const batchResults = [];
     const errors = [];
 
-    for (let i = 0; i < totalJobs; i += concurrency) {
-      const batch = [];
+    // Create all video generation promises at once for true concurrency
+    const allPromises = [];
+    
+    for (let i = 0; i < totalJobs; i++) {
+      const jobIndex = i;
+      const currentVideoNumber = i + 1;
       
-      for (let j = 0; j < concurrency && (i + j) < totalJobs; j++) {
-        const jobIndex = i + j;
-        const currentVideoNumber = jobIndex + 1; // Reset to 1 for each generation
-        
-        if (jobIndex > 0) {
-          const waitTime = Math.random() * (maxWait - minWait) + minWait + 2;
-          addLog('⏱️ Waiting ' + waitTime.toFixed(1) + 's before next job to prevent rate limiting...', 'info');
-          await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+      // Add a small staggered delay only for the initial API calls to prevent overwhelming the server
+      const staggerDelay = i * 1000; // 1 second between each initial request
+      
+      const delayedPromise = new Promise(async (resolve) => {
+        if (staggerDelay > 0) {
+          addLog('⏱️ Staggering job ' + (jobIndex + 1) + ' start by ' + (staggerDelay / 1000) + 's...', 'info');
+          await new Promise(delayResolve => setTimeout(delayResolve, staggerDelay));
         }
         
-        batch.push(generateVideo(prompt, imageUrl, jobIndex, currentGeneration, currentVideoNumber));
-      }
+        try {
+          const result = await generateVideo(prompt, imageUrl, jobIndex, currentGeneration, currentVideoNumber);
+          resolve({ status: 'fulfilled', value: result });
+        } catch (error) {
+          resolve({ status: 'rejected', reason: error });
+        }
+      });
+      
+      allPromises.push(delayedPromise);
+    }
 
-      try {
-        const batchResultsArray = await Promise.allSettled(batch);
-        
-        batchResultsArray.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            batchResults.push(result.value);
-          } else {
-            errors.push(result.reason);
-          }
-        });
-        
-      } catch (error) {
-        addLog('❌ Batch processing error: ' + error.message, 'error');
-        errors.push(error);
-      }
+    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
+
+    try {
+      // Wait for all promises to complete (truly concurrent processing)
+      const allResults = await Promise.all(allPromises);
+      
+      allResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          batchResults.push(result.value);
+        } else {
+          errors.push(result.reason);
+        }
+      });
+      
+    } catch (error) {
+      addLog('❌ Concurrent processing error: ' + error.message, 'error');
+      errors.push(error);
     }
 
     // Update the video counter for the next batch
