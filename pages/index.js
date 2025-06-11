@@ -437,11 +437,11 @@ export default function RunwayAutomationApp() {
               🎬 Runway Automation Pro
             </h1>
             <p className="lead text-white-50 mx-auto" style={{ maxWidth: '800px' }}>
-              Professional-grade video generation automation for RunwayML.<br />Generate up to 20 AI videos at once with advanced batch processing.<br />Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.
+              Professional-grade video generation automation for RunwayML.<br />Generate up to 20 AI videos at once with advanced batch processing.
             </p>
           </div>
 
-          <div className="row justify-content-center mb-4">
+          <div className="row justify-content-center mb-3">
             <div className="col-auto">
               <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '15px', padding: '8px' }}>
                 <li className="nav-item">
@@ -1132,7 +1132,7 @@ export default function RunwayAutomationApp() {
 
           <div className="text-center mt-5">
             <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
           </div>
         </div>
