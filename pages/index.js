@@ -845,7 +845,7 @@ export default function RunwayAutomationApp() {
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
-                          🚀 Start Generation
+                          Start Generation
                         </button>
                       ) : (
                         <button
