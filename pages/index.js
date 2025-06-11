@@ -57,7 +57,7 @@ export default function RunwayAutomationApp() {
         new window.bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
-  }, [activeTab, model, results]); // Re-run when activeTab, model, or results change
+  }, [activeTab, model, results]);
 
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
@@ -138,6 +138,9 @@ export default function RunwayAutomationApp() {
       
       while (retryCount <= maxRetries) {
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 45000);
+
           const response = await fetch(API_BASE + '/runway-generate', {
             method: 'POST',
             headers: {
@@ -147,8 +150,10 @@ export default function RunwayAutomationApp() {
               apiKey: runwayApiKey,
               payload: payload
             }),
-            signal: AbortSignal.timeout(45000) // 45 second timeout for initial request
+            signal: controller.signal
           });
+
+          clearTimeout(timeoutId);
 
           if (!response.ok) {
             const errorData = await response.json();
@@ -157,7 +162,7 @@ export default function RunwayAutomationApp() {
             // Handle retryable errors
             if (response.status === 429 || response.status >= 500) {
               if (retryCount < maxRetries) {
-                const retryDelay = (retryCount + 1) * 10000; // 10, 20, 30 seconds
+                const retryDelay = (retryCount + 1) * 10000;
                 addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
                 retryCount++;
@@ -165,9 +170,8 @@ export default function RunwayAutomationApp() {
               }
             }
             
-            // Provide helpful guidance for common errors
             if (errorMessage.includes('Invalid asset aspect ratio')) {
-              errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that\'s closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
+              errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that is closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
             }
             
             throw new Error(errorMessage);
@@ -185,7 +189,7 @@ export default function RunwayAutomationApp() {
             fetchError.message.includes('fetch') ||
             fetchError.message.includes('network')
           )) {
-            const retryDelay = (retryCount + 1) * 5000; // 5, 10, 15 seconds
+            const retryDelay = (retryCount + 1) * 5000;
             addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
             await new Promise(resolve => setTimeout(resolve, retryDelay));
             retryCount++;
@@ -209,29 +213,32 @@ export default function RunwayAutomationApp() {
 
   // Improved polling logic with better error handling and backoff
   const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
-    const maxPolls = Math.floor(2400 / 12); // 40 minutes total with 12s intervals
+    const maxPolls = Math.floor(2400 / 12);
     let pollCount = 0;
     let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 3; // Reduced from 5
+    const maxConsecutiveErrors = 3;
     let isThrottled = false;
     let throttledStartTime = null;
     let lastKnownStatus = 'unknown';
     let stuckInPendingCount = 0;
-    const maxStuckInPending = 10; // If stuck in PENDING for 10 polls (2 minutes), increase backoff
+    const maxStuckInPending = 10;
 
     while (pollCount < maxPolls) {
       try {
-        // Dynamic timeout based on consecutive errors and throttling
         const timeoutMs = consecutiveErrors > 0 ? 45000 : (isThrottled ? 60000 : 30000);
         
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
         const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          signal: AbortSignal.timeout(timeoutMs)
+          signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
         const responseText = await response.text();
         
         let task;
@@ -241,7 +248,6 @@ export default function RunwayAutomationApp() {
           console.error('Failed to parse response as JSON:', parseError);
           console.log('Raw response:', responseText.substring(0, 300));
           
-          // If we get invalid JSON, it might be a server error - treat as retryable
           if (consecutiveErrors < maxConsecutiveErrors) {
             consecutiveErrors++;
             addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
@@ -253,18 +259,15 @@ export default function RunwayAutomationApp() {
           throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
         }
 
-        // Handle HTTP errors
         if (!response.ok) {
           if (response.status === 429) {
-            // Rate limited - back off more aggressively
-            const backoffTime = 30000 + (consecutiveErrors * 15000); // 30s + escalating backoff
+            const backoffTime = 30000 + (consecutiveErrors * 15000);
             addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${backoffTime/1000}s...`, 'warning');
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             consecutiveErrors++;
             pollCount++;
             continue;
           } else if (response.status >= 500) {
-            // Server error - treat as retryable
             consecutiveErrors++;
             if (consecutiveErrors >= maxConsecutiveErrors) {
               throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
@@ -278,10 +281,8 @@ export default function RunwayAutomationApp() {
           throw new Error(task.error || 'Polling failed: ' + response.status);
         }
         
-        // Reset consecutive errors on successful response
         consecutiveErrors = 0;
         
-        // Handle THROTTLED status
         if (task.status === 'THROTTLED') {
           if (!isThrottled) {
             isThrottled = true;
@@ -299,26 +300,22 @@ export default function RunwayAutomationApp() {
             }
           }));
           
-          // Log every 2 minutes instead of every minute for throttled jobs
           if (throttledDuration > 0 && throttledDuration % 120 === 0) {
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
-          // Use longer polling interval for throttled jobs
-          await new Promise(resolve => setTimeout(resolve, 20000)); // 20 seconds instead of 12
+          await new Promise(resolve => setTimeout(resolve, 20000));
           pollCount++;
           continue;
         }
         
-        // Handle transition from THROTTLED to other states
         if (isThrottled && task.status !== 'THROTTLED') {
           const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
           addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + queueTime + 's in queue', 'info');
           isThrottled = false;
-          stuckInPendingCount = 0; // Reset pending counter
+          stuckInPendingCount = 0;
         }
         
-        // Handle jobs stuck in PENDING
         if (task.status === 'PENDING') {
           if (lastKnownStatus === 'PENDING') {
             stuckInPendingCount++;
@@ -326,26 +323,24 @@ export default function RunwayAutomationApp() {
             stuckInPendingCount = 1;
           }
           
-          // If stuck in PENDING for too long, increase polling interval
           if (stuckInPendingCount >= maxStuckInPending) {
             addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING, using longer polling interval...`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 30000)); // 30 seconds for stuck jobs
+            await new Promise(resolve => setTimeout(resolve, 30000));
           } else {
-            await new Promise(resolve => setTimeout(resolve, 15000)); // 15 seconds for normal PENDING
+            await new Promise(resolve => setTimeout(resolve, 15000));
           }
         } else {
-          stuckInPendingCount = 0; // Reset if not pending
+          stuckInPendingCount = 0;
         }
         
         lastKnownStatus = task.status;
         
-        // Calculate progress
         let progress = 10;
         if (task.status === 'PENDING') {
-          progress = 20 + Math.min(stuckInPendingCount * 2, 20); // Slowly increase progress for stuck jobs
+          progress = 20 + Math.min(stuckInPendingCount * 2, 20);
         } else if (task.status === 'RUNNING') {
           const runningTime = Math.max(0, pollCount - 5);
-          progress = Math.min(40 + (runningTime * 2), 90); // Slower progress increase
+          progress = Math.min(40 + (runningTime * 2), 90);
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
         }
@@ -361,7 +356,6 @@ export default function RunwayAutomationApp() {
           }
         }));
 
-        // Handle completion
         if (task.status === 'SUCCEEDED') {
           addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully', 'success');
           
@@ -385,7 +379,6 @@ export default function RunwayAutomationApp() {
           return completedVideo;
         }
 
-        // Handle failure
         if (task.status === 'FAILED') {
           const failureReason = task.failure_reason || task.error || 'Generation failed - no specific reason provided';
           addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
@@ -396,11 +389,10 @@ export default function RunwayAutomationApp() {
           throw new Error(failureReason);
         }
 
-        // Use dynamic polling interval based on status
         const pollInterval = 
-          task.status === 'PENDING' && stuckInPendingCount > 5 ? 25000 : // Longer for stuck jobs
-          task.status === 'RUNNING' ? 10000 : // Faster for running jobs
-          12000; // Default
+          task.status === 'PENDING' && stuckInPendingCount > 5 ? 25000 :
+          task.status === 'RUNNING' ? 10000 :
+          12000;
         
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         pollCount++;
@@ -408,7 +400,6 @@ export default function RunwayAutomationApp() {
       } catch (error) {
         consecutiveErrors++;
         
-        // Handle permanent failures that shouldn't be retried
         if (error.message.includes('Generation failed') && 
             !error.message.includes('timeout') && 
             !error.message.includes('network') && 
@@ -422,14 +413,13 @@ export default function RunwayAutomationApp() {
           throw error;
         }
         
-        // Categorize errors and handle accordingly
         if (error.name === 'AbortError' || error.name === 'TimeoutError') {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('429') || error.message.includes('rate limit')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
-          await new Promise(resolve => setTimeout(resolve, 60000)); // 1 minute for rate limits
+          await new Promise(resolve => setTimeout(resolve, 60000));
         } else {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         }
@@ -440,10 +430,9 @@ export default function RunwayAutomationApp() {
           throw new Error(finalError);
         }
         
-        // Exponential backoff with jitter
         const baseDelay = 15000;
-        const maxDelay = 120000; // 2 minutes max
-        const jitter = Math.random() * 5000; // Add randomness to prevent thundering herd
+        const maxDelay = 120000;
+        const jitter = Math.random() * 5000;
         const backoffDelay = Math.min(baseDelay * Math.pow(1.5, consecutiveErrors) + jitter, maxDelay);
         
         addLog(`⏳ Job ${jobIndex + 1} waiting ${Math.round(backoffDelay/1000)}s before retry...`, 'info');
@@ -456,7 +445,7 @@ export default function RunwayAutomationApp() {
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
-  // Improved generation logic - let RunwayML handle tier-based throttling
+  // Improved generation logic with safety features
   const generateVideos = async () => {
     setIsRunning(true);
     setLogs([]);
@@ -500,25 +489,24 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Additional safety check for reasonable values
     if (isNaN(totalJobs) || totalJobs < 1) {
       addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
-      const safeJobs = 1;
-      addLog(`🔒 SAFETY: Generating ${safeJobs} video for cost protection`, 'info');
+      setIsRunning(false);
+      return;
     }
     
     // Cost estimation and user confirmation for larger batches
-    const estimatedCostMin = totalJobs * 0.25; // $0.25 minimum per video
-    const estimatedCostMax = totalJobs * 0.75; // $0.75 maximum per video (10s videos)
+    const estimatedCostMin = totalJobs * 0.25;
+    const estimatedCostMax = totalJobs * 0.75;
     
-    addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
+    addLog(`💰 Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     
     // Extra confirmation for large batches (10+ videos)
     if (totalJobs >= 10) {
       const confirmLargeBatch = window.confirm(
         `⚠️ COST WARNING ⚠️\n\n` +
         `You are about to generate ${totalJobs} videos.\n` +
-        `Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}\n\n` +
+        `Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)}\n\n` +
         `This will use ${totalJobs * 25}-${totalJobs * 50} credits from your RunwayML account.\n\n` +
         `Are you sure you want to proceed?`
       );
@@ -539,17 +527,12 @@ export default function RunwayAutomationApp() {
     const batchResults = [];
     const errors = [];
 
-    // Create all video generation promises at once for true concurrency
-    // Let RunwayML API handle the throttling based on user's tier
     const allPromises = [];
     
     for (let i = 0; i < totalJobs; i++) {
       const jobIndex = i;
       const currentVideoNumber = i + 1;
-      
-      // Light staggering (1-2 seconds) to prevent overwhelming the server with simultaneous requests
-      // This is just to be nice to the API, not to limit concurrency
-      const staggerDelay = i * 1000; // 1 second between each initial request
+      const staggerDelay = i * 1000;
       
       const delayedPromise = new Promise(async (resolve) => {
         if (staggerDelay > 0) {
@@ -572,8 +555,6 @@ export default function RunwayAutomationApp() {
     addLog('⚡ RunwayML will automatically queue jobs beyond your tier limit', 'info');
 
     try {
-      // Wait for all promises to complete (truly concurrent processing)
-      // RunwayML API will handle queuing based on the user's tier limits
       const allResults = await Promise.all(allPromises);
       
       allResults.forEach((result) => {
@@ -589,7 +570,6 @@ export default function RunwayAutomationApp() {
       errors.push(error);
     }
 
-    // Update the video counter for the next batch
     setVideoCounter(prev => prev + totalJobs);
 
     const successCount = batchResults.length;
@@ -597,7 +577,6 @@ export default function RunwayAutomationApp() {
            successCount > 0 ? 'success' : 'error');
     
     if (errors.length > 0) {
-      // Group similar errors for better readability
       const errorCounts = {};
       errors.forEach(e => {
         const errorType = e.message.includes('timeout') ? 'Generation timeout' :
@@ -647,11 +626,9 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // Helper function to convert jobId to filename format
   const generateFilename = (jobId, taskId) => {
     if (!jobId) return 'video_' + taskId + '.mp4';
     
-    // Parse "Generation X - Video Y" format
     const genMatch = jobId.match(/Generation (\d+)/);
     const vidMatch = jobId.match(/Video (\d+)/);
     
@@ -661,7 +638,6 @@ export default function RunwayAutomationApp() {
       return `gen-${generation}-video-${video}.mp4`;
     }
     
-    // Fallback to original format if parsing fails
     return 'video_' + taskId + '.mp4';
   };
 
@@ -697,7 +673,6 @@ export default function RunwayAutomationApp() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
-        // Small delay between downloads to prevent browser blocking
         await new Promise(resolve => setTimeout(resolve, 500));
         
         return filename;
@@ -753,18 +728,7 @@ export default function RunwayAutomationApp() {
   const upscaleVideo = async (videoId, videoTitle) => {
     try {
       addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
-      
-      // Note: This would need to be implemented with RunwayML's upscale API
-      // For now, we'll show a placeholder message
       addLog('⚠️ 4K upscaling is not yet implemented in the API. This feature would require RunwayML to add upscaling to their API endpoints.', 'warning');
-      
-      // Placeholder for future API call:
-      // const response = await fetch(API_BASE + '/runway-upscale', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ apiKey: runwayApiKey, taskId: videoId })
-      // });
-      
     } catch (error) {
       addLog('❌ 4K upscale failed: ' + error.message, 'error');
     }
@@ -851,7 +815,6 @@ export default function RunwayAutomationApp() {
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                      {/* Blue header with hanging circle */}
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
@@ -859,7 +822,6 @@ export default function RunwayAutomationApp() {
                           borderRadius: '20px 20px 0 0'
                         }}
                       >
-                        {/* Icon circle hanging over the blue section */}
                         <div 
                           className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
@@ -875,13 +837,11 @@ export default function RunwayAutomationApp() {
                           <Key className="text-white" size={32} />
                         </div>
                         
-                        {/* Centered header text inside blue section */}
                         <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">API Configuration</h3>
                         </div>
                       </div>
                       
-                      {/* Card content with top padding for hanging circle */}
                       <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4">
                         </div>
@@ -994,7 +954,6 @@ export default function RunwayAutomationApp() {
                                 const safeValue = Math.min(Math.max(value, 1), 20);
                                 setConcurrency(safeValue);
                                 
-                                // Show warning if user tries to enter more than 20
                                 if (value > 20) {
                                   addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
                                 }
@@ -1043,14 +1002,6 @@ export default function RunwayAutomationApp() {
                           </div>
                           
                           <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="Max number of videos that can be generated at the same time. All tiers can input up to 20 max, but lower tiers will be throttled above the limits listed here."
-                            ></i>
-                          </label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
                               <thead className="table-secondary">
@@ -1099,7 +1050,6 @@ export default function RunwayAutomationApp() {
 
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                      {/* Blue header with hanging circle */}
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
@@ -1107,7 +1057,6 @@ export default function RunwayAutomationApp() {
                           borderRadius: '20px 20px 0 0'
                         }}
                       >
-                        {/* Icon circle hanging over the blue section */}
                         <div 
                           className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
@@ -1123,17 +1072,15 @@ export default function RunwayAutomationApp() {
                           <Film className="text-white" size={32} />
                         </div>
                         
-                        {/* Centered header text inside blue section */}
                         <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">Video Configuration</h3>
                         </div>
                       </div>
                       
-                      {/* Card content with top padding for hanging circle */}
                       <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4">
                         </div>
-                   <div className="mb-4">
+                        <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
                           <div className="position-relative">
                             <textarea
@@ -1190,8 +1137,7 @@ export default function RunwayAutomationApp() {
                             value={imageUrl}
                             onChange={(e) => setImageUrl(e.target.value)}
                             placeholder="https://example.com/image.jpg"
-                            style={{ borderRadius: '12px',
-                            fontSize:'16px' }}
+                            style={{ borderRadius: '12px', fontSize:'16px' }}
                           />
                           
                           <div 
@@ -1225,7 +1171,6 @@ export default function RunwayAutomationApp() {
             <div className="row justify-content-center">
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                  {/* Blue header with hanging circle */}
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -1233,7 +1178,6 @@ export default function RunwayAutomationApp() {
                       borderRadius: '20px 20px 0 0'
                     }}
                   >
-                    {/* Icon circle hanging over the blue section */}
                     <div 
                       className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
@@ -1249,18 +1193,15 @@ export default function RunwayAutomationApp() {
                       <Video className="text-white" size={32} />
                     </div>
                     
-                    {/* Centered header text inside blue section */}
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
-                {/* Action button positioned in the blue header */}
                     <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
                           onClick={() => {
-                            // Final safety check before generation
                             const safeConcurrency = Math.min(Math.max(parseInt(concurrency) || 1, 1), 20);
                             if (safeConcurrency !== concurrency) {
                               setConcurrency(safeConcurrency);
@@ -1303,7 +1244,6 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
                   
-                  {/* Card content with top padding for hanging circle */}
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4">
                     </div>
@@ -1416,7 +1356,6 @@ export default function RunwayAutomationApp() {
             <div className="row justify-content-center">
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                  {/* Blue header with hanging circle */}
                   <div 
                     className="bg-primary position-relative" 
                     style={{ 
@@ -1424,7 +1363,6 @@ export default function RunwayAutomationApp() {
                       borderRadius: '20px 20px 0 0'
                     }}
                   >
-                    {/* Icon circle hanging over the blue section */}
                     <div 
                       className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
@@ -1440,13 +1378,11 @@ export default function RunwayAutomationApp() {
                       <Download className="text-white" size={32} />
                     </div>
                     
-                    {/* Centered header text inside blue section */}
                     <div className="text-white" style={{ marginLeft: '105px', marginTop: '8px' }}>
                       <h2 className="fw-bold mb-1">Generated Videos</h2>
                       <p className="small mb-0" style={{ marginLeft: '3px' }}>{results.length} {results.length === 1 ? 'video' : 'videos'} generated</p>
                     </div>
                     
-                    {/* Download All Videos button positioned in the blue header */}
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
                       <div className="position-absolute" style={{ right: '30px', top: '20px' }}>
                         <button
@@ -1473,7 +1409,6 @@ export default function RunwayAutomationApp() {
                     )}
                   </div>
                   
-                  {/* Card content with top padding for hanging circle */}
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4">
                     </div>
@@ -1495,13 +1430,11 @@ export default function RunwayAutomationApp() {
                     ) : (
                       <div className="row g-4">
                         {results
-                          .slice() // Create a copy to avoid mutating the original array
+                          .slice()
                           .sort((a, b) => {
-                            // Parse the jobId to extract generation and video numbers for sorting
                             const parseJobId = (jobId) => {
                               if (!jobId) return { generation: 0, video: 0 };
                               
-                              // Extract numbers from "Generation X - Video Y" format
                               const genMatch = jobId.match(/Generation (\d+)/);
                               const vidMatch = jobId.match(/Video (\d+)/);
                               
@@ -1514,7 +1447,6 @@ export default function RunwayAutomationApp() {
                             const aData = parseJobId(a.jobId);
                             const bData = parseJobId(b.jobId);
                             
-                            // Sort by generation first, then by video number
                             if (aData.generation !== bData.generation) {
                               return aData.generation - bData.generation;
                             }
