@@ -99,6 +99,27 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
+  // Check user's credit balance before generation
+  const checkCredits = async () => {
+    try {
+      const response = await fetch(API_BASE + '/runway-credits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ apiKey: runwayApiKey })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.credits || 0;
+      }
+    } catch (error) {
+      console.log('Could not check credits:', error);
+    }
+    return null; // Return null if we can't check credits
+  };
+
   // Improved generateVideo function with better error handling
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
@@ -189,6 +210,11 @@ export default function RunwayAutomationApp() {
                 retryCount++;
                 continue;
               }
+            }
+
+            // Handle insufficient credits - don't retry, fail immediately
+            if (response.status === 400 && errorMessage.includes('not have enough credits')) {
+              throw new Error('Insufficient credits: ' + errorMessage);
             }
             
             if (errorMessage.includes('Invalid asset aspect ratio')) {
@@ -919,7 +945,12 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="16:9 (landscape), 9:16 (mobile/social), 1:1 (square), 4:3 (classic TV/monitor), 3:4 (social media portrait), 21:9 (ultra-wide cinematic). More ratios available with Gen-4."
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)
+• 9:16 (Portrait - TikTok, Instagram Stories, mobile)
+• 1:1 (Square - Instagram posts, profile pics)
+• 4:3 (Standard - Classic TV, monitors)
+• 3:4 (Portrait Standard - Print, documents)
+• 21:9 (Cinematic - Ultrawide movies)"
                               ></i>
                             </label>
                             <select
