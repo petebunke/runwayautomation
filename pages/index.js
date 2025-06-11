@@ -933,7 +933,7 @@ export default function RunwayAutomationApp() {
                                   <div className="d-flex justify-content-between align-items-center mb-2">
                                     <span className="fw-bold small">{jobId}</span>
                                     <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-primary' :
+                                      progress.status === 'completed' ? 'bg-success' :
                                       progress.status === 'failed' ? 'bg-danger' :
                                       progress.status === 'throttled' ? 'bg-warning' :
                                       'bg-primary'
