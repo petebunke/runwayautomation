@@ -800,7 +800,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '50px',
+                      height: '80px',
                       borderRadius: '20px 20px 0 0'
                     }}
                   >
@@ -811,7 +811,7 @@ export default function RunwayAutomationApp() {
                         width: '80px', 
                         height: '80px',
                         left: '30px',
-                        top: '10px',
+                        top: '40px',
                         zIndex: 10,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                       }}
@@ -825,7 +825,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                 {/* Action button positioned in the blue header */}
-                    <div style={{ marginRight: '30px', marginTop: '20px', marginBottom: '20px' }}>
+                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
@@ -834,8 +834,8 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             borderRadius: '12px', 
                             fontWeight: '600', 
-                            marginTop: '15px', 
-                            marginBottom: '15px',
+                            marginTop: '5px', 
+                            marginBottom: '5px',
                             opacity: '1',
                             transition: 'opacity 0.2s ease-in-out',
                             backgroundColor: '#28a745',
@@ -851,7 +851,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '20px', marginBottom: '20px' }}
+                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
