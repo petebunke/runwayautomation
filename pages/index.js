@@ -19,6 +19,7 @@ export default function RunwayAutomationApp() {
   const [generationProgress, setGenerationProgress] = useState({});
   const [imageError, setImageError] = useState(false);
   const [videoCounter, setVideoCounter] = useState(0);
+  const [generationCounter, setGenerationCounter] = useState(0);
 
   const isValidImageUrl = (url) => {
     try {
@@ -79,8 +80,8 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
-  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, videoNumber) => {
-    const jobId = 'Video ' + videoNumber;
+  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
+    const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
     try {
       if (!imageUrlText || !imageUrlText.trim()) {
@@ -258,7 +259,8 @@ export default function RunwayAutomationApp() {
             thumbnail_url: task.output && task.output[1] ? task.output[1] : null,
             image_url: imageUrlText,
             status: 'completed',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            jobId: jobId // Store the generation info
           };
 
           setResults(prev => [...prev, completedVideo]);
@@ -325,6 +327,10 @@ export default function RunwayAutomationApp() {
     setLogs([]);
     // setGenerationProgress({});
     
+    // Increment generation counter for this new batch
+    const currentGeneration = generationCounter + 1;
+    setGenerationCounter(currentGeneration);
+    
     addLog('🚀 Starting Runway video generation...', 'info');
     addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
     
@@ -358,7 +364,7 @@ export default function RunwayAutomationApp() {
       
       for (let j = 0; j < concurrency && (i + j) < totalJobs; j++) {
         const jobIndex = i + j;
-        const currentVideoNumber = videoCounter + jobIndex + 1;
+        const currentVideoNumber = jobIndex + 1; // Reset to 1 for each generation
         
         if (jobIndex > 0) {
           const waitTime = Math.random() * (maxWait - minWait) + minWait + 2;
@@ -366,7 +372,7 @@ export default function RunwayAutomationApp() {
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
         }
         
-        batch.push(generateVideo(prompt, imageUrl, jobIndex, currentVideoNumber));
+        batch.push(generateVideo(prompt, imageUrl, jobIndex, currentGeneration, currentVideoNumber));
       }
 
       try {
@@ -1140,7 +1146,7 @@ export default function RunwayAutomationApp() {
                               </div>
                               
                               <div className="card-body p-3">
-                                <div className="fw-bold text-primary mb-2">Video {index + 1}</div>
+                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
                                 <h6 className="card-title fw-bold mb-3" title={result.prompt}>
                                   {result.prompt}
                                 </h6>
