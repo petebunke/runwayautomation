@@ -598,13 +598,13 @@ export default function RunwayAutomationApp() {
         />
         <style>{`
           .tooltip .tooltip-inner {
-            background-color: rgba(0, 0, 0, 0.9) !important;
+            background-color: rgba(0, 0, 0, 1) !important;
           }
           .tooltip.bs-tooltip-top .tooltip-arrow::before,
           .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
           .tooltip.bs-tooltip-start .tooltip-arrow::before,
           .tooltip.bs-tooltip-end .tooltip-arrow::before {
-            border-color: rgba(0, 0, 0, 0.9) transparent !important;
+            border-color: rgba(0, 0, 0, 1) transparent !important;
           }
         `}</style>
       </Head>
@@ -1094,8 +1094,14 @@ export default function RunwayAutomationApp() {
                             <div key={jobId} className="col-md-6 col-xl-3">
                               <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
                                 <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-center mb-2">
-                                    <span className="fw-bold small">{jobId}</span>
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <span className="fw-bold small" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
+                                      {jobId}
+                                    </span>
                                     <span className={`badge ${
                                       progress.status === 'completed' ? 'bg-success' :
                                       progress.status === 'failed' ? 'bg-danger' :
