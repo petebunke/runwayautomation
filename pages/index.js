@@ -446,9 +446,13 @@ export default function RunwayAutomationApp() {
               <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '15px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'text-white' : 'text-white'}`}
                     onClick={() => setActiveTab('setup')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                    style={{ 
+                      borderRadius: '6px', 
+                      fontWeight: '600',
+                      backgroundColor: activeTab === 'setup' ? '#4dd0ff' : 'transparent'
+                    }}
                   >
                     <Settings size={20} className="me-2" />
                     Configuration
@@ -456,9 +460,13 @@ export default function RunwayAutomationApp() {
                 </li>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'text-white' : 'text-white'}`}
                     onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                    style={{ 
+                      borderRadius: '6px', 
+                      fontWeight: '600',
+                      backgroundColor: activeTab === 'generation' ? '#4dd0ff' : 'transparent'
+                    }}
                   >
                     <Video size={20} className="me-2" />
                     Generation
@@ -466,9 +474,13 @@ export default function RunwayAutomationApp() {
                 </li>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'text-white' : 'text-white'}`}
                     onClick={() => setActiveTab('results')}
-                    style={{ borderRadius: '10px', fontWeight: '600' }}
+                    style={{ 
+                      borderRadius: '10px', 
+                      fontWeight: '600',
+                      backgroundColor: activeTab === 'results' ? '#4dd0ff' : 'transparent'
+                    }}
                   >
                     <Download size={20} className="me-2" />
                     Results
@@ -987,7 +999,7 @@ export default function RunwayAutomationApp() {
                         left: '30px',
                         top: '50px',
                         zIndex: 10,
-                        backgroundColor: '#00c7fd'
+                        backgroundColor: '#4dd0ff'
                       }}
                     >
                       <Download className="text-white" size={28} />
