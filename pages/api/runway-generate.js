@@ -1,4 +1,4 @@
-// /pages/api/runway-generate.js (Fixed aspect ratio mapping)
+// /pages/api/runway-generate.js (Enhanced timeout version)
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -48,14 +48,17 @@ export default async function handler(req, res) {
       promptText: payload.text_prompt,
       promptImage: payload.image_prompt.trim(),
       model: payload.model || 'gen3a_turbo',
-      ratio: payload.aspect_ratio, // Now using the correct RunwayML ratios directly
+      ratio: payload.aspect_ratio,
       duration: payload.duration || 5,
       seed: payload.seed || Math.floor(Math.random() * 1000000)
     };
 
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
-    // Make request using exact format from docs
+    // Make request using exact format from docs with increased timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+
     const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
       method: 'POST',
       headers: {
@@ -63,8 +66,11 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         'X-Runway-Version': '2024-11-06'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const responseText = await response.text();
     console.log('RunwayML API response status:', response.status);
@@ -85,6 +91,23 @@ export default async function handler(req, res) {
     if (!response.ok) {
       console.error('RunwayML API error:', response.status, data);
       
+      // Provide specific error handling for common issues
+      if (response.status === 429) {
+        return res.status(429).json({
+          error: 'Rate limit exceeded',
+          message: 'You have exceeded your tier\'s concurrent generation limit. Please wait for current generations to complete.',
+          retryAfter: '30'
+        });
+      }
+
+      if (response.status >= 500) {
+        return res.status(response.status).json({
+          error: `RunwayML server error (${response.status})`,
+          message: 'RunwayML API is experiencing issues. This is usually temporary.',
+          retryable: true
+        });
+      }
+      
       // Return the actual error from RunwayML
       return res.status(response.status).json({
         error: `RunwayML API Error (${response.status}): ${data.error || data.message || 'Unknown error'}`,
@@ -98,6 +121,14 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Proxy error:', error);
+    
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ 
+        error: 'Generation request timeout',
+        message: 'RunwayML API took too long to respond (45s)',
+        retryable: true
+      });
+    }
     
     return res.status(500).json({ 
       error: 'Internal server error',
