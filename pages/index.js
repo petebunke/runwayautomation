@@ -978,25 +978,21 @@ export default function RunwayAutomationApp() {
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
         <div className="container-fluid py-4">
-          <div className="row justify-content-center">
-            <div className="col-lg-10">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <div className="d-flex align-items-center">
-                  <button 
-                    onClick={() => setActiveTab('setup')}
-                    className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                    style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
-                  >
-                    <Film size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
-                    Runway Automation Pro
-                  </button>
-                </div>
-                <div className="text-end">
-                  <p className="lead text-white-50 mb-0" style={{ maxWidth: '500px', fontSize: '1rem', lineHeight: '1.4' }}>
-                    A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
-                  </p>
-                </div>
-              </div>
+          <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
+            <div className="d-flex align-items-center">
+              <button 
+                onClick={() => setActiveTab('setup')}
+                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
+                style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
+              >
+                <Film size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
+                Runway Automation Pro
+              </button>
+            </div>
+            <div className="text-end">
+              <p className="lead text-white-50 mb-0" style={{ maxWidth: '480px', fontSize: '1rem', lineHeight: '1.4' }}>
+                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
+              </p>
             </div>
           </div>
 
