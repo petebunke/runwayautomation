@@ -838,12 +838,12 @@ export default function RunwayAutomationApp() {
 
           <div className="row justify-content-center mb-3">
             <div className="col-auto">
-              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '15px', padding: '8px' }}>
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '4px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('setup')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                    style={{ borderRadius: '2px', fontWeight: '600' }}
                   >
                     <Settings size={20} className="me-2" />
                     Configuration
@@ -853,7 +853,7 @@ export default function RunwayAutomationApp() {
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                    style={{ borderRadius: '2px', fontWeight: '600' }}
                   >
                     <Video size={20} className="me-2" />
                     Generation
@@ -863,7 +863,7 @@ export default function RunwayAutomationApp() {
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('results')}
-                    style={{ borderRadius: '10px', fontWeight: '600' }}
+                    style={{ borderRadius: '2px', fontWeight: '600' }}
                   >
                     <Download size={20} className="me-2" />
                     Results
@@ -878,12 +878,12 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="row g-4">
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '4px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '20px 20px 0 0'
+                          borderRadius: '4px 4px 0 0'
                         }}
                       >
                         <div 
@@ -917,7 +917,7 @@ export default function RunwayAutomationApp() {
                             value={runwayApiKey}
                             onChange={(e) => setRunwayApiKey(e.target.value)}
                             placeholder="key_xxx..."
-                            style={{ borderRadius: '12px' }}
+                            style={{ borderRadius: '4px' }}
                           />
                           <div className="form-text">
                             <ExternalLink size={14} className="me-1" />
@@ -927,7 +927,7 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
 
-                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '4px' }}>
                           <div className="d-flex align-items-center mb-2">
                             <CreditCard size={20} className="text-warning me-2" />
                             <strong>Credits Required</strong>
@@ -948,7 +948,7 @@ export default function RunwayAutomationApp() {
                               className="form-select"
                               value={model}
                               onChange={(e) => setModel(e.target.value)}
-                              style={{ borderRadius: '12px' }}
+                              style={{ borderRadius: '4px' }}
                             >
                               {modelOptions.map(option => (
                                 <option key={option.value} value={option.value}>
@@ -973,7 +973,7 @@ export default function RunwayAutomationApp() {
                               className="form-select"
                               value={aspectRatio}
                               onChange={(e) => setAspectRatio(e.target.value)}
-                              style={{ borderRadius: '12px' }}
+                              style={{ borderRadius: '4px' }}
                             >
                               {aspectRatioOptions.map(option => (
                                 <option key={option.value} value={option.value}>
@@ -989,7 +989,7 @@ export default function RunwayAutomationApp() {
                               className="form-select"
                               value={duration}
                               onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '12px' }}
+                              style={{ borderRadius: '4px' }}
                             >
                               <option value={5}>5 seconds</option>
                               <option value={10}>10 seconds</option>
@@ -1022,7 +1022,7 @@ export default function RunwayAutomationApp() {
                                   addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
                                 }
                               }}
-                              style={{ borderRadius: '12px' }}
+                              style={{ borderRadius: '4px' }}
                             />
                           </div>
                         </div>
@@ -1076,12 +1076,12 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '4px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '20px 20px 0 0'
+                          borderRadius: '4px 4px 0 0'
                         }}
                       >
                         <div 
@@ -1116,7 +1116,7 @@ export default function RunwayAutomationApp() {
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
                               placeholder=""
-                              style={{ borderRadius: '12px' }}
+                              style={{ borderRadius: '4px' }}
                             />
                             {!prompt && (
                               <div 
@@ -1164,7 +1164,7 @@ export default function RunwayAutomationApp() {
                             value={imageUrl}
                             onChange={(e) => setImageUrl(e.target.value)}
                             placeholder="https://example.com/image.jpg"
-                            style={{ borderRadius: '12px', fontSize:'16px' }}
+                            style={{ borderRadius: '4px', fontSize:'16px' }}
                           />
                           
                           <div 
@@ -1197,12 +1197,12 @@ export default function RunwayAutomationApp() {
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '4px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '20px 20px 0 0'
+                      borderRadius: '4px 4px 0 0'
                     }}
                   >
                     <div 
@@ -1231,7 +1231,7 @@ export default function RunwayAutomationApp() {
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
-                            borderRadius: '12px', 
+                            borderRadius: '4px', 
                             fontWeight: '600', 
                             marginTop: '5px', 
                             marginBottom: '5px',
@@ -1255,7 +1255,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
+                          style={{ borderRadius: '4px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
@@ -1267,7 +1267,7 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4">
                     </div>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '15px' }}>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '4px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
                           <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
@@ -1275,7 +1275,7 @@ export default function RunwayAutomationApp() {
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Videos:</strong> {Object.keys(generationProgress).length}</span>
+                            <span className="text-dark"><strong>Videos Processing:</strong> {Object.keys(generationProgress).length}</span>
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
@@ -1330,7 +1330,7 @@ export default function RunwayAutomationApp() {
                         <div className="row g-3">
                           {Object.entries(generationProgress).map(([jobId, progress]) => (
                             <div key={jobId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '4px' }}>
                                 <div className="card-body p-3">
                                   <div className="d-flex justify-content-between align-items-start mb-2">
                                     <span className="fw-bold small" style={{ 
@@ -1371,14 +1371,14 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '15px' }}>
+                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '4px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
                         <button 
                           className="btn btn-sm btn-outline-light" 
                           onClick={copyLogsToClipboard}
                           title="Copy all logs to clipboard"
-                          style={{ borderRadius: '6px' }}
+                          style={{ borderRadius: '2px' }}
                         >
                           <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
                         </button>
@@ -1410,12 +1410,12 @@ export default function RunwayAutomationApp() {
           {activeTab === 'results' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '4px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '20px 20px 0 0'
+                      borderRadius: '4px 4px 0 0'
                     }}
                   >
                     <div 
@@ -1444,7 +1444,7 @@ export default function RunwayAutomationApp() {
                           className="btn btn-light shadow"
                           onClick={downloadAllVideos}
                           disabled={isDownloadingAll}
-                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                          style={{ borderRadius: '4px', fontWeight: '600' }}
                         >
                           {isDownloadingAll ? (
                             <>
@@ -1480,7 +1480,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-primary btn-lg shadow"
                           onClick={() => setActiveTab('setup')}
-                          style={{ borderRadius: '6px' }}
+                          style={{ borderRadius: '2px' }}
                         >
                           Get Started
                         </button>
@@ -1512,7 +1512,7 @@ export default function RunwayAutomationApp() {
                           })
                           .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-4">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '15px' }}>
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '4px' }}>
                               <div className="position-relative" style={{ borderRadius: '15px 15px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
