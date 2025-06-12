@@ -696,8 +696,33 @@ export default function RunwayAutomationApp() {
   const downloadAllVideos = async () => {
     setIsDownloadingAll(true);
     
-    // Get ALL completed videos from ALL generations
-    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
+    // Get ALL completed videos from ALL generations and sort them
+    const videosWithUrls = results
+      .filter(result => result.video_url && result.status === 'completed')
+      .sort((a, b) => {
+        // Parse the jobId to extract generation and video numbers for sorting
+        const parseJobId = (jobId) => {
+          if (!jobId) return { generation: 0, video: 0 };
+          
+          // Extract numbers from "Generation X - Video Y" format
+          const genMatch = jobId.match(/Generation (\d+)/);
+          const vidMatch = jobId.match(/Video (\d+)/);
+          
+          return {
+            generation: genMatch ? parseInt(genMatch[1]) : 0,
+            video: vidMatch ? parseInt(vidMatch[1]) : 0
+          };
+        };
+        
+        const aData = parseJobId(a.jobId);
+        const bData = parseJobId(b.jobId);
+        
+        // Sort by generation first, then by video number
+        if (aData.generation !== bData.generation) {
+          return aData.generation - bData.generation;
+        }
+        return aData.video - bData.video;
+      });
     
     if (videosWithUrls.length === 0) {
       addLog('❌ No completed videos available for download', 'error');
@@ -705,57 +730,60 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    addLog(`📦 Starting download of ${videosWithUrls.length} videos from all generations...`, 'info');
+    addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
 
-    // Process all videos sequentially to avoid browser blocking
-    let successCount = 0;
-    let failCount = 0;
-
-    for (let i = 0; i < videosWithUrls.length; i++) {
-      const result = videosWithUrls[i];
-      const filename = generateFilename(result.jobId, result.id);
+    try {
+      // Create a new JSZip instance
+      const zip = new JSZip();
       
-      try {
-        addLog(`📥 Downloading ${i + 1}/${videosWithUrls.length}: ${filename}...`, 'info');
+      // Download all videos and add to zip
+      for (let i = 0; i < videosWithUrls.length; i++) {
+        const result = videosWithUrls[i];
+        const filename = generateFilename(result.jobId, result.id);
         
-        const response = await fetch(result.video_url);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        try {
+          addLog(`📥 Adding to zip ${i + 1}/${videosWithUrls.length}: ${filename}...`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Add the video file to the zip
+          zip.file(filename, blob);
+          
+        } catch (error) {
+          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          // Continue with next video even if one fails
+          continue;
         }
-        
-        const blob = await response.blob();
-        
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = filename;
-        
-        document.body.appendChild(a);
-        a.click();
-        
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        successCount++;
-        
-        // Small delay between downloads to prevent browser blocking and show progress
-        if (i < videosWithUrls.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 800));
-        }
-        
-      } catch (error) {
-        failCount++;
-        addLog(`❌ Failed to download ${filename}: ${error.message}`, 'error');
-        
-        // Continue with next download even if one fails
-        continue;
       }
+
+      // Generate the zip file
+      addLog('🗜️ Generating zip file...', 'info');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Download the zip file
+      const zipUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = zipUrl;
+      a.download = 'runway-videos.zip';
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(zipUrl);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded runway-videos.zip with ${videosWithUrls.length} videos successfully!`, 'success');
+      
+    } catch (error) {
+      addLog(`❌ Failed to create zip file: ${error.message}`, 'error');
     }
 
-    const totalVideos = videosWithUrls.length;
-    addLog(`✅ Download complete! ${successCount}/${totalVideos} videos downloaded successfully${failCount > 0 ? `, ${failCount} failed` : ''}`, 'success');
-    
     setIsDownloadingAll(false);
   };
 
@@ -801,6 +829,35 @@ export default function RunwayAutomationApp() {
   return (
     <>
       <Head>
+        <title>Runway Automation Pro - AI Video Generation</title>
+        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://runway-automation.vercel.app/" />
+        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="og:image" content="/og-image.png" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
+        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="twitter:image" content="/og-image.png" />
+
+        {/* Additional SEO tags */}
+        <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
+        <meta name="author" content="Runway Automation Pro" />
+        <meta name="robots" content="index, follow" />
+        
+        {/* Theme color for mobile browsers */}
+        <meta name="theme-color" content="#667eea" />
+        <meta name="msapplication-navbutton-color" content="#667eea" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
           rel="stylesheet" 
@@ -812,6 +869,7 @@ export default function RunwayAutomationApp() {
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <style>{`
           .tooltip .tooltip-inner {
             background-color: rgba(0, 0, 0, 1) !important;
@@ -834,7 +892,8 @@ export default function RunwayAutomationApp() {
                 className="btn btn-link text-white text-decoration-none p-0"
                 style={{ fontSize: 'inherit', fontWeight: 'inherit' }}
               >
-                🎬 Runway Automation Pro
+                <Film size={48} className="me-3" style={{ verticalAlign: 'middle' }} />
+                Runway Automation Pro
               </button>
             </h1>
             <p className="lead text-white-50 mx-auto" style={{ maxWidth: '800px' }}>
@@ -1460,7 +1519,7 @@ export default function RunwayAutomationApp() {
                           ) : (
                             <>
                               <Download size={20} className="me-2" />
-                              Download All Videos
+                              Download All as ZIP
                               <span className="ms-2 badge bg-primary">
                                 {results.filter(result => result.video_url && result.status === 'completed').length}
                               </span>
@@ -1609,7 +1668,10 @@ export default function RunwayAutomationApp() {
           )}
 
           <div className="text-center mt-5">
-            <div className="d-flex align-items-center justify-content-center text-white-50 mb-3">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
                 <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
@@ -1620,9 +1682,6 @@ export default function RunwayAutomationApp() {
                   </g>
                 </svg>
               </a>
-            </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
           </div>
         </div>
