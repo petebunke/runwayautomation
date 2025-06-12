@@ -21,6 +21,7 @@ export default function RunwayAutomationApp() {
   const [videoCounter, setVideoCounter] = useState(0);
   const [generationCounter, setGenerationCounter] = useState(0);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [completedGeneration, setCompletedGeneration] = useState(null);
 
   const isValidImageUrl = (url) => {
     try {
@@ -642,6 +643,8 @@ export default function RunwayAutomationApp() {
       addLog('⚠️ Failed jobs: ' + errorSummary, 'warning');
     }
 
+    // Show completion message for this generation
+    setCompletedGeneration(currentGeneration);
     setIsRunning(false);
   };
 
@@ -1329,6 +1332,19 @@ export default function RunwayAutomationApp() {
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {completedGeneration && Object.keys(generationProgress).length === 0 && (
+                      <div className="mb-4">
+                        <div className="text-center py-4">
+                          <h4 className="fw-bold text-dark mb-2">
+                            Generation {completedGeneration} completed.
+                          </h4>
+                          <p className="text-muted mb-0">
+                            {results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length} videos generated successfully
+                          </p>
                         </div>
                       </div>
                     )}
