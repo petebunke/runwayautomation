@@ -1407,6 +1407,35 @@ export default function RunwayAutomationApp() {
                               style={{ borderRadius: '8px' }}
                             />
                           </div>
+                          
+                          {/* Generate Video Button */}
+                          <div className="mt-4">
+                            <button
+                              className="btn btn-success btn-lg w-100 shadow"
+                              onClick={() => {
+                                setActiveTab('generation');
+                                // Small delay to ensure tab switch completes before starting generation
+                                setTimeout(() => {
+                                  generateVideos();
+                                }, 100);
+                              }}
+                              disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
+                              style={{ 
+                                borderRadius: '8px', 
+                                fontWeight: '600',
+                                backgroundColor: '#28a745',
+                                borderColor: '#28a745'
+                              }}
+                            >
+                              <Play size={20} className="me-2" />
+                              Generate Video{concurrency > 1 ? 's' : ''}
+                              {concurrency > 1 && (
+                                <span className="ms-2 badge bg-light text-dark">
+                                  {concurrency}
+                                </span>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
