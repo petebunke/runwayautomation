@@ -1074,7 +1074,7 @@ export default function RunwayAutomationApp() {
         <title>Runway Automation Pro - AI Video Generation</title>
         <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
+        <link rel="icon" href="/favicon.ico" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
