@@ -25,17 +25,32 @@ export default function RunwayAutomationApp() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Load API key from localStorage on component mount
+  // Load saved data from localStorage on component mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
+        // Load API key
         const savedApiKey = localStorage.getItem('runway-automation-api-key');
         if (savedApiKey && savedApiKey.trim()) {
           console.log('Loading saved API key from localStorage');
           setRunwayApiKey(savedApiKey);
         }
+        
+        // Load prompt
+        const savedPrompt = localStorage.getItem('runway-automation-prompt');
+        if (savedPrompt && savedPrompt.trim()) {
+          console.log('Loading saved prompt from localStorage');
+          setPrompt(savedPrompt);
+        }
+        
+        // Load image URL
+        const savedImageUrl = localStorage.getItem('runway-automation-image-url');
+        if (savedImageUrl && savedImageUrl.trim()) {
+          console.log('Loading saved image URL from localStorage');
+          setImageUrl(savedImageUrl);
+        }
       } catch (error) {
-        console.warn('Failed to load API key from localStorage:', error);
+        console.warn('Failed to load saved data from localStorage:', error);
       }
     }
   }, []);
@@ -57,6 +72,36 @@ export default function RunwayAutomationApp() {
     }
   }, [runwayApiKey]);
 
+  // Save prompt to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (prompt && prompt.trim()) {
+          localStorage.setItem('runway-automation-prompt', prompt);
+        } else if (prompt === '') {
+          localStorage.removeItem('runway-automation-prompt');
+        }
+      } catch (error) {
+        console.warn('Failed to save prompt to localStorage:', error);
+      }
+    }
+  }, [prompt]);
+
+  // Save image URL to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (imageUrl && imageUrl.trim()) {
+          localStorage.setItem('runway-automation-image-url', imageUrl);
+        } else if (imageUrl === '') {
+          localStorage.removeItem('runway-automation-image-url');
+        }
+      } catch (error) {
+        console.warn('Failed to save image URL to localStorage:', error);
+      }
+    }
+  }, [imageUrl]);
+
   // Clear API key function for security
   const clearStoredApiKey = () => {
     try {
@@ -65,6 +110,24 @@ export default function RunwayAutomationApp() {
       addLog('🔒 API key cleared from storage', 'info');
     } catch (error) {
       console.warn('Failed to clear API key:', error);
+    }
+  };
+
+  // Clear all stored data function
+  const clearAllStoredData = () => {
+    try {
+      localStorage.removeItem('runway-automation-api-key');
+      localStorage.removeItem('runway-automation-prompt');
+      localStorage.removeItem('runway-automation-image-url');
+      setRunwayApiKey('');
+      setPrompt('');
+      setImageUrl('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      addLog('🔒 All stored data cleared', 'info');
+    } catch (error) {
+      console.warn('Failed to clear stored data:', error);
     }
   };
 
