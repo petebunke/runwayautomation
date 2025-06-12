@@ -1074,7 +1074,20 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4">
                         </div>
                         <div className="mb-4">
-                          <label className="form-label fw-bold">RunwayML API Key</label>
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
+                            {runwayApiKey && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={clearStoredApiKey}
+                                title="Clear stored API key"
+                                style={{ fontSize: '12px' }}
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
                           <input
                             type="password"
                             className="form-control form-control-lg"
@@ -1416,7 +1429,9 @@ export default function RunwayAutomationApp() {
                                 setActiveTab('generation');
                                 // Small delay to ensure tab switch completes before starting generation
                                 setTimeout(() => {
-                                  generateVideos();
+                                  if (!isRunning) {
+                                    generateVideos();
+                                  }
                                 }, 100);
                               }}
                               disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
