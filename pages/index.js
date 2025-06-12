@@ -30,7 +30,7 @@ export default function RunwayAutomationApp() {
     if (typeof window !== 'undefined') {
       try {
         const savedApiKey = localStorage.getItem('runway-api-key');
-        if (savedApiKey) {
+        if (savedApiKey && savedApiKey.trim()) {
           setRunwayApiKey(savedApiKey);
         }
       } catch (error) {
@@ -39,13 +39,18 @@ export default function RunwayAutomationApp() {
     }
   }, []);
 
-  // Save API key to localStorage when it changes (with debouncing)
+  // Save API key to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined' && runwayApiKey) {
+    if (typeof window !== 'undefined') {
       try {
-        // Only save if it looks like a valid API key format
-        if (runwayApiKey.startsWith('key_') || runwayApiKey.startsWith('sk-')) {
-          localStorage.setItem('runway-api-key', runwayApiKey);
+        if (runwayApiKey && runwayApiKey.trim()) {
+          // Only save if it looks like a valid API key format and has some length
+          if ((runwayApiKey.startsWith('key_') || runwayApiKey.startsWith('sk-')) && runwayApiKey.length > 10) {
+            localStorage.setItem('runway-api-key', runwayApiKey);
+          }
+        } else if (runwayApiKey === '') {
+          // If explicitly cleared, remove from storage
+          localStorage.removeItem('runway-api-key');
         }
       } catch (error) {
         console.warn('Failed to save API key to localStorage:', error);
@@ -990,7 +995,7 @@ export default function RunwayAutomationApp() {
               </button>
             </div>
             <div className="text-end">
-              <p className="lead text-white-50 mb-0" style={{ maxWidth: '480px', fontSize: '1rem', lineHeight: '1.4' }}>
+              <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
                 A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
               </p>
             </div>
