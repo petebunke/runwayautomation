@@ -829,7 +829,13 @@ export default function RunwayAutomationApp() {
         <div className="container-fluid py-4">
           <div className="text-center mb-5">
             <h1 className="display-4 fw-bold text-white mb-3">
-              🎬 Runway Automation Pro
+              <button 
+                onClick={() => setActiveTab('setup')}
+                className="btn btn-link text-white text-decoration-none p-0"
+                style={{ fontSize: 'inherit', fontWeight: 'inherit' }}
+              >
+                🎬 Runway Automation Pro
+              </button>
             </h1>
             <p className="lead text-white-50 mx-auto" style={{ maxWidth: '800px' }}>
               A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
@@ -1004,7 +1010,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image. Maximum 20 for cost protection."
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
                               ></i>
                             </label>
                             <input
