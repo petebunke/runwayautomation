@@ -49,6 +49,39 @@ export default function RunwayAutomationApp() {
           console.log('Loading saved image URL from localStorage');
           setImageUrl(savedImageUrl);
         }
+        
+        // Load model
+        const savedModel = localStorage.getItem('runway-automation-model');
+        if (savedModel && ['gen3a_turbo', 'gen4_turbo'].includes(savedModel)) {
+          console.log('Loading saved model from localStorage:', savedModel);
+          setModel(savedModel);
+        }
+        
+        // Load aspect ratio
+        const savedAspectRatio = localStorage.getItem('runway-automation-aspect-ratio');
+        if (savedAspectRatio && ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'].includes(savedAspectRatio)) {
+          console.log('Loading saved aspect ratio from localStorage:', savedAspectRatio);
+          setAspectRatio(savedAspectRatio);
+        }
+        
+        // Load duration
+        const savedDuration = localStorage.getItem('runway-automation-duration');
+        if (savedDuration && ['5', '10'].includes(savedDuration)) {
+          console.log('Loading saved duration from localStorage:', savedDuration);
+          setDuration(parseInt(savedDuration));
+        }
+        
+        // Load concurrency (# of Videos Generated)
+        const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
+        if (savedConcurrency) {
+          const parsedConcurrency = parseInt(savedConcurrency);
+          if (!isNaN(parsedConcurrency) && parsedConcurrency >= 1 && parsedConcurrency <= 20) {
+            console.log('Loading saved concurrency (# of videos) from localStorage:', parsedConcurrency);
+            setConcurrency(parsedConcurrency);
+          } else {
+            console.log('Invalid concurrency value in localStorage, using default:', savedConcurrency);
+          }
+        }
       } catch (error) {
         console.warn('Failed to load saved data from localStorage:', error);
       }
@@ -102,6 +135,51 @@ export default function RunwayAutomationApp() {
     }
   }, [imageUrl]);
 
+  // Save model to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('runway-automation-model', model);
+      } catch (error) {
+        console.warn('Failed to save model to localStorage:', error);
+      }
+    }
+  }, [model]);
+
+  // Save aspect ratio to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
+      } catch (error) {
+        console.warn('Failed to save aspect ratio to localStorage:', error);
+      }
+    }
+  }, [aspectRatio]);
+
+  // Save duration to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('runway-automation-duration', duration.toString());
+      } catch (error) {
+        console.warn('Failed to save duration to localStorage:', error);
+      }
+    }
+  }, [duration]);
+
+  // Save concurrency (# of Videos Generated) to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        console.log('Saving concurrency (# of videos) to localStorage:', concurrency);
+        localStorage.setItem('runway-automation-concurrency', concurrency.toString());
+      } catch (error) {
+        console.warn('Failed to save concurrency to localStorage:', error);
+      }
+    }
+  }, [concurrency]);
+
   // Clear API key function for security
   const clearStoredApiKey = () => {
     try {
@@ -119,9 +197,17 @@ export default function RunwayAutomationApp() {
       localStorage.removeItem('runway-automation-api-key');
       localStorage.removeItem('runway-automation-prompt');
       localStorage.removeItem('runway-automation-image-url');
+      localStorage.removeItem('runway-automation-model');
+      localStorage.removeItem('runway-automation-aspect-ratio');
+      localStorage.removeItem('runway-automation-duration');
+      localStorage.removeItem('runway-automation-concurrency');
       setRunwayApiKey('');
       setPrompt('');
       setImageUrl('');
+      setModel('gen3a_turbo');
+      setAspectRatio('16:9');
+      setDuration(5);
+      setConcurrency(1);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -1043,8 +1129,8 @@ export default function RunwayAutomationApp() {
         `}</style>
       </Head>
 
-      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4">
+      <div className="min-vh-100 d-flex flex-column" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
+        <div className="container-fluid py-4 flex-grow-1 d-flex flex-column">
           <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
             <div className="d-flex align-items-center">
               <button 
@@ -1100,17 +1186,20 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
 
+          <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0 }}>
+
           {activeTab === 'setup' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="row g-4">
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+            <div className="row justify-content-center flex-grow-1">
+              <div className="col-lg-10 d-flex flex-column">
+                <div className="row g-4 flex-grow-1">
+                  <div className="col-lg-6 d-flex">
+                    <div className="card shadow-lg border-0 flex-grow-1 d-flex flex-column" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '8px 8px 0 0'
+                          borderRadius: '8px 8px 0 0',
+                          flexShrink: 0
                         }}
                       >
                         <div 
@@ -1133,7 +1222,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                      <div className="card-body p-4 flex-grow-1 overflow-auto" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4">
                         </div>
                         <div className="mb-4">
@@ -1315,13 +1404,14 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
 
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div className="col-lg-6 d-flex">
+                    <div className="card shadow-lg border-0 flex-grow-1 d-flex flex-column" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '8px 8px 0 0'
+                          borderRadius: '8px 8px 0 0',
+                          flexShrink: 0
                         }}
                       >
                         <div 
@@ -1344,7 +1434,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                      <div className="card-body p-4 flex-grow-1 overflow-auto" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4">
                         </div>
                         <div className="mb-4">
@@ -1524,14 +1614,15 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+            <div className="row justify-content-center flex-grow-1">
+              <div className="col-lg-10 d-flex flex-column">
+                <div className="card shadow-lg border-0 flex-grow-1 d-flex flex-column" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '8px 8px 0 0'
+                      borderRadius: '8px 8px 0 0',
+                      flexShrink: 0
                     }}
                   >
                     <div 
@@ -1593,7 +1684,7 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
                   
-                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                  <div className="card-body p-4 flex-grow-1 overflow-auto d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4">
                     </div>
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
@@ -1699,7 +1790,7 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
+                    <div className="card bg-dark text-light border-0 shadow flex-shrink-0" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
                         <button 
@@ -1711,7 +1802,7 @@ export default function RunwayAutomationApp() {
                           <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
                         </button>
                       </div>
-                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
+                      <div className="card-body overflow-auto" style={{ maxHeight: '300px', fontFamily: 'monospace' }}>
                         {logs.map((log, index) => (
                           <div key={index} className={`small mb-1 ${
                             log.type === 'error' ? 'text-danger' :
@@ -1736,14 +1827,15 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+            <div className="row justify-content-center flex-grow-1">
+              <div className="col-lg-10 d-flex flex-column">
+                <div className="card shadow-lg border-0 flex-grow-1 d-flex flex-column" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '8px 8px 0 0'
+                      borderRadius: '8px 8px 0 0',
+                      flexShrink: 0
                     }}
                   >
                     <div 
@@ -1794,7 +1886,7 @@ export default function RunwayAutomationApp() {
                     )}
                   </div>
                   
-                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                  <div className="card-body p-4 flex-grow-1 overflow-auto" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4">
                     </div>
                     {results.length === 0 ? (
