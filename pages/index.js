@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video, FolderOpen } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -29,8 +29,9 @@ export default function RunwayAutomationApp() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedApiKey = localStorage.getItem('runway-api-key');
+        const savedApiKey = localStorage.getItem('runway-automation-api-key');
         if (savedApiKey && savedApiKey.trim()) {
+          console.log('Loading saved API key from localStorage');
           setRunwayApiKey(savedApiKey);
         }
       } catch (error) {
@@ -43,14 +44,12 @@ export default function RunwayAutomationApp() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        if (runwayApiKey && runwayApiKey.trim()) {
-          // Only save if it looks like a valid API key format and has some length
-          if ((runwayApiKey.startsWith('key_') || runwayApiKey.startsWith('sk-')) && runwayApiKey.length > 10) {
-            localStorage.setItem('runway-api-key', runwayApiKey);
-          }
+        if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
+          console.log('Saving API key to localStorage');
+          localStorage.setItem('runway-automation-api-key', runwayApiKey);
         } else if (runwayApiKey === '') {
-          // If explicitly cleared, remove from storage
-          localStorage.removeItem('runway-api-key');
+          console.log('Removing API key from localStorage');
+          localStorage.removeItem('runway-automation-api-key');
         }
       } catch (error) {
         console.warn('Failed to save API key to localStorage:', error);
@@ -61,7 +60,7 @@ export default function RunwayAutomationApp() {
   // Clear API key function for security
   const clearStoredApiKey = () => {
     try {
-      localStorage.removeItem('runway-api-key');
+      localStorage.removeItem('runway-automation-api-key');
       setRunwayApiKey('');
       addLog('🔒 API key cleared from storage', 'info');
     } catch (error) {
@@ -990,7 +989,7 @@ export default function RunwayAutomationApp() {
                 className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
                 style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
               >
-                <Film size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
+                <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
                 Runway Automation Pro
               </button>
             </div>
@@ -1075,20 +1074,7 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4">
                         </div>
                         <div className="mb-4">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
-                            {runwayApiKey && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={clearStoredApiKey}
-                                title="Clear stored API key"
-                                style={{ fontSize: '12px' }}
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
+                          <label className="form-label fw-bold">RunwayML API Key</label>
                           <input
                             type="password"
                             className="form-control form-control-lg"
@@ -1102,12 +1088,6 @@ export default function RunwayAutomationApp() {
                             <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
                               Get your API key from RunwayML Developer Portal
                             </a>
-                            {runwayApiKey && (
-                              <div className="small text-muted mt-1">
-                                <i className="bi bi-shield-check me-1"></i>
-                                API key is stored locally in your browser for convenience
-                              </div>
-                            )}
                           </div>
                         </div>
 
