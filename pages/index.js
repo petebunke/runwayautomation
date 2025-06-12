@@ -1266,7 +1266,7 @@ export default function RunwayAutomationApp() {
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Videos:</strong> {results.length}</span>
+                            <span className="text-dark"><strong>Videos:</strong> {results.length + Object.keys(generationProgress).length}</span>
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
