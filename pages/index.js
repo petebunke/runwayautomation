@@ -406,10 +406,12 @@ export default function RunwayAutomationApp() {
         if (task.status === 'SUCCEEDED') {
           addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully', 'success');
           
-          setGenerationProgress(prev => ({
-            ...prev,
-            [jobId]: { status: 'completed', progress: 100 }
-          }));
+          // Remove from progress tracking since it's now completed
+          setGenerationProgress(prev => {
+            const updated = { ...prev };
+            delete updated[jobId];
+            return updated;
+          });
 
           const completedVideo = {
             id: taskId,
@@ -429,10 +431,14 @@ export default function RunwayAutomationApp() {
         if (task.status === 'FAILED') {
           const failureReason = task.failure_reason || task.error || 'Generation failed - no specific reason provided';
           addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
-          setGenerationProgress(prev => ({
-            ...prev,
-            [jobId]: { status: 'failed', progress: 0, error: failureReason }
-          }));
+          
+          // Remove from progress tracking since it failed
+          setGenerationProgress(prev => {
+            const updated = { ...prev };
+            delete updated[jobId];
+            return updated;
+          });
+          
           throw new Error(failureReason);
         }
 
