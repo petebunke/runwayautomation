@@ -846,7 +846,7 @@ export default function RunwayAutomationApp() {
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
                     <Settings size={20} className="me-2" />
-                    Configuration
+                    Setup
                   </button>
                 </li>
                 <li className="nav-item">
@@ -902,7 +902,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         
                         <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">API Configuration</h3>
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
                         </div>
                       </div>
                       
@@ -1100,7 +1100,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         
                         <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Video Configuration</h3>
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
                         </div>
                       </div>
                       
@@ -1551,7 +1551,7 @@ export default function RunwayAutomationApp() {
                               
                               <div className="card-body p-3">
                                 <div className="fw-bold text-primary mb-2">{result.jobId}</div>
-                                <h6 className="card-title fw-bold mb-3" title={result.prompt}>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
                                 
@@ -1606,14 +1606,13 @@ export default function RunwayAutomationApp() {
           <div className="text-center mt-5">
             <div className="d-flex align-items-center justify-content-center text-white-50 mb-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <svg width="120" height="24" viewBox="0 0 120 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8.4 6.6V12H12V6.6H8.4ZM8.4 13.2V18.6H12V13.2H8.4ZM13.2 6.6V12H16.8V6.6H13.2ZM13.2 13.2V18.6H16.8V13.2H13.2ZM18 6.6V12H21.6V6.6H18ZM18 13.2V18.6H21.6V13.2H18Z" fill="white" fillOpacity="0.6"/>
-                  <path d="M28.8 7.8V10.2H34.8V7.8H28.8ZM28.8 10.8V13.2H34.8V10.8H28.8ZM28.8 13.8V16.2H34.8V13.8H28.8Z" fill="white" fillOpacity="0.6"/>
-                  <path d="M40.8 7.8V18.6H43.2V15.6H46.8V18.6H49.2V7.8H46.8V13.2H43.2V7.8H40.8Z" fill="white" fillOpacity="0.6"/>
-                  <path d="M55.2 7.8V18.6H61.2V16.2H57.6V13.8H60.6V11.4H57.6V10.2H61.2V7.8H55.2Z" fill="white" fillOpacity="0.6"/>
-                  <path d="M67.2 7.8V10.2H69.6V7.8H67.2ZM67.2 10.8V18.6H69.6V10.8H67.2Z" fill="white" fillOpacity="0.6"/>
-                  <path d="M75.6 7.8V18.6H78V15.6H81.6V18.6H84V7.8H81.6V13.2H78V7.8H75.6Z" fill="white" fillOpacity="0.6"/>
-                  <text x="32" y="16" font-family="Arial, sans-serif" font-size="8" font-weight="600" fill="white" fillOpacity="0.6">RUNWAY</text>
+                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
+                  <g transform="translate(75, 2)">
+                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
+                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
+                    <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                  </g>
                 </svg>
               </a>
             </div>
