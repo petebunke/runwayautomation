@@ -1438,9 +1438,8 @@ export default function RunwayAutomationApp() {
                       <Download className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white" style={{ marginLeft: '105px', marginTop: '8px' }}>
-                      <h2 className="fw-bold mb-1">Generated Videos</h2>
-                      <p className="small mb-0" style={{ marginLeft: '3px' }}>{results.length} {results.length === 1 ? 'video' : 'videos'} generated</p>
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
