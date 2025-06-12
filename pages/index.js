@@ -687,6 +687,7 @@ export default function RunwayAutomationApp() {
   const downloadAllVideos = async () => {
     setIsDownloadingAll(true);
     
+    // Get ALL completed videos from ALL generations
     const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
     
     if (videosWithUrls.length === 0) {
@@ -695,13 +696,24 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    addLog('📦 Starting download of ' + videosWithUrls.length + ' videos...', 'info');
+    addLog(`📦 Starting download of ${videosWithUrls.length} videos from all generations...`, 'info');
 
-    const downloadPromises = videosWithUrls.map(async (result, index) => {
+    // Process all videos sequentially to avoid browser blocking
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < videosWithUrls.length; i++) {
+      const result = videosWithUrls[i];
       const filename = generateFilename(result.jobId, result.id);
       
       try {
+        addLog(`📥 Downloading ${i + 1}/${videosWithUrls.length}: ${filename}...`, 'info');
+        
         const response = await fetch(result.video_url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const blob = await response.blob();
         
         const url = window.URL.createObjectURL(blob);
@@ -716,25 +728,25 @@ export default function RunwayAutomationApp() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
-        await new Promise(resolve => setTimeout(resolve, 500));
+        successCount++;
         
-        return filename;
+        // Small delay between downloads to prevent browser blocking and show progress
+        if (i < videosWithUrls.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+        
       } catch (error) {
-        addLog('❌ Failed to download video ' + (index + 1) + ': ' + error.message, 'error');
-        throw error;
+        failCount++;
+        addLog(`❌ Failed to download ${filename}: ${error.message}`, 'error');
+        
+        // Continue with next download even if one fails
+        continue;
       }
-    });
-
-    try {
-      const downloadedFiles = await Promise.allSettled(downloadPromises);
-      const successful = downloadedFiles.filter(result => result.status === 'fulfilled').length;
-      const failed = downloadedFiles.filter(result => result.status === 'rejected').length;
-      
-      addLog('✅ Download complete! ' + successful + ' videos downloaded successfully' + (failed > 0 ? ', ' + failed + ' failed' : ''), 'success');
-    } catch (error) {
-      addLog('❌ Batch download error: ' + error.message, 'error');
     }
 
+    const totalVideos = videosWithUrls.length;
+    addLog(`✅ Download complete! ${successCount}/${totalVideos} videos downloaded successfully${failCount > 0 ? `, ${failCount} failed` : ''}`, 'success');
+    
     setIsDownloadingAll(false);
   };
 
@@ -945,12 +957,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="• 16:9 (Landscape - YouTube, TV, desktop)
-• 9:16 (Portrait - TikTok, Instagram Stories, mobile)
-• 1:1 (Square - Instagram posts, profile pics)
-• 4:3 (Standard - Classic TV, monitors)
-• 3:4 (Portrait Standard - Print, documents)
-• 21:9 (Cinematic - Ultrawide movies)"
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
                               ></i>
                             </label>
                             <select
@@ -1406,6 +1413,9 @@ export default function RunwayAutomationApp() {
                             <>
                               <Download size={20} className="me-2" />
                               Download All Videos
+                              <span className="ms-2 badge bg-primary">
+                                {results.filter(result => result.video_url && result.status === 'completed').length}
+                              </span>
                             </>
                           )}
                         </button>
