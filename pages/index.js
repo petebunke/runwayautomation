@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video, Upload, FolderOpen } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Key, ExternalLink, CreditCard, Video, FolderOpen } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -987,6 +987,385 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
 
+          {activeTab === 'setup' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-10">
+                <div className="row g-4">
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Key className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4">
+                        </div>
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">RunwayML API Key</label>
+                          <input
+                            type="password"
+                            className="form-control form-control-lg"
+                            value={runwayApiKey}
+                            onChange={(e) => setRunwayApiKey(e.target.value)}
+                            placeholder="key_xxx..."
+                            style={{ borderRadius: '8px' }}
+                          />
+                          <div className="form-text">
+                            <ExternalLink size={14} className="me-1" />
+                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                              Get your API key from RunwayML Developer Portal
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                          <div className="d-flex align-items-center mb-2">
+                            <CreditCard size={20} className="text-warning me-2" />
+                            <strong>Credits Required</strong>
+                          </div>
+                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
+                          <ul className="small mb-0 ps-3">
+                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Minimum $10 (1000 credits)</li>
+                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li>Credits are separate from web app credits</li>
+                          </ul>
+                        </div>
+
+                        <div className="row g-3">
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Model</label>
+                            <select
+                              className="form-select"
+                              value={model}
+                              onChange={(e) => setModel(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {modelOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              Aspect Ratio
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
+                              ></i>
+                            </label>
+                            <select
+                              className="form-select"
+                              value={aspectRatio}
+                              onChange={(e) => setAspectRatio(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {aspectRatioOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Duration (seconds)</label>
+                            <select
+                              className="form-select"
+                              value={duration}
+                              onChange={(e) => setDuration(parseInt(e.target.value))}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              <option value={5}>5 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              # of Videos Generated
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
+                              ></i>
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              className="form-control"
+                              value={concurrency}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                const safeValue = Math.min(Math.max(value, 1), 20);
+                                setConcurrency(safeValue);
+                                
+                                if (value > 20) {
+                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
+                                }
+                              }}
+                              style={{ borderRadius: '8px' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-light rounded border">
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
+                          <div className="table-responsive">
+                            <table className="table table-sm table-bordered border-dark mb-0">
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
+                                </tr>
+                              </thead>
+                              <tbody className="small">
+                                <tr>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">Default (new accounts)</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">2</td>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">1 day after $50 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">7 days after $100 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">4</td>
+                                  <td className="border-dark">10</td>
+                                  <td className="border-dark">14 days after $1,000 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">20</td>
+                                  <td className="border-dark">7 days after $5,000 purchased</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="small text-muted mt-2 mb-0">
+                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Film className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4">
+                        </div>
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Video Prompt</label>
+                          <div className="position-relative">
+                            <textarea
+                              className="form-control"
+                              rows="3"
+                              value={prompt}
+                              onChange={(e) => setPrompt(e.target.value)}
+                              placeholder=""
+                              style={{ borderRadius: '8px' }}
+                            />
+                            {!prompt && (
+                              <div 
+                                className="position-absolute" 
+                                style={{ 
+                                  left: '16px', 
+                                  top: '12px', 
+                                  pointerEvents: 'none',
+                                  color: '#6c757d',
+                                  fontSize: '16px'
+                                }}
+                              >
+                                Add an image then describe your shot.{' '}
+                                <a 
+                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-decoration-underline"
+                                  style={{ 
+                                    color: '#6c757d',
+                                    pointerEvents: 'auto'
+                                  }}
+                                >
+                                  View guide
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">
+                            Image
+                            <i 
+                              className="bi bi-info-circle ms-1 text-primary" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
+                            ></i>
+                          </label>
+                          
+                          {/* Hidden file input */}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            style={{ display: 'none' }}
+                          />
+                          
+                          {/* Upload button or URL input */}
+                          {!imageUrl ? (
+                            <div 
+                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
+                              style={{ 
+                                borderColor: '#dee2e6', 
+                                backgroundColor: '#f8f9fa',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                minHeight: '120px'
+                              }}
+                              onClick={triggerImageUpload}
+                              onMouseEnter={(e) => {
+                                e.target.style.borderColor = '#0d6efd';
+                                e.target.style.backgroundColor = '#e7f3ff';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#dee2e6';
+                                e.target.style.backgroundColor = '#f8f9fa';
+                              }}
+                            >
+                              <div>
+                                {isUploadingImage ? (
+                                  <>
+                                    <div className="spinner-border text-primary mb-2" role="status">
+                                      <span className="visually-hidden">Uploading...</span>
+                                    </div>
+                                    <div className="text-muted">Uploading image...</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <FolderOpen size={48} className="text-primary mb-2" />
+                                    <div className="text-primary fw-bold mb-1">Click to upload image</div>
+                                    <div className="text-muted small">or paste image URL below</div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="position-relative">
+                              <img 
+                                src={imageUrl} 
+                                alt="Uploaded image preview"
+                                className="img-fluid rounded border w-100"
+                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                              <button
+                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                onClick={() => {
+                                  setImageUrl('');
+                                  setImageError(false);
+                                  if (fileInputRef.current) {
+                                    fileInputRef.current.value = '';
+                                  }
+                                }}
+                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* URL input as alternative */}
+                          <div className="mt-3">
+                            <input
+                              type="url"
+                              className="form-control"
+                              value={imageUrl}
+                              onChange={(e) => setImageUrl(e.target.value)}
+                              placeholder="Or paste image URL here..."
+                              style={{ borderRadius: '8px' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
@@ -1416,383 +1795,4 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-} === 'setup' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="row g-4">
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                      <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '80px',
-                          borderRadius: '8px 8px 0 0'
-                        }}
-                      >
-                        <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '80px', 
-                            height: '80px',
-                            left: '20px',
-                            top: '40px',
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
-                          }}
-                        >
-                          <Key className="text-white" size={32} />
-                        </div>
-                        
-                        <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">API Setup</h3>
-                        </div>
-                      </div>
-                      
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4">
-                        </div>
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">RunwayML API Key</label>
-                          <input
-                            type="password"
-                            className="form-control form-control-lg"
-                            value={runwayApiKey}
-                            onChange={(e) => setRunwayApiKey(e.target.value)}
-                            placeholder="key_xxx..."
-                            style={{ borderRadius: '8px' }}
-                          />
-                          <div className="form-text">
-                            <ExternalLink size={14} className="me-1" />
-                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from RunwayML Developer Portal
-                            </a>
-                          </div>
-                        </div>
-
-                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                          <div className="d-flex align-items-center mb-2">
-                            <CreditCard size={20} className="text-warning me-2" />
-                            <strong>Credits Required</strong>
-                          </div>
-                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
-                          <ul className="small mb-0 ps-3">
-                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
-                            <li>Minimum $10 (1000 credits)</li>
-                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>Credits are separate from web app credits</li>
-                          </ul>
-                        </div>
-
-                        <div className="row g-3">
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Model</label>
-                            <select
-                              className="form-select"
-                              value={model}
-                              onChange={(e) => setModel(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {modelOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              Aspect Ratio
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
-                              ></i>
-                            </label>
-                            <select
-                              className="form-select"
-                              value={aspectRatio}
-                              onChange={(e) => setAspectRatio(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {aspectRatioOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Duration (seconds)</label>
-                            <select
-                              className="form-select"
-                              value={duration}
-                              onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              <option value={5}>5 seconds</option>
-                              <option value={10}>10 seconds</option>
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              # of Videos Generated
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
-                              ></i>
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="20"
-                              className="form-control"
-                              value={concurrency}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value) || 1;
-                                const safeValue = Math.min(Math.max(value, 1), 20);
-                                setConcurrency(safeValue);
-                                
-                                if (value > 20) {
-                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
-                                }
-                              }}
-                              style={{ borderRadius: '8px' }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
-                          <div className="table-responsive">
-                            <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead className="table-secondary">
-                                <tr>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
-                                </tr>
-                              </thead>
-                              <tbody className="small">
-                                <tr>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">Default (new accounts)</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">2</td>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">1 day after $50 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">7 days after $100 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">4</td>
-                                  <td className="border-dark">10</td>
-                                  <td className="border-dark">14 days after $1,000 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">20</td>
-                                  <td className="border-dark">7 days after $5,000 purchased</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                          <p className="small text-muted mt-2 mb-0">
-                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                      <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '80px',
-                          borderRadius: '8px 8px 0 0'
-                        }}
-                      >
-                        <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '80px', 
-                            height: '80px',
-                            left: '20px',
-                            top: '40px',
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
-                          }}
-                        >
-                          <Film className="text-white" size={32} />
-                        </div>
-                        
-                        <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Video Setup</h3>
-                        </div>
-                      </div>
-                      
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4">
-                        </div>
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt</label>
-                          <div className="position-relative">
-                            <textarea
-                              className="form-control"
-                              rows="3"
-                              value={prompt}
-                              onChange={(e) => setPrompt(e.target.value)}
-                              placeholder=""
-                              style={{ borderRadius: '8px' }}
-                            />
-                            {!prompt && (
-                              <div 
-                                className="position-absolute" 
-                                style={{ 
-                                  left: '16px', 
-                                  top: '12px', 
-                                  pointerEvents: 'none',
-                                  color: '#6c757d',
-                                  fontSize: '16px'
-                                }}
-                              >
-                                Add an image then describe your shot.{' '}
-                                <a 
-                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-decoration-underline"
-                                  style={{ 
-                                    color: '#6c757d',
-                                    pointerEvents: 'auto'
-                                  }}
-                                >
-                                  View guide
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">
-                            Image
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
-                            ></i>
-                          </label>
-                          
-                          {/* Hidden file input */}
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            style={{ display: 'none' }}
-                          />
-                          
-                          {/* Upload button or URL input */}
-                          {!imageUrl ? (
-                            <div 
-                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
-                              style={{ 
-                                borderColor: '#dee2e6', 
-                                backgroundColor: '#f8f9fa',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                minHeight: '120px'
-                              }}
-                              onClick={triggerImageUpload}
-                              onMouseEnter={(e) => {
-                                e.target.style.borderColor = '#0d6efd';
-                                e.target.style.backgroundColor = '#e7f3ff';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.borderColor = '#dee2e6';
-                                e.target.style.backgroundColor = '#f8f9fa';
-                              }}
-                            >
-                              <div>
-                                {isUploadingImage ? (
-                                  <>
-                                    <div className="spinner-border text-primary mb-2" role="status">
-                                      <span className="visually-hidden">Uploading...</span>
-                                    </div>
-                                    <div className="text-muted">Uploading image...</div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <FolderOpen size={48} className="text-primary mb-2" />
-                                    <div className="text-primary fw-bold mb-1">Click to upload image</div>
-                                    <div className="text-muted small">or paste image URL below</div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="position-relative">
-                              <img 
-                                src={imageUrl} 
-                                alt="Uploaded image preview"
-                                className="img-fluid rounded border w-100"
-                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
-                                onLoad={handleImageLoad}
-                                onError={handleImageError}
-                              />
-                              <button
-                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
-                                onClick={() => {
-                                  setImageUrl('');
-                                  setImageError(false);
-                                  if (fileInputRef.current) {
-                                    fileInputRef.current.value = '';
-                                  }
-                                }}
-                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          )}
-                          
-                          {/* URL input as alternative */}
-                          <div className="mt-3">
-                            <input
-                              type="url"
-                              className="form-control"
-                              value={imageUrl}
-                              onChange={(e) => setImageUrl(e.target.value)}
-                              placeholder="Or paste image URL here..."
-                              style={{ borderRadius: '8px' }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab
+}
