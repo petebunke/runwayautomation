@@ -25,6 +25,45 @@ export default function RunwayAutomationApp() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Load API key from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedApiKey = localStorage.getItem('runway-api-key');
+        if (savedApiKey) {
+          setRunwayApiKey(savedApiKey);
+        }
+      } catch (error) {
+        console.warn('Failed to load API key from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Save API key to localStorage when it changes (with debouncing)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && runwayApiKey) {
+      try {
+        // Only save if it looks like a valid API key format
+        if (runwayApiKey.startsWith('key_') || runwayApiKey.startsWith('sk-')) {
+          localStorage.setItem('runway-api-key', runwayApiKey);
+        }
+      } catch (error) {
+        console.warn('Failed to save API key to localStorage:', error);
+      }
+    }
+  }, [runwayApiKey]);
+
+  // Clear API key function for security
+  const clearStoredApiKey = () => {
+    try {
+      localStorage.removeItem('runway-api-key');
+      setRunwayApiKey('');
+      addLog('🔒 API key cleared from storage', 'info');
+    } catch (error) {
+      console.warn('Failed to clear API key:', error);
+    }
+  };
+
   const isValidImageUrl = (url) => {
     try {
       // Handle data URLs from uploaded files
@@ -939,20 +978,22 @@ export default function RunwayAutomationApp() {
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
         <div className="container-fluid py-4">
-          <div className="text-center mb-5">
-            <h1 className="display-4 fw-bold text-white mb-3">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <div className="d-flex align-items-center">
               <button 
                 onClick={() => setActiveTab('setup')}
-                className="btn btn-link text-white text-decoration-none p-0"
-                style={{ fontSize: 'inherit', fontWeight: 'inherit' }}
+                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
+                style={{ fontSize: '2.5rem', fontWeight: 'bold' }}
               >
                 <Film size={48} className="me-3" style={{ verticalAlign: 'middle' }} />
                 Runway Automation Pro
               </button>
-            </h1>
-            <p className="lead text-white-50 mx-auto" style={{ maxWidth: '800px' }}>
-              A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
-            </p>
+            </div>
+            <div className="text-end">
+              <p className="lead text-white-50 mb-0" style={{ maxWidth: '600px', fontSize: '1.1rem' }}>
+                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
+              </p>
+            </div>
           </div>
 
           <div className="row justify-content-center mb-3">
@@ -1029,7 +1070,20 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4">
                         </div>
                         <div className="mb-4">
-                          <label className="form-label fw-bold">RunwayML API Key</label>
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
+                            {runwayApiKey && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={clearStoredApiKey}
+                                title="Clear stored API key"
+                                style={{ fontSize: '12px' }}
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
                           <input
                             type="password"
                             className="form-control form-control-lg"
@@ -1043,6 +1097,12 @@ export default function RunwayAutomationApp() {
                             <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
                               Get your API key from RunwayML Developer Portal
                             </a>
+                            {runwayApiKey && (
+                              <div className="small text-muted mt-1">
+                                <i className="bi bi-shield-check me-1"></i>
+                                API key is stored locally in your browser for convenience
+                              </div>
+                            )}
                           </div>
                         </div>
 
