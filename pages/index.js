@@ -1289,6 +1289,42 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
+                    {/* Always show generation status */}
+                    <div className="mb-4" style={{ minHeight: '120px' }}>
+                      <div className="text-center py-4">
+                        <h4 className="fw-bold text-dark mb-2">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              // During generation
+                              return `Generation ${generationCounter || 1} in progress`;
+                            } else if (completedGeneration) {
+                              // After completion
+                              return `Generation ${completedGeneration} completed`;
+                            } else {
+                              // Initial state
+                              return `Generation ${generationCounter || 1}`;
+                            }
+                          })()}
+                        </h4>
+                        <p className="text-muted mb-0">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              // During generation - show active job count
+                              const count = Object.keys(generationProgress).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generating`;
+                            } else if (completedGeneration) {
+                              // After completion - show completed count from that generation
+                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                            } else {
+                              // Initial state
+                              return '0 videos generated';
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+
                     {Object.keys(generationProgress).length > 0 && (
                       <div className="mb-4">
                         <h4 className="fw-bold mb-3">Generation Progress</h4>
@@ -1333,28 +1369,6 @@ export default function RunwayAutomationApp() {
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-
-                    {completedGeneration && Object.keys(generationProgress).length === 0 && (
-                      <div className="mb-4" style={{ minHeight: '120px' }}>
-                        <div className="text-center py-4">
-                          <h4 className="fw-bold text-dark mb-2">
-                            Generation {completedGeneration} completed
-                          </h4>
-                          <p className="text-muted mb-0">
-                            {(() => {
-                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            })()}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {Object.keys(generationProgress).length === 0 && !completedGeneration && (
-                      <div className="mb-4" style={{ minHeight: '120px' }}>
-                        {/* Empty spacer to maintain consistent spacing */}
                       </div>
                     )}
 
