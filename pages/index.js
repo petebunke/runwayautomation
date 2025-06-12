@@ -71,15 +71,12 @@ export default function RunwayAutomationApp() {
           setDuration(parseInt(savedDuration));
         }
         
-        // Load concurrency (# of Videos Generated)
+        // Load concurrency
         const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
         if (savedConcurrency) {
           const parsedConcurrency = parseInt(savedConcurrency);
           if (!isNaN(parsedConcurrency) && parsedConcurrency >= 1 && parsedConcurrency <= 20) {
-            console.log('Loading saved concurrency (# of videos) from localStorage:', parsedConcurrency);
             setConcurrency(parsedConcurrency);
-          } else {
-            console.log('Invalid concurrency value in localStorage, using default:', savedConcurrency);
           }
         }
       } catch (error) {
@@ -168,11 +165,10 @@ export default function RunwayAutomationApp() {
     }
   }, [duration]);
 
-  // Save concurrency (# of Videos Generated) to localStorage when it changes
+  // Save concurrency to localStorage when it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        console.log('Saving concurrency (# of videos) to localStorage:', concurrency);
         localStorage.setItem('runway-automation-concurrency', concurrency.toString());
       } catch (error) {
         console.warn('Failed to save concurrency to localStorage:', error);
@@ -1078,7 +1074,7 @@ export default function RunwayAutomationApp() {
         <title>Runway Automation Pro - AI Video Generation</title>
         <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
