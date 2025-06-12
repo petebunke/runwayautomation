@@ -1,593 +1,3 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen } from 'lucide-react';
-import Head from 'next/head';
-
-export default function RunwayAutomationApp() {
-  const [activeTab, setActiveTab] = useState('setup');
-  const [runwayApiKey, setRunwayApiKey] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [model, setModel] = useState('gen3a_turbo');
-  const [aspectRatio, setAspectRatio] = useState('16:9');
-  const [duration, setDuration] = useState(5);
-  const [concurrency, setConcurrency] = useState(1);
-  const [minWait, setMinWait] = useState(8);
-  const [maxWait, setMaxWait] = useState(15);
-  const [isRunning, setIsRunning] = useState(false);
-  const [results, setResults] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [generationProgress, setGenerationProgress] = useState({});
-  const [imageError, setImageError] = useState(false);
-  const [videoCounter, setVideoCounter] = useState(0);
-  const [generationCounter, setGenerationCounter] = useState(0);
-  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
-  const [completedGeneration, setCompletedGeneration] = useState(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const fileInputRef = useRef(null);
-
-  // Load saved data from localStorage on component mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        // Load API key
-        const savedApiKey = localStorage.getItem('runway-automation-api-key');
-        if (savedApiKey && savedApiKey.trim()) {
-          console.log('Loading saved API key from localStorage');
-          setRunwayApiKey(savedApiKey);
-        }
-        
-        // Load prompt
-        const savedPrompt = localStorage.getItem('runway-automation-prompt');
-        if (savedPrompt && savedPrompt.trim()) {
-          console.log('Loading saved prompt from localStorage');
-          setPrompt(savedPrompt);
-        }
-        
-        // Load image URL
-        const savedImageUrl = localStorage.getItem('runway-automation-image-url');
-        if (savedImageUrl && savedImageUrl.trim()) {
-          console.log('Loading saved image URL from localStorage');
-          setImageUrl(savedImageUrl);
-        }
-        
-        // Load model
-        const savedModel = localStorage.getItem('runway-automation-model');
-        if (savedModel && ['gen3a_turbo', 'gen4_turbo'].includes(savedModel)) {
-          console.log('Loading saved model from localStorage:', savedModel);
-          setModel(savedModel);
-        }
-        
-        // Load aspect ratio
-        const savedAspectRatio = localStorage.getItem('runway-automation-aspect-ratio');
-        if (savedAspectRatio && ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'].includes(savedAspectRatio)) {
-          console.log('Loading saved aspect ratio from localStorage:', savedAspectRatio);
-          setAspectRatio(savedAspectRatio);
-        }
-        
-        // Load duration
-        const savedDuration = localStorage.getItem('runway-automation-duration');
-        if (savedDuration && ['5', '10'].includes(savedDuration)) {
-          console.log('Loading saved duration from localStorage:', savedDuration);
-          setDuration(parseInt(savedDuration));
-        }
-        
-        // Load concurrency
-        const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
-        if (savedConcurrency) {
-          const parsedConcurrency = parseInt(savedConcurrency);
-          if (!isNaN(parsedConcurrency) && parsedConcurrency >= 1 && parsedConcurrency <= 20) {
-            setConcurrency(parsedConcurrency);
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to load saved data from localStorage:', error);
-      }
-    }
-  }, []);
-
-  // Save API key to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
-          console.log('Saving API key to localStorage');
-          localStorage.setItem('runway-automation-api-key', runwayApiKey);
-        } else if (runwayApiKey === '') {
-          console.log('Removing API key from localStorage');
-          localStorage.removeItem('runway-automation-api-key');
-        }
-      } catch (error) {
-        console.warn('Failed to save API key to localStorage:', error);
-      }
-    }
-  }, [runwayApiKey]);
-
-  // Save prompt to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (prompt && prompt.trim()) {
-          localStorage.setItem('runway-automation-prompt', prompt);
-        } else if (prompt === '') {
-          localStorage.removeItem('runway-automation-prompt');
-        }
-      } catch (error) {
-        console.warn('Failed to save prompt to localStorage:', error);
-      }
-    }
-  }, [prompt]);
-
-  // Save image URL to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (imageUrl && imageUrl.trim()) {
-          localStorage.setItem('runway-automation-image-url', imageUrl);
-        } else if (imageUrl === '') {
-          localStorage.removeItem('runway-automation-image-url');
-        }
-      } catch (error) {
-        console.warn('Failed to save image URL to localStorage:', error);
-      }
-    }
-  }, [imageUrl]);
-
-  // Save model to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('runway-automation-model', model);
-      } catch (error) {
-        console.warn('Failed to save model to localStorage:', error);
-      }
-    }
-  }, [model]);
-
-  // Save aspect ratio to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
-      } catch (error) {
-        console.warn('Failed to save aspect ratio to localStorage:', error);
-      }
-    }
-  }, [aspectRatio]);
-
-  // Save duration to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('runway-automation-duration', duration.toString());
-      } catch (error) {
-        console.warn('Failed to save duration to localStorage:', error);
-      }
-    }
-  }, [duration]);
-
-  // Save concurrency to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('runway-automation-concurrency', concurrency.toString());
-      } catch (error) {
-        console.warn('Failed to save concurrency to localStorage:', error);
-      }
-    }
-  }, [concurrency]);
-
-  // Clear API key function for security
-  const clearStoredApiKey = () => {
-    try {
-      localStorage.removeItem('runway-automation-api-key');
-      setRunwayApiKey('');
-      addLog('🔒 API key cleared from storage', 'info');
-    } catch (error) {
-      console.warn('Failed to clear API key:', error);
-    }
-  };
-
-  // Clear all stored data function
-  const clearAllStoredData = () => {
-    try {
-      localStorage.removeItem('runway-automation-api-key');
-      localStorage.removeItem('runway-automation-prompt');
-      localStorage.removeItem('runway-automation-image-url');
-      localStorage.removeItem('runway-automation-model');
-      localStorage.removeItem('runway-automation-aspect-ratio');
-      localStorage.removeItem('runway-automation-duration');
-      localStorage.removeItem('runway-automation-concurrency');
-      setRunwayApiKey('');
-      setPrompt('');
-      setImageUrl('');
-      setModel('gen3a_turbo');
-      setAspectRatio('16:9');
-      setDuration(5);
-      setConcurrency(1);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      addLog('🔒 All stored data cleared', 'info');
-    } catch (error) {
-      console.warn('Failed to clear stored data:', error);
-    }
-  };
-
-  const isValidImageUrl = (url) => {
-    try {
-      // Handle data URLs from uploaded files
-      if (url.startsWith('data:image/')) {
-        return true;
-      }
-      
-      const urlObj = new URL(url);
-      const isValidProtocol = urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-      const hasImageExtension = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(urlObj.pathname) || 
-                               url.includes('imgur.com') || 
-                               url.includes('googleusercontent.com') ||
-                               url.includes('amazonaws.com') ||
-                               url.includes('cloudinary.com') ||
-                               url.includes('unsplash.com') ||
-                               url.includes('pexels.com');
-      return isValidProtocol && (hasImageExtension || url.length > 20);
-    } catch {
-      return false;
-    }
-  };
-
-  const handleImageLoad = () => {
-    setImageError(false);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  // Handle image file upload
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      addLog('❌ Please select a valid image file', 'error');
-      return;
-    }
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      addLog('❌ Image file too large. Please use an image under 10MB', 'error');
-      return;
-    }
-
-    setIsUploadingImage(true);
-    
-    try {
-      // Create a data URL for the image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        setImageUrl(dataUrl);
-        setImageError(false);
-        addLog('✅ Image uploaded successfully', 'success');
-        setIsUploadingImage(false);
-      };
-      reader.onerror = () => {
-        addLog('❌ Failed to read image file', 'error');
-        setIsUploadingImage(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      addLog('❌ Error uploading image: ' + error.message, 'error');
-      setIsUploadingImage(false);
-    }
-  };
-
-  const triggerImageUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Initialize Bootstrap tooltips
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.bootstrap) {
-      // Dispose existing tooltips first to prevent duplicates
-      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      existingTooltips.forEach(function (tooltipEl) {
-        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
-        if (existingTooltip) {
-          existingTooltip.dispose();
-        }
-      });
-
-      // Initialize new tooltips
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new window.bootstrap.Tooltip(tooltipTriggerEl);
-      });
-    }
-  }, [activeTab, model, results]);
-
-  const modelOptions = [
-    { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
-    { value: 'gen3a_turbo', label: 'Gen-3 Alpha Turbo (Fast, reliable)' }
-  ];
-
-  const aspectRatioOptions = [
-    { value: '16:9', label: '16:9 (Landscape)' },
-    { value: '9:16', label: '9:16 (Portrait)' },
-    ...(model === 'gen4_turbo' ? [
-      { value: '1:1', label: '1:1 (Square)' },
-      { value: '4:3', label: '4:3 (Standard)' },
-      { value: '3:4', label: '3:4 (Portrait Standard)' },
-      { value: '21:9', label: '21:9 (Cinematic)' }
-    ] : [])
-  ];
-
-  const addLog = (message, type = 'info') => {
-    const timestamp = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { message, type, timestamp }]);
-  };
-
-  const copyLogsToClipboard = () => {
-    const logText = logs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
-    navigator.clipboard.writeText(logText).then(() => {
-      addLog('📋 Logs copied to clipboard', 'info');
-    }).catch(() => {
-      addLog('❌ Failed to copy logs to clipboard', 'error');
-    });
-  };
-
-  const API_BASE = '/api';
-
-  // Check user's credit balance before generation
-  const checkCredits = async () => {
-    try {
-      const response = await fetch(API_BASE + '/runway-credits', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ apiKey: runwayApiKey })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.credits || 0;
-      }
-    } catch (error) {
-      console.log('Could not check credits:', error);
-    }
-    return null; // Return null if we can't check credits
-  };
-
-  // Improved generateVideo function with better error handling
-  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
-    const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
-    
-    try {
-      if (!imageUrlText || !imageUrlText.trim()) {
-        const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
-        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
-        
-        setGenerationProgress(prev => ({
-          ...prev,
-          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
-        }));
-        
-        throw new Error(errorMsg);
-      }
-
-      // Validate image URL format
-      if (!isValidImageUrl(imageUrlText.trim())) {
-        const errorMsg = 'Invalid image URL format. Please use a direct link to an image file (jpg, png, gif, etc.) or a supported image hosting service.';
-        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
-        
-        setGenerationProgress(prev => ({
-          ...prev,
-          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
-        }));
-        
-        throw new Error(errorMsg);
-      }
-
-      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
-      
-      setGenerationProgress(prev => ({
-        ...prev,
-        [jobId]: { status: 'starting', progress: 0 }
-      }));
-
-      const payload = {
-        text_prompt: promptText,
-        image_prompt: imageUrlText.trim(),
-        model: model,
-        aspect_ratio: model === 'gen4_turbo' ? 
-          (aspectRatio === '16:9' ? '1280:720' : 
-           aspectRatio === '9:16' ? '720:1280' : 
-           aspectRatio === '1:1' ? '960:960' : 
-           aspectRatio === '4:3' ? '1104:832' : 
-           aspectRatio === '3:4' ? '832:1104' : 
-           aspectRatio === '21:9' ? '1584:672' : '1280:720') :
-          (aspectRatio === '16:9' ? '1280:768' : 
-           aspectRatio === '9:16' ? '768:1280' : '1280:768'),
-        duration: duration,
-        seed: Math.floor(Math.random() * 1000000)
-      };
-
-      // Add retry logic for initial API call
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      while (retryCount <= maxRetries) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 45000);
-
-          const response = await fetch(API_BASE + '/runway-generate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              apiKey: runwayApiKey,
-              payload: payload
-            }),
-            signal: controller.signal
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            let errorMessage = errorData.error || 'API Error: ' + response.status;
-            
-            // Handle retryable errors
-            if (response.status === 429 || response.status >= 500) {
-              if (retryCount < maxRetries) {
-                const retryDelay = (retryCount + 1) * 10000;
-                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
-                retryCount++;
-                continue;
-              }
-            }
-
-            // Handle insufficient credits - don't retry, fail immediately
-            if (response.status === 400 && errorMessage.includes('not have enough credits')) {
-              throw new Error('Insufficient credits: ' + errorMessage);
-            }
-            
-            if (errorMessage.includes('Invalid asset aspect ratio')) {
-              errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that is closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
-            }
-            
-            throw new Error(errorMessage);
-          }
-
-          const task = await response.json();
-          
-          addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
-          
-          return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
-          
-        } catch (fetchError) {
-          if (retryCount < maxRetries && (
-            fetchError.name === 'AbortError' || 
-            fetchError.message.includes('fetch') ||
-            fetchError.message.includes('network')
-          )) {
-            const retryDelay = (retryCount + 1) * 5000;
-            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-            retryCount++;
-            continue;
-          }
-          throw fetchError;
-        }
-      }
-      
-      throw new Error(`Failed to start generation after ${maxRetries} retries`);
-        
-    } catch (error) {
-      addLog('✗ Job ' + (jobIndex + 1) + ' failed: ' + error.message, 'error');
-      setGenerationProgress(prev => ({
-        ...prev,
-        [jobId]: { status: 'failed', progress: 0, error: error.message }
-      }));
-      throw error;
-    }
-  };
-
-  // Improved polling logic with better error handling and backoff
-  const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
-    const maxPolls = Math.floor(2400 / 12);
-    let pollCount = 0;
-    let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 3;
-    let isThrottled = false;
-    let throttledStartTime = null;
-    let lastKnownStatus = 'unknown';
-    let stuckInPendingCount = 0;
-    const maxStuckInPending = 10;
-
-    while (pollCount < maxPolls) {
-      try {
-        const timeoutMs = consecutiveErrors > 0 ? 45000 : (isThrottled ? 60000 : 30000);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-        const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-        const responseText = await response.text();
-        
-        let task;
-        try {
-          task = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('Failed to parse response as JSON:', parseError);
-          console.log('Raw response:', responseText.substring(0, 300));
-          
-          if (consecutiveErrors < maxConsecutiveErrors) {
-            consecutiveErrors++;
-            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 15000 + (consecutiveErrors * 5000)));
-            pollCount++;
-            continue;
-          }
-          
-          throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
-        }
-
-        if (!response.ok) {
-          if (response.status === 429) {
-            const backoffTime = 30000 + (consecutiveErrors * 15000);
-            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${backoffTime/1000}s...`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, backoffTime));
-            consecutiveErrors++;
-            pollCount++;
-            continue;
-          } else if (response.status >= 500) {
-            consecutiveErrors++;
-            if (consecutiveErrors >= maxConsecutiveErrors) {
-              throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
-            }
-            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 20000 + (consecutiveErrors * 10000)));
-            pollCount++;
-            continue;
-          }
-          
-          throw new Error(task.error || 'Polling failed: ' + response.status);
-        }
-        
-        consecutiveErrors = 0;
-        
-        if (task.status === 'THROTTLED') {
-          if (!isThrottled) {
-            isThrottled = true;
-            throttledStartTime = Date.now();
-            addLog('⏸️ Job ' + (jobIndex + 1) + ' is queued (throttled) - waiting for available slot...', 'info');
-          }
-          
-          const throttledDuration = Math.floor((Date.now() - throttledStartTime) / 1000);
-          setGenerationProgress(prev => ({
-            ...prev,
-            [jobId]: { 
-              status: 'throttled', 
-              progress: 5,
-              message: `Queued for ${throttledDuration}s` 
-            }
-          }));
-          
-          if (throttledDuration > 0 && throttledDuration % 120 === 0) {
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
@@ -646,7 +56,6 @@ export default function RunwayAutomationApp() {
         if (task.status === 'SUCCEEDED') {
           addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully', 'success');
           
-          // Remove from progress tracking since it's now completed
           setGenerationProgress(prev => {
             const updated = { ...prev };
             delete updated[jobId];
@@ -672,7 +81,6 @@ export default function RunwayAutomationApp() {
           const failureReason = task.failure_reason || task.error || 'Generation failed - no specific reason provided';
           addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
           
-          // Remove from progress tracking since it failed
           setGenerationProgress(prev => {
             const updated = { ...prev };
             delete updated[jobId];
@@ -738,7 +146,6 @@ export default function RunwayAutomationApp() {
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
-  // Improved generation logic with safety features
   const generateVideos = async () => {
     setIsRunning(true);
     setLogs([]);
@@ -767,7 +174,6 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // SAFETY CHECK: Prevent massive API costs
     const requestedJobs = parseInt(concurrency) || 1;
     const MAX_CONCURRENT_JOBS = 20;
     const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
@@ -784,13 +190,11 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Cost estimation and user confirmation for larger batches
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
     addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     
-    // Extra confirmation for large batches (10+ videos) - ALWAYS show popup
     if (totalJobs >= 10) {
       const confirmLargeBatch = window.confirm(
         `⚠️ COST WARNING ⚠️\n\n` +
@@ -815,7 +219,6 @@ export default function RunwayAutomationApp() {
 
     const batchResults = [];
     const errors = [];
-
     const allPromises = [];
     
     for (let i = 0; i < totalJobs; i++) {
@@ -882,7 +285,6 @@ export default function RunwayAutomationApp() {
       addLog('⚠️ Failed jobs: ' + errorSummary, 'warning');
     }
 
-    // Show completion message for this generation
     setCompletedGeneration(currentGeneration);
     setIsRunning(false);
   };
@@ -935,15 +337,12 @@ export default function RunwayAutomationApp() {
   const downloadAllVideos = async () => {
     setIsDownloadingAll(true);
     
-    // Get ALL completed videos from ALL generations and sort them
     const videosWithUrls = results
       .filter(result => result.video_url && result.status === 'completed')
       .sort((a, b) => {
-        // Parse the jobId to extract generation and video numbers for sorting
         const parseJobId = (jobId) => {
           if (!jobId) return { generation: 0, video: 0 };
           
-          // Extract numbers from "Generation X - Video Y" format
           const genMatch = jobId.match(/Generation (\d+)/);
           const vidMatch = jobId.match(/Video (\d+)/);
           
@@ -956,7 +355,6 @@ export default function RunwayAutomationApp() {
         const aData = parseJobId(a.jobId);
         const bData = parseJobId(b.jobId);
         
-        // Sort by generation first, then by video number
         if (aData.generation !== bData.generation) {
           return aData.generation - bData.generation;
         }
@@ -972,13 +370,9 @@ export default function RunwayAutomationApp() {
     addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
 
     try {
-      // Create a new JSZip instance
       const zip = new JSZip();
-      
-      // Create the "Runway Videos" folder
       const videosFolder = zip.folder("Runway Videos");
       
-      // Download all videos and add to zip inside the folder
       for (let i = 0; i < videosWithUrls.length; i++) {
         const result = videosWithUrls[i];
         const filename = generateFilename(result.jobId, result.id);
@@ -992,22 +386,17 @@ export default function RunwayAutomationApp() {
           }
           
           const blob = await response.blob();
-          
-          // Add the video file to the "Runway Videos" folder in the zip
           videosFolder.file(filename, blob);
           
         } catch (error) {
           addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
-          // Continue with next video even if one fails
           continue;
         }
       }
 
-      // Generate the zip file
       addLog('🗜️ Generating zip file...', 'info');
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       
-      // Download the zip file
       const zipUrl = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -1029,36 +418,6 @@ export default function RunwayAutomationApp() {
     setIsDownloadingAll(false);
   };
 
-  const exportResults = () => {
-    const exportData = {
-      generated_at: new Date().toISOString(),
-      total_videos: results.length,
-      configuration: {
-        model,
-        aspect_ratio: aspectRatio,
-        duration
-      },
-      videos: results.map(result => ({
-        id: result.id,
-        prompt: result.prompt,
-        video_url: result.video_url,
-        thumbnail_url: result.thumbnail_url,
-        image_url: result.image_url,
-        created_at: result.created_at
-      }))
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'runway_generation_' + new Date().toISOString().split('T')[0] + '.json';
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    addLog('📊 Results exported to JSON', 'success');
-  };
-
   const upscaleVideo = async (videoId, videoTitle) => {
     try {
       addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
@@ -1076,26 +435,22 @@ export default function RunwayAutomationApp() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
         
-        {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://runway-automation.vercel.app/" />
         <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
         <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta property="og:image" content="/og-image.png" />
 
-        {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
         <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
         <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta property="twitter:image" content="/og-image.png" />
 
-        {/* Additional SEO tags */}
         <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
         <meta name="author" content="Runway Automation Pro" />
         <meta name="robots" content="index, follow" />
         
-        {/* Theme color for mobile browsers */}
         <meta name="theme-color" content="#667eea" />
         <meta name="msapplication-navbutton-color" content="#667eea" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -1112,17 +467,6 @@ export default function RunwayAutomationApp() {
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-        <style>{`
-          .tooltip .tooltip-inner {
-            background-color: rgba(0, 0, 0, 1) !important;
-          }
-          .tooltip.bs-tooltip-top .tooltip-arrow::before,
-          .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
-          .tooltip.bs-tooltip-start .tooltip-arrow::before,
-          .tooltip.bs-tooltip-end .tooltip-arrow::before {
-            border-color: rgba(0, 0, 0, 1) transparent !important;
-          }
-        `}</style>
       </Head>
 
       <div className="min-vh-100 d-flex flex-column" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
@@ -1485,7 +829,6 @@ export default function RunwayAutomationApp() {
                             ></i>
                           </label>
                           
-                          {/* Hidden file input */}
                           <input
                             ref={fileInputRef}
                             type="file"
@@ -1494,7 +837,6 @@ export default function RunwayAutomationApp() {
                             style={{ display: 'none' }}
                           />
                           
-                          {/* Upload button or URL input */}
                           {!imageUrl ? (
                             <div 
                               className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
@@ -1558,7 +900,6 @@ export default function RunwayAutomationApp() {
                             </div>
                           )}
                           
-                          {/* URL input as alternative */}
                           <div className="mt-3">
                             <input
                               type="url"
@@ -1570,13 +911,11 @@ export default function RunwayAutomationApp() {
                             />
                           </div>
                           
-                          {/* Generate Video Button */}
                           <div className="mt-4">
                             <button
                               className="btn btn-success btn-lg w-100 shadow"
                               onClick={() => {
                                 setActiveTab('generation');
-                                // Small delay to ensure tab switch completes before starting generation
                                 setTimeout(() => {
                                   if (!isRunning) {
                                     generateVideos();
@@ -1704,19 +1043,15 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
-                    {/* Always show generation status */}
                     <div className="mb-3" style={{ minHeight: '100px' }}>
                       <div className="text-center py-3">
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
-                              // During generation
                               return `Generation ${generationCounter || 1} in progress`;
                             } else if (completedGeneration) {
-                              // After completion
                               return `Generation ${completedGeneration} completed`;
                             } else {
-                              // Initial state
                               return `Generation ${generationCounter || 1}`;
                             }
                           })()}
@@ -1724,15 +1059,12 @@ export default function RunwayAutomationApp() {
                         <p className="text-muted mb-0">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
-                              // During generation - show active job count
                               const count = Object.keys(generationProgress).length;
                               return `${count} video${count !== 1 ? 's' : ''} generating`;
                             } else if (completedGeneration) {
-                              // After completion - show completed count from that generation
                               const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
                               return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
                             } else {
-                              // Initial state
                               return '0 videos generated';
                             }
                           })()}
@@ -2019,18 +1351,20 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center mt-5">
+          </div>
+
+          <div className="text-center mt-3 flex-shrink-0">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
                 <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
+                  <text x="0" y="14" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="400" fill="white" fillOpacity="0.7">Powered by</text>
                   <g transform="translate(75, 2)">
                     <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
                     <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
-                    <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                    <text x="32" y="12" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
                   </g>
                 </svg>
               </a>
@@ -2040,4 +1374,528 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
+}import React, { useState, useEffect, useRef } from 'react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen } from 'lucide-react';
+import Head from 'next/head';
+
+export default function RunwayAutomationApp() {
+  const [activeTab, setActiveTab] = useState('setup');
+  const [runwayApiKey, setRunwayApiKey] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [model, setModel] = useState('gen3a_turbo');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [duration, setDuration] = useState(5);
+  const [concurrency, setConcurrency] = useState(1);
+  const [minWait, setMinWait] = useState(8);
+  const [maxWait, setMaxWait] = useState(15);
+  const [isRunning, setIsRunning] = useState(false);
+  const [results, setResults] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [generationProgress, setGenerationProgress] = useState({});
+  const [imageError, setImageError] = useState(false);
+  const [videoCounter, setVideoCounter] = useState(0);
+  const [generationCounter, setGenerationCounter] = useState(0);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [completedGeneration, setCompletedGeneration] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Load saved data from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedApiKey = localStorage.getItem('runway-automation-api-key');
+        if (savedApiKey && savedApiKey.trim()) {
+          setRunwayApiKey(savedApiKey);
+        }
+        
+        const savedPrompt = localStorage.getItem('runway-automation-prompt');
+        if (savedPrompt && savedPrompt.trim()) {
+          setPrompt(savedPrompt);
+        }
+        
+        const savedImageUrl = localStorage.getItem('runway-automation-image-url');
+        if (savedImageUrl && savedImageUrl.trim()) {
+          setImageUrl(savedImageUrl);
+        }
+        
+        const savedModel = localStorage.getItem('runway-automation-model');
+        if (savedModel && ['gen3a_turbo', 'gen4_turbo'].includes(savedModel)) {
+          setModel(savedModel);
+        }
+        
+        const savedAspectRatio = localStorage.getItem('runway-automation-aspect-ratio');
+        if (savedAspectRatio && ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'].includes(savedAspectRatio)) {
+          setAspectRatio(savedAspectRatio);
+        }
+        
+        const savedDuration = localStorage.getItem('runway-automation-duration');
+        if (savedDuration && ['5', '10'].includes(savedDuration)) {
+          setDuration(parseInt(savedDuration));
+        }
+        
+        const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
+        if (savedConcurrency) {
+          const parsedConcurrency = parseInt(savedConcurrency);
+          if (!isNaN(parsedConcurrency) && parsedConcurrency >= 1 && parsedConcurrency <= 20) {
+            setConcurrency(parsedConcurrency);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load saved data from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Save to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
+          localStorage.setItem('runway-automation-api-key', runwayApiKey);
+        } else if (runwayApiKey === '') {
+          localStorage.removeItem('runway-automation-api-key');
+        }
+      } catch (error) {
+        console.warn('Failed to save API key:', error);
+      }
+    }
+  }, [runwayApiKey]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (prompt && prompt.trim()) {
+          localStorage.setItem('runway-automation-prompt', prompt);
+        } else if (prompt === '') {
+          localStorage.removeItem('runway-automation-prompt');
+        }
+      } catch (error) {
+        console.warn('Failed to save prompt:', error);
+      }
+    }
+  }, [prompt]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (imageUrl && imageUrl.trim()) {
+          localStorage.setItem('runway-automation-image-url', imageUrl);
+        } else if (imageUrl === '') {
+          localStorage.removeItem('runway-automation-image-url');
+        }
+      } catch (error) {
+        console.warn('Failed to save image URL:', error);
+      }
+    }
+  }, [imageUrl]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('runway-automation-model', model);
+      } catch (error) {
+        console.warn('Failed to save model:', error);
+      }
+    }
+  }, [model]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
+      } catch (error) {
+        console.warn('Failed to save aspect ratio:', error);
+      }
+    }
+  }, [aspectRatio]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('runway-automation-duration', duration.toString());
+      } catch (error) {
+        console.warn('Failed to save duration:', error);
+      }
+    }
+  }, [duration]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('runway-automation-concurrency', concurrency.toString());
+      } catch (error) {
+        console.warn('Failed to save concurrency:', error);
+      }
+    }
+  }, [concurrency]);
+
+  const isValidImageUrl = (url) => {
+    try {
+      if (url.startsWith('data:image/')) {
+        return true;
+      }
+      
+      const urlObj = new URL(url);
+      const isValidProtocol = urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      const hasImageExtension = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(urlObj.pathname) || 
+                               url.includes('imgur.com') || 
+                               url.includes('googleusercontent.com') ||
+                               url.includes('amazonaws.com') ||
+                               url.includes('cloudinary.com') ||
+                               url.includes('unsplash.com') ||
+                               url.includes('pexels.com');
+      return isValidProtocol && (hasImageExtension || url.length > 20);
+    } catch {
+      return false;
+    }
+  };
+
+  const handleImageLoad = () => {
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      addLog('❌ Please select a valid image file', 'error');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      addLog('❌ Image file too large. Please use an image under 10MB', 'error');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        setImageUrl(dataUrl);
+        setImageError(false);
+        addLog('✅ Image uploaded successfully', 'success');
+        setIsUploadingImage(false);
+      };
+      reader.onerror = () => {
+        addLog('❌ Failed to read image file', 'error');
+        setIsUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      addLog('❌ Error uploading image: ' + error.message, 'error');
+      setIsUploadingImage(false);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      existingTooltips.forEach(function (tooltipEl) {
+        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
+        if (existingTooltip) {
+          existingTooltip.dispose();
+        }
+      });
+
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new window.bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+  }, [activeTab, model, results]);
+
+  const modelOptions = [
+    { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
+    { value: 'gen3a_turbo', label: 'Gen-3 Alpha Turbo (Fast, reliable)' }
+  ];
+
+  const aspectRatioOptions = [
+    { value: '16:9', label: '16:9 (Landscape)' },
+    { value: '9:16', label: '9:16 (Portrait)' },
+    ...(model === 'gen4_turbo' ? [
+      { value: '1:1', label: '1:1 (Square)' },
+      { value: '4:3', label: '4:3 (Standard)' },
+      { value: '3:4', label: '3:4 (Portrait Standard)' },
+      { value: '21:9', label: '21:9 (Cinematic)' }
+    ] : [])
+  ];
+
+  const addLog = (message, type = 'info') => {
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs(prev => [...prev, { message, type, timestamp }]);
+  };
+
+  const copyLogsToClipboard = () => {
+    const logText = logs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
+    navigator.clipboard.writeText(logText).then(() => {
+      addLog('📋 Logs copied to clipboard', 'info');
+    }).catch(() => {
+      addLog('❌ Failed to copy logs to clipboard', 'error');
+    });
+  };
+
+  const clearStoredApiKey = () => {
+    try {
+      localStorage.removeItem('runway-automation-api-key');
+      setRunwayApiKey('');
+      addLog('🔒 API key cleared from storage', 'info');
+    } catch (error) {
+      console.warn('Failed to clear API key:', error);
+    }
+  };
+
+  const API_BASE = '/api';
+
+  const checkCredits = async () => {
+    try {
+      const response = await fetch(API_BASE + '/runway-credits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ apiKey: runwayApiKey })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.credits || 0;
+      }
+    } catch (error) {
+      console.log('Could not check credits:', error);
+    }
+    return null;
+  };
+
+  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
+    const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
+    
+    try {
+      if (!imageUrlText || !imageUrlText.trim()) {
+        const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+
+      if (!isValidImageUrl(imageUrlText.trim())) {
+        const errorMsg = 'Invalid image URL format. Please use a direct link to an image file (jpg, png, gif, etc.) or a supported image hosting service.';
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+
+      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
+      
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'starting', progress: 0 }
+      }));
+
+      const payload = {
+        text_prompt: promptText,
+        image_prompt: imageUrlText.trim(),
+        model: model,
+        aspect_ratio: model === 'gen4_turbo' ? 
+          (aspectRatio === '16:9' ? '1280:720' : 
+           aspectRatio === '9:16' ? '720:1280' : 
+           aspectRatio === '1:1' ? '960:960' : 
+           aspectRatio === '4:3' ? '1104:832' : 
+           aspectRatio === '3:4' ? '832:1104' : 
+           aspectRatio === '21:9' ? '1584:672' : '1280:720') :
+          (aspectRatio === '16:9' ? '1280:768' : 
+           aspectRatio === '9:16' ? '768:1280' : '1280:768'),
+        duration: duration,
+        seed: Math.floor(Math.random() * 1000000)
+      };
+
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+          const response = await fetch(API_BASE + '/runway-generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: runwayApiKey,
+              payload: payload
+            }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            let errorMessage = errorData.error || 'API Error: ' + response.status;
+            
+            if (response.status === 429 || response.status >= 500) {
+              if (retryCount < maxRetries) {
+                const retryDelay = (retryCount + 1) * 10000;
+                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                retryCount++;
+                continue;
+              }
+            }
+
+            if (response.status === 400 && errorMessage.includes('not have enough credits')) {
+              throw new Error('Insufficient credits: ' + errorMessage);
+            }
+            
+            if (errorMessage.includes('Invalid asset aspect ratio')) {
+              errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that is closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
+            }
+            
+            throw new Error(errorMessage);
+          }
+
+          const task = await response.json();
+          
+          addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
+          
+          return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
+          
+        } catch (fetchError) {
+          if (retryCount < maxRetries && (
+            fetchError.name === 'AbortError' || 
+            fetchError.message.includes('fetch') ||
+            fetchError.message.includes('network')
+          )) {
+            const retryDelay = (retryCount + 1) * 5000;
+            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            retryCount++;
+            continue;
+          }
+          throw fetchError;
+        }
+      }
+      
+      throw new Error(`Failed to start generation after ${maxRetries} retries`);
+        
+    } catch (error) {
+      addLog('✗ Job ' + (jobIndex + 1) + ' failed: ' + error.message, 'error');
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'failed', progress: 0, error: error.message }
+      }));
+      throw error;
+    }
+  };
+
+  const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
+    const maxPolls = Math.floor(2400 / 12);
+    let pollCount = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
+    let isThrottled = false;
+    let throttledStartTime = null;
+    let lastKnownStatus = 'unknown';
+    let stuckInPendingCount = 0;
+    const maxStuckInPending = 10;
+
+    while (pollCount < maxPolls) {
+      try {
+        const timeoutMs = consecutiveErrors > 0 ? 45000 : (isThrottled ? 60000 : 30000);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          if (consecutiveErrors < maxConsecutiveErrors) {
+            consecutiveErrors++;
+            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 15000 + (consecutiveErrors * 5000)));
+            pollCount++;
+            continue;
+          }
+          
+          throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
+        }
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            const backoffTime = 30000 + (consecutiveErrors * 15000);
+            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${backoffTime/1000}s...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+            consecutiveErrors++;
+            pollCount++;
+            continue;
+          } else if (response.status >= 500) {
+            consecutiveErrors++;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
+            }
+            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 20000 + (consecutiveErrors * 10000)));
+            pollCount++;
+            continue;
+          }
+          
+          throw new Error(task.error || 'Polling failed: ' + response.status);
+        }
+        
+        consecutiveErrors = 0;
+        
+        if (task.status === 'THROTTLED') {
+          if (!isThrottled) {
+            isThrottled = true;
+            throttledStartTime = Date.now();
+            addLog('⏸️ Job ' + (jobIndex + 1) + ' is queued (throttled) - waiting for available slot...', 'info');
+          }
+          
+          const throttledDuration = Math.floor((Date.now() - throttledStartTime) / 1000);
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { 
+              status: 'throttled', 
+              progress: 5,
+              message: `Queued for ${throttledDuration}s` 
+            }
+          }));
+          
+          if (throttledDuration > 0 && throttledDuration % 120 === 0) {
+            addLog
