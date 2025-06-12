@@ -1290,8 +1290,8 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {/* Always show generation status */}
-                    <div className="mb-4" style={{ minHeight: '120px' }}>
-                      <div className="text-center py-4">
+                    <div className="mb-3" style={{ minHeight: '100px' }}>
+                      <div className="text-center py-3">
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
@@ -1326,8 +1326,7 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="fw-bold mb-3">Generation Progress</h4>
+                      <div className="mb-3">
                         <div className="row g-3">
                           {Object.entries(generationProgress).map(([jobId, progress]) => (
                             <div key={jobId} className="col-md-6 col-xl-3">
