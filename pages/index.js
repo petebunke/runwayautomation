@@ -1275,7 +1275,7 @@ export default function RunwayAutomationApp() {
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Videos:</strong> {results.length + Object.keys(generationProgress).length}</span>
+                            <span className="text-dark"><strong>Videos:</strong> {Object.keys(generationProgress).length}</span>
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
@@ -1337,15 +1337,24 @@ export default function RunwayAutomationApp() {
                     )}
 
                     {completedGeneration && Object.keys(generationProgress).length === 0 && (
-                      <div className="mb-4">
+                      <div className="mb-4" style={{ minHeight: '120px' }}>
                         <div className="text-center py-4">
                           <h4 className="fw-bold text-dark mb-2">
-                            Generation {completedGeneration} completed.
+                            Generation {completedGeneration} completed
                           </h4>
                           <p className="text-muted mb-0">
-                            {results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length} videos generated successfully
+                            {(() => {
+                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                            })()}
                           </p>
                         </div>
+                      </div>
+                    )}
+
+                    {Object.keys(generationProgress).length === 0 && !completedGeneration && (
+                      <div className="mb-4" style={{ minHeight: '120px' }}>
+                        {/* Empty spacer to maintain consistent spacing */}
                       </div>
                     )}
 
