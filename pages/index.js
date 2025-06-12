@@ -27,6 +27,11 @@ export default function RunwayAutomationApp() {
 
   const isValidImageUrl = (url) => {
     try {
+      // Handle data URLs from uploaded files
+      if (url.startsWith('data:image/')) {
+        return true;
+      }
+      
       const urlObj = new URL(url);
       const isValidProtocol = urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
       const hasImageExtension = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(urlObj.pathname) || 
