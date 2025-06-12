@@ -11,8 +11,6 @@ export default function RunwayAutomationApp() {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
   const [concurrency, setConcurrency] = useState(1);
-  const [minWait, setMinWait] = useState(8);
-  const [maxWait, setMaxWait] = useState(15);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -72,7 +70,7 @@ export default function RunwayAutomationApp() {
     }
   }, []);
 
-  // Save to localStorage
+  // Save to localStorage effects
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -119,61 +117,624 @@ export default function RunwayAutomationApp() {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('runway-automation-model', model);
-      } catch (error) {
-        console.warn('Failed to save model:', error);
-      }
-    }
-  }, [model]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
         localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
-      } catch (error) {
-        console.warn('Failed to save aspect ratio:', error);
-      }
-    }
-  }, [aspectRatio]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
         localStorage.setItem('runway-automation-duration', duration.toString());
-      } catch (error) {
-        console.warn('Failed to save duration:', error);
-      }
-    }
-  }, [duration]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
         localStorage.setItem('runway-automation-concurrency', concurrency.toString());
       } catch (error) {
-        console.warn('Failed to save concurrency:', error);
+        console.warn('Failed to save settings:', error);
       }
     }
-  }, [concurrency]);
+  }, [model, aspectRatio, duration, concurrency]);
 
-  const isValidImageUrl = (url) => {
+  const handleImageLoad = () => {
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      addLog('❌ Please select a valid image file', 'error');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      addLog('❌ Image file too large. Please use an image under 10MB', 'error');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    
     try {
-      if (url.startsWith('data:image/')) {
-        return true;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        setImageUrl(dataUrl);
+        setImageError(false);
+        addLog('✅ Image uploaded successfully', 'success');
+        setIsUploadingImage(false);
+      };
+      reader.onerror = () => {
+        addLog('❌ Failed to read image file', 'error');
+        setIsUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      addLog('❌ Error uploading image: ' + error.message, 'error');
+      setIsUploadingImage(false);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      existingTooltips.forEach(function (tooltipEl) {
+        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
+        if (existingTooltip) {
+          existingTooltip.dispose();
+        }
+      });
+
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new window.bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+  }, [activeTab, model, results]);
+
+  const modelOptions = [
+    { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
+    { value: 'gen3a_turbo', label: 'Gen-3 Alpha Turbo (Fast, reliable)' }
+  ];
+
+  const aspectRatioOptions = [
+    { value: '16:9', label: '16:9 (Landscape)' },
+    { value: '9:16', label: '9:16 (Portrait)' },
+    ...(model === 'gen4_turbo' ? [
+      { value: '1:1', label: '1:1 (Square)' },
+      { value: '4:3', label: '4:3 (Standard)' },
+      { value: '3:4', label: '3:4 (Portrait Standard)' },
+      { value: '21:9', label: '21:9 (Cinematic)' }
+    ] : [])
+  ];
+
+  const addLog = (message, type = 'info') => {
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs(prev => [...prev, { message, type, timestamp }]);
+  };
+
+  const copyLogsToClipboard = () => {
+    const logText = logs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(logText).then(() => {
+        addLog('📋 Logs copied to clipboard', 'info');
+      }).catch(() => {
+        addLog('❌ Failed to copy logs to clipboard', 'error');
+      });
+    }
+  };
+
+  const clearStoredApiKey = () => {
+    try {
+      localStorage.removeItem('runway-automation-api-key');
+      setRunwayApiKey('');
+      addLog('🔒 API key cleared from storage', 'info');
+    } catch (error) {
+      console.warn('Failed to clear API key:', error);
+    }
+  };
+
+  const API_BASE = '/api';
+
+  // Download function
+  const downloadVideo = (videoUrl, filename) => {
+    try {
+      addLog(`📥 Downloading ${filename}...`, 'info');
+      
+      const a = document.createElement('a');
+      a.href = videoUrl;
+      a.download = filename;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded ${filename}`, 'success');
+    } catch (error) {
+      addLog(`❌ Failed to download ${filename}: ${error.message}`, 'error');
+    }
+  };
+
+  const downloadAllVideos = () => {
+    const completedVideos = results.filter(result => result.video_url && result.status === 'completed');
+    
+    if (completedVideos.length === 0) {
+      addLog('❌ No completed videos to download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating downloads for ${completedVideos.length} videos...`, 'info');
+
+    try {
+      completedVideos.forEach((result, index) => {
+        const videoNumber = index + 1;
+        const filename = `runway-video-${videoNumber.toString().padStart(2, '0')}.mp4`;
+        downloadVideo(result.video_url, filename);
+      });
+      
+      addLog(`✅ Started downloads for ${completedVideos.length} videos`, 'success');
+    } catch (error) {
+      addLog(`❌ Failed to start downloads: ${error.message}`, 'error');
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  // Simplified video generation function
+  const generateVideos = async () => {
+    setIsRunning(true);
+    setLogs([]);
+    setResults([]);
+    setGenerationProgress({});
+    
+    const currentGeneration = generationCounter + 1;
+    setGenerationCounter(currentGeneration);
+    
+    addLog('🚀 Starting Runway video generation...', 'info');
+    addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
+    
+    if (!prompt.trim()) {
+      addLog('❌ No prompt provided!', 'error');
+      setIsRunning(false);
+      return;
+    }
+
+    if (!imageUrl.trim()) {
+      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
+      setIsRunning(false);
+      return;
+    }
+
+    if (!runwayApiKey.trim()) {
+      addLog('❌ RunwayML API key is required!', 'error');
+      setIsRunning(false);
+      return;
+    }
+
+    const requestedJobs = parseInt(concurrency) || 1;
+    const MAX_CONCURRENT_JOBS = 20;
+    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
+    
+    if (requestedJobs > MAX_CONCURRENT_JOBS) {
+      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
+      setIsRunning(false);
+      return;
+    }
+    
+    const estimatedCostMin = totalJobs * 0.25;
+    const estimatedCostMax = totalJobs * 0.75;
+    
+    addLog(`💰 Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
+    
+    if (totalJobs >= 10) {
+      const confirmLargeBatch = window.confirm(
+        `⚠️ COST WARNING ⚠️\n\n` +
+        `You are about to generate ${totalJobs} videos.\n` +
+        `Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)}\n\n` +
+        `This will use ${totalJobs * 25}-${totalJobs * 50} credits from your RunwayML account.\n\n` +
+        `Are you sure you want to proceed?`
+      );
+      
+      if (!confirmLargeBatch) {
+        addLog('🛑 Generation cancelled by user (cost protection)', 'warning');
+        setIsRunning(false);
+        return;
       }
       
-      const urlObj = new URL(url);
-      const isValidProtocol = urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-      const hasImageExtension = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(urlObj.pathname) || 
-                               url.includes('imgur.com') || 
-                               url.includes('googleusercontent.com') ||
-                               url.includes('amazonaws.com') ||
-                               url.includes('cloudinary.com') ||
-                               url.includes('unsplash.com') ||
-                               url.includes('pexels.com');
-      return isValidProtocol && (hasImageExtension || url.length > 20);
-    } catch {
-      return false;
+      addLog('✅ User confirmed large batch generation', 'info');
     }
+
+    addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
+
+    // Check credits first
+    try {
+      addLog('💳 Checking credit balance...', 'info');
+      const creditsResponse = await fetch(`${API_BASE}/runway-credits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey
+        })
+      });
+
+      if (creditsResponse.ok) {
+        const creditsData = await creditsResponse.json();
+        const credits = creditsData.credits || 0;
+        addLog(`💰 Current balance: ${credits} credits`, 'info');
+        
+        const requiredCredits = totalJobs * 30;
+        if (credits < requiredCredits) {
+          addLog(`⚠️ Warning: Low credits! You have ${credits} credits but need ~${requiredCredits} for this generation`, 'warning');
+        }
+      } else {
+        addLog('⚠️ Could not check credit balance, continuing anyway...', 'warning');
+      }
+    } catch (error) {
+      addLog('⚠️ Error checking credits: ' + error.message, 'warning');
+    }
+
+    // Create generation jobs
+    const jobs = [];
+    for (let i = 0; i < totalJobs; i++) {
+      const jobId = `Generation ${currentGeneration} - Video ${i + 1}`;
+      jobs.push({
+        id: jobId,
+        index: i + 1,
+        status: 'pending',
+        prompt: prompt,
+        imageUrl: imageUrl,
+        model: model,
+        aspectRatio: aspectRatio,
+        duration: duration
+      });
+    }
+
+    addLog(`🎬 Starting ${totalJobs} video generation${totalJobs > 1 ? 's' : ''}...`, 'info');
+
+    // Process jobs sequentially to avoid Promise.allSettled issues
+    let successful = 0;
+    let failed = 0;
+
+    for (const job of jobs) {
+      try {
+        const result = await processJob(job);
+        if (result.success) {
+          successful++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        addLog(`❌ ${job.id} failed: ${error.message}`, 'error');
+        failed++;
+      }
+    }
+    
+    addLog(`🏁 Generation batch completed!`, 'info');
+    addLog(`✅ Successful: ${successful}`, successful > 0 ? 'success' : 'info');
+    addLog(`❌ Failed: ${failed}`, failed > 0 ? 'error' : 'info');
+    
+    if (successful > 0) {
+      addLog(`🎬 ${successful} video${successful !== 1 ? 's' : ''} ready for download in the Results tab`, 'success');
+      setCompletedGeneration(currentGeneration);
+    }
+
+    setIsRunning(false);
+    setGenerationProgress({});
+  };
+
+  // Process individual job
+  const processJob = async (job) => {
+    const jobId = job.id;
+    
+    try {
+      // Update progress
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'generating', progress: 0 }
+      }));
+
+      addLog(`🎥 Starting ${jobId}...`, 'info');
+
+      // Create generation request payload
+      const payload = {
+        text_prompt: job.prompt,
+        image_prompt: job.imageUrl,
+        model: job.model,
+        aspect_ratio: job.aspectRatio,
+        duration: job.duration,
+        seed: Math.floor(Math.random() * 1000000)
+      };
+
+      // Submit generation request
+      const generateResponse = await fetch(`${API_BASE}/runway-generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          payload: payload
+        })
+      });
+
+      if (!generateResponse.ok) {
+        const errorData = await generateResponse.json();
+        throw new Error(errorData.error || `HTTP ${generateResponse.status}`);
+      }
+
+      const generateData = await generateResponse.json();
+      const taskId = generateData.id;
+
+      if (!taskId) {
+        throw new Error('No task ID returned from generation request');
+      }
+
+      addLog(`✅ ${jobId} submitted successfully (Task: ${taskId})`, 'success');
+
+      // Update progress with task ID
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'processing', progress: 25, taskId: taskId }
+      }));
+
+      // Poll for completion (simplified)
+      let pollAttempts = 0;
+      const maxPollAttempts = 120;
+      
+      while (pollAttempts < maxPollAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        pollAttempts++;
+
+        try {
+          const statusResponse = await fetch(`${API_BASE}/runway-status?taskId=${taskId}&apiKey=${encodeURIComponent(runwayApiKey)}`);
+          
+          if (!statusResponse.ok) {
+            const errorData = await statusResponse.json();
+            throw new Error(errorData.error || `Status check failed: ${statusResponse.status}`);
+          }
+
+          const statusData = await statusResponse.json();
+          const status = statusData.status;
+
+          // Update progress based on status
+          let progress = 25;
+          if (status === 'RUNNING') {
+            progress = Math.min(25 + (pollAttempts * 2), 90);
+          } else if (status === 'SUCCEEDED') {
+            progress = 100;
+          }
+
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { status: status.toLowerCase(), progress: progress, taskId: taskId }
+          }));
+
+          if (status === 'SUCCEEDED') {
+            const videoUrl = statusData.output && statusData.output[0];
+            if (videoUrl) {
+              addLog(`🎉 ${jobId} completed successfully!`, 'success');
+              
+              // Add to results
+              setResults(prev => [...prev, {
+                jobId: jobId,
+                taskId: taskId,
+                video_url: videoUrl,
+                status: 'completed',
+                prompt: job.prompt,
+                model: job.model,
+                aspectRatio: job.aspectRatio,
+                duration: job.duration,
+                timestamp: new Date().toISOString(),
+                credits_deducted: statusData.credits_deducted || 'unknown'
+              }]);
+
+              // Remove from progress tracking
+              setGenerationProgress(prev => {
+                const newProgress = { ...prev };
+                delete newProgress[jobId];
+                return newProgress;
+              });
+
+              setVideoCounter(prev => prev + 1);
+              return { success: true, jobId, videoUrl, taskId };
+            } else {
+              throw new Error('Video generation completed but no video URL returned');
+            }
+          } else if (status === 'FAILED') {
+            throw new Error(`Video generation failed: ${statusData.failure_reason || 'Unknown error'}`);
+          } else if (status === 'CANCELLED') {
+            throw new Error('Video generation was cancelled');
+          }
+
+          // Continue polling for PENDING, RUNNING statuses
+          if (pollAttempts % 6 === 0) {
+            addLog(`⏳ ${jobId} still processing... (${Math.floor(pollAttempts * 5 / 60)}m ${(pollAttempts * 5) % 60}s)`, 'info');
+          }
+
+        } catch (statusError) {
+          addLog(`❌ Error checking status for ${jobId}: ${statusError.message}`, 'error');
+          
+          if (pollAttempts < maxPollAttempts - 10) {
+            continue;
+          } else {
+            throw statusError;
+          }
+        }
+      }
+
+      throw new Error(`Polling timeout after ${maxPollAttempts * 5 / 60} minutes`);
+
+    } catch (error) {
+      addLog(`❌ ${jobId} failed: ${error.message}`, 'error');
+      
+      // Remove from progress tracking
+      setGenerationProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[jobId];
+        return newProgress;
+      });
+
+      // Add to results as failed
+      setResults(prev => [...prev, {
+        jobId: jobId,
+        status: 'failed',
+        error: error.message,
+        prompt: job.prompt,
+        model: job.model,
+        aspectRatio: job.aspectRatio,
+        duration: job.duration,
+        timestamp: new Date().toISOString()
+      }]);
+
+      return { success: false, jobId, error: error.message };
+    }
+  };
+
+  const stopGeneration = () => {
+    setIsRunning(false);
+    addLog('🛑 Generation stopped by user', 'warning');
+  };
+
+  // Results Tab Component
+  const ResultsTabContent = () => {
+    const completedVideos = results.filter(result => result.video_url && result.status === 'completed');
+    const failedVideos = results.filter(result => result.status === 'failed');
+
+    if (results.length === 0) {
+      return (
+        <div className="text-center py-5">
+          <div className="mb-4">
+            <Film size={80} className="text-muted" />
+          </div>
+          <h4 className="text-muted mb-3">No videos generated yet</h4>
+          <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+          <button
+            className="btn btn-primary btn-lg shadow"
+            onClick={() => setActiveTab('setup')}
+            style={{ borderRadius: '6px' }}
+          >
+            Get Started
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        {/* Summary Stats */}
+        <div className="row g-3 mb-4">
+          <div className="col-md-3">
+            <div className="card bg-success text-white h-100">
+              <div className="card-body text-center">
+                <h3 className="fw-bold mb-1">{completedVideos.length}</h3>
+                <small>Completed</small>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card bg-danger text-white h-100">
+              <div className="card-body text-center">
+                <h3 className="fw-bold mb-1">{failedVideos.length}</h3>
+                <small>Failed</small>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card bg-info text-white h-100">
+              <div className="card-body text-center">
+                <h3 className="fw-bold mb-1">{Object.keys(generationProgress).length}</h3>
+                <small>Processing</small>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card bg-secondary text-white h-100">
+              <div className="card-body text-center">
+                <h3 className="fw-bold mb-1">{results.length}</h3>
+                <small>Total</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Video Grid */}
+        <div className="row g-4">
+          {results.map((result, index) => (
+            <div key={result.jobId || index} className="col-lg-4 col-md-6">
+              <div className="card h-100 shadow">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <h6 className="card-title fw-bold mb-0">{result.jobId}</h6>
+                    <span className={`badge ${
+                      result.status === 'completed' ? 'bg-success' :
+                      result.status === 'failed' ? 'bg-danger' :
+                      'bg-warning'
+                    }`}>
+                      {result.status}
+                    </span>
+                  </div>
+
+                  {result.video_url && (
+                    <div className="mb-3">
+                      <video 
+                        controls 
+                        className="w-100 rounded" 
+                        style={{ height: '200px', objectFit: 'cover' }}
+                        poster=""
+                      >
+                        <source src={result.video_url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  )}
+
+                  <div className="small text-muted mb-3">
+                    <div><strong>Model:</strong> {result.model}</div>
+                    <div><strong>Aspect:</strong> {result.aspectRatio}</div>
+                    <div><strong>Duration:</strong> {result.duration}s</div>
+                    {result.credits_deducted && (
+                      <div><strong>Credits:</strong> {result.credits_deducted}</div>
+                    )}
+                  </div>
+
+                  {result.prompt && (
+                    <div className="small mb-3">
+                      <strong>Prompt:</strong>
+                      <div className="text-muted">{result.prompt}</div>
+                    </div>
+                  )}
+
+                  {result.error && (
+                    <div className="alert alert-danger alert-sm mb-3">
+                      <small>{result.error}</small>
+                    </div>
+                  )}
+
+                  {result.status === 'completed' && result.video_url && (
+                    <div className="d-grid gap-2">
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => downloadVideo(
+                          result.video_url, 
+                          `${result.jobId.replace(/[^a-zA-Z0-9-]/g, '_')}.mp4`
+                        )}
+                      >
+                        <Download size={16} className="me-1" />
+                        Download
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -215,7 +776,6 @@ export default function RunwayAutomationApp() {
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
       </Head>
 
       <div className="min-vh-100 d-flex flex-column" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
@@ -906,7 +1466,7 @@ export default function RunwayAutomationApp() {
                           ) : (
                             <>
                               <Download size={20} className="me-2" />
-                              Download All as ZIP
+                              Download All
                               <span className="ms-2 badge bg-primary">
                                 {results.filter(result => result.video_url && result.status === 'completed').length}
                               </span>
@@ -951,588 +1511,3 @@ export default function RunwayAutomationApp() {
     </>
   );
 }
-
-  const handleImageLoad = () => {
-    setImageError(false);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      addLog('❌ Please select a valid image file', 'error');
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      addLog('❌ Image file too large. Please use an image under 10MB', 'error');
-      return;
-    }
-
-    setIsUploadingImage(true);
-    
-    try {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        setImageUrl(dataUrl);
-        setImageError(false);
-        addLog('✅ Image uploaded successfully', 'success');
-        setIsUploadingImage(false);
-      };
-      reader.onerror = () => {
-        addLog('❌ Failed to read image file', 'error');
-        setIsUploadingImage(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      addLog('❌ Error uploading image: ' + error.message, 'error');
-      setIsUploadingImage(false);
-    }
-  };
-
-  const triggerImageUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.bootstrap) {
-      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      existingTooltips.forEach(function (tooltipEl) {
-        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
-        if (existingTooltip) {
-          existingTooltip.dispose();
-        }
-      });
-
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new window.bootstrap.Tooltip(tooltipTriggerEl);
-      });
-    }
-  }, [activeTab, model, results]);
-
-  const modelOptions = [
-    { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
-    { value: 'gen3a_turbo', label: 'Gen-3 Alpha Turbo (Fast, reliable)' }
-  ];
-
-  const aspectRatioOptions = [
-    { value: '16:9', label: '16:9 (Landscape)' },
-    { value: '9:16', label: '9:16 (Portrait)' },
-    ...(model === 'gen4_turbo' ? [
-      { value: '1:1', label: '1:1 (Square)' },
-      { value: '4:3', label: '4:3 (Standard)' },
-      { value: '3:4', label: '3:4 (Portrait Standard)' },
-      { value: '21:9', label: '21:9 (Cinematic)' }
-    ] : [])
-  ];
-
-  const addLog = (message, type = 'info') => {
-    const timestamp = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { message, type, timestamp }]);
-  };
-
-  const copyLogsToClipboard = () => {
-    const logText = logs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
-    navigator.clipboard.writeText(logText).then(() => {
-      addLog('📋 Logs copied to clipboard', 'info');
-    }).catch(() => {
-      addLog('❌ Failed to copy logs to clipboard', 'error');
-    });
-  };
-
-  const clearStoredApiKey = () => {
-    try {
-      localStorage.removeItem('runway-automation-api-key');
-      setRunwayApiKey('');
-      addLog('🔒 API key cleared from storage', 'info');
-    } catch (error) {
-      console.warn('Failed to clear API key:', error);
-    }
-  };
-
-  const API_BASE = '/api';
-
-  // Download Functions
-  const downloadVideo = async (videoUrl, filename) => {
-    try {
-      addLog(`📥 Downloading ${filename}...`, 'info');
-      
-      const response = await fetch(videoUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch video: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded ${filename}`, 'success');
-    } catch (error) {
-      addLog(`❌ Failed to download ${filename}: ${error.message}`, 'error');
-    }
-  };
-
-  const downloadAllVideos = async () => {
-    const completedVideos = results.filter(result => result.video_url && result.status === 'completed');
-    
-    if (completedVideos.length === 0) {
-      addLog('❌ No completed videos to download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating ZIP file with ${completedVideos.length} videos...`, 'info');
-
-    try {
-      // Check if JSZip is available
-      if (typeof JSZip === 'undefined') {
-        throw new Error('JSZip library not loaded');
-      }
-
-      const zip = new JSZip();
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-      
-      // Add each video to the zip
-      for (let i = 0; i < completedVideos.length; i++) {
-        const result = completedVideos[i];
-        const videoNumber = i + 1;
-        
-        try {
-          addLog(`📥 Adding video ${videoNumber}/${completedVideos.length} to ZIP...`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch video ${videoNumber}: ${response.status}`);
-          }
-          
-          const blob = await response.blob();
-          const filename = `runway-video-${timestamp}-${videoNumber.toString().padStart(2, '0')}.mp4`;
-          
-          zip.file(filename, blob);
-          
-          // Add metadata file for each video
-          const metadata = {
-            prompt: result.prompt,
-            model: result.model,
-            aspectRatio: result.aspectRatio,
-            duration: result.duration,
-            taskId: result.taskId,
-            timestamp: result.timestamp,
-            credits_deducted: result.credits_deducted
-          };
-          
-          zip.file(`${filename.replace('.mp4', '')}-metadata.json`, JSON.stringify(metadata, null, 2));
-          
-        } catch (videoError) {
-          addLog(`⚠️ Skipping video ${videoNumber}: ${videoError.message}`, 'warning');
-        }
-      }
-
-      // Generate and download the ZIP file
-      addLog('🔄 Generating ZIP file...', 'info');
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `runway-videos-${timestamp}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Successfully downloaded ${completedVideos.length} videos as ZIP file`, 'success');
-      
-    } catch (error) {
-      addLog(`❌ Failed to create ZIP file: ${error.message}`, 'error');
-    } finally {
-      setIsDownloadingAll(false);
-    }
-  };
-
-  const upscaleVideo = async (result) => {
-    if (!result.taskId) {
-      addLog('❌ Cannot upscale: Missing task ID', 'error');
-      return;
-    }
-
-    try {
-      addLog(`🔍 Starting 4K upscale for ${result.jobId}...`, 'info');
-      
-      const upscaleResponse = await fetch(`${API_BASE}/runway-upscale`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          taskId: result.taskId
-        })
-      });
-
-      if (!upscaleResponse.ok) {
-        const errorData = await upscaleResponse.json();
-        throw new Error(errorData.error || `HTTP ${upscaleResponse.status}`);
-      }
-
-      const upscaleData = await upscaleResponse.json();
-      const upscaleTaskId = upscaleData.id;
-
-      if (!upscaleTaskId) {
-        throw new Error('No upscale task ID returned');
-      }
-
-      addLog(`✅ Upscale submitted for ${result.jobId} (Task: ${upscaleTaskId})`, 'success');
-      addLog(`⏳ Upscaling will take 2-5 minutes. Check Results tab for progress.`, 'info');
-
-      // Update result with upscale task ID
-      setResults(prev => prev.map(r => 
-        r.jobId === result.jobId 
-          ? { ...r, upscaleTaskId: upscaleTaskId, upscaleStatus: 'processing' }
-          : r
-      ));
-
-      // Start polling for upscale completion
-      pollUpscaleStatus(result.jobId, upscaleTaskId);
-
-    } catch (error) {
-      addLog(`❌ Upscale failed for ${result.jobId}: ${error.message}`, 'error');
-    }
-  };
-
-  const pollUpscaleStatus = async (jobId, upscaleTaskId) => {
-    let pollAttempts = 0;
-    const maxPollAttempts = 60; // 5 minutes max
-    
-    const poll = async () => {
-      try {
-        const statusResponse = await fetch(`${API_BASE}/runway-status?taskId=${upscaleTaskId}&apiKey=${encodeURIComponent(runwayApiKey)}`);
-        
-        if (!statusResponse.ok) {
-          throw new Error(`Status check failed: ${statusResponse.status}`);
-        }
-
-        const statusData = await statusResponse.json();
-        const status = statusData.status;
-
-        if (status === 'SUCCEEDED') {
-          const upscaledVideoUrl = statusData.output && statusData.output[0];
-          if (upscaledVideoUrl) {
-            addLog(`🎉 4K upscale completed for ${jobId}!`, 'success');
-            
-            // Update result with upscaled video
-            setResults(prev => prev.map(r => 
-              r.jobId === jobId 
-                ? { 
-                    ...r, 
-                    upscaledVideoUrl: upscaledVideoUrl, 
-                    upscaleStatus: 'completed',
-                    upscaleTaskId: upscaleTaskId
-                  }
-                : r
-            ));
-          }
-          return;
-        } else if (status === 'FAILED') {
-          throw new Error(`Upscale failed: ${statusData.failure_reason || 'Unknown error'}`);
-        } else if (status === 'CANCELLED') {
-          throw new Error('Upscale was cancelled');
-        }
-
-        // Continue polling
-        pollAttempts++;
-        if (pollAttempts < maxPollAttempts) {
-          setTimeout(poll, 5000); // Poll every 5 seconds
-        } else {
-          throw new Error('Upscale polling timeout');
-        }
-
-      } catch (error) {
-        addLog(`❌ Upscale status error for ${jobId}: ${error.message}`, 'error');
-        
-        // Update result with error
-        setResults(prev => prev.map(r => 
-          r.jobId === jobId 
-            ? { ...r, upscaleStatus: 'failed', upscaleError: error.message }
-            : r
-        ));
-      }
-    };
-
-    poll();
-  };
-
-  // Main video generation function
-  const generateVideos = async () => {
-    setIsRunning(true);
-    setLogs([]);
-    setResults([]);
-    setGenerationProgress({});
-    
-    const currentGeneration = generationCounter + 1;
-    setGenerationCounter(currentGeneration);
-    
-    addLog('🚀 Starting Runway video generation...', 'info');
-    addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
-    
-    if (!prompt.trim()) {
-      addLog('❌ No prompt provided!', 'error');
-      setIsRunning(false);
-      return;
-    }
-
-    if (!imageUrl.trim()) {
-      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
-      setIsRunning(false);
-      return;
-    }
-
-    if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required!', 'error');
-      setIsRunning(false);
-      return;
-    }
-
-    const requestedJobs = parseInt(concurrency) || 1;
-    const MAX_CONCURRENT_JOBS = 20;
-    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
-    
-    if (requestedJobs > MAX_CONCURRENT_JOBS) {
-      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
-      setIsRunning(false);
-      return;
-    }
-    
-    if (isNaN(totalJobs) || totalJobs < 1) {
-      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
-      setIsRunning(false);
-      return;
-    }
-    
-    const estimatedCostMin = totalJobs * 0.25;
-    const estimatedCostMax = totalJobs * 0.75;
-    
-    addLog(`💰 Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
-    
-    if (totalJobs >= 10) {
-      const confirmLargeBatch = window.confirm(
-        `⚠️ COST WARNING ⚠️\n\n` +
-        `You are about to generate ${totalJobs} videos.\n` +
-        `Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)}\n\n` +
-        `This will use ${totalJobs * 25}-${totalJobs * 50} credits from your RunwayML account.\n\n` +
-        `Are you sure you want to proceed?`
-      );
-      
-      if (!confirmLargeBatch) {
-        addLog('🛑 Generation cancelled by user (cost protection)', 'warning');
-        setIsRunning(false);
-        return;
-      }
-      
-      addLog('✅ User confirmed large batch generation', 'info');
-    }
-
-    addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
-    addLog('💳 Note: Each generation requires credits from your API account', 'info');
-    addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
-
-    // Check credits first
-    try {
-      addLog('💳 Checking credit balance...', 'info');
-      const creditsResponse = await fetch(`${API_BASE}/runway-credits`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey
-        })
-      });
-
-      if (creditsResponse.ok) {
-        const creditsData = await creditsResponse.json();
-        const credits = creditsData.credits || 0;
-        addLog(`💰 Current balance: ${credits} credits (Tier: ${creditsData.tier || 'unknown'})`, 'info');
-        
-        const requiredCredits = totalJobs * 30; // Conservative estimate
-        if (credits < requiredCredits) {
-          addLog(`⚠️ Warning: Low credits! You have ${credits} credits but need ~${requiredCredits} for this generation`, 'warning');
-        }
-      } else {
-        addLog('⚠️ Could not check credit balance, continuing anyway...', 'warning');
-      }
-    } catch (error) {
-      addLog('⚠️ Error checking credits: ' + error.message, 'warning');
-    }
-
-    // Create generation jobs
-    const jobs = [];
-    for (let i = 0; i < totalJobs; i++) {
-      const jobId = `Generation ${currentGeneration} - Video ${i + 1}`;
-      jobs.push({
-        id: jobId,
-        index: i + 1,
-        status: 'pending',
-        prompt: prompt,
-        imageUrl: imageUrl,
-        model: model,
-        aspectRatio: aspectRatio,
-        duration: duration
-      });
-    }
-
-    addLog(`🎬 Starting ${totalJobs} video generation${totalJobs > 1 ? 's' : ''}...`, 'info');
-
-    // Process jobs with proper concurrency handling
-    const processJob = async (job) => {
-      const jobId = job.id;
-      
-      try {
-        // Update progress
-        setGenerationProgress(prev => ({
-          ...prev,
-          [jobId]: { status: 'generating', progress: 0 }
-        }));
-
-        addLog(`🎥 Starting ${jobId}...`, 'info');
-
-        // Create generation request payload
-        const payload = {
-          text_prompt: job.prompt,
-          image_prompt: job.imageUrl,
-          model: job.model,
-          aspect_ratio: job.aspectRatio,
-          duration: job.duration,
-          seed: Math.floor(Math.random() * 1000000)
-        };
-
-        // Submit generation request
-        const generateResponse = await fetch(`${API_BASE}/runway-generate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            apiKey: runwayApiKey,
-            payload: payload
-          })
-        });
-
-        if (!generateResponse.ok) {
-          const errorData = await generateResponse.json();
-          throw new Error(errorData.error || `HTTP ${generateResponse.status}`);
-        }
-
-        const generateData = await generateResponse.json();
-        const taskId = generateData.id;
-
-        if (!taskId) {
-          throw new Error('No task ID returned from generation request');
-        }
-
-        addLog(`✅ ${jobId} submitted successfully (Task: ${taskId})`, 'success');
-
-        // Update progress with task ID
-        setGenerationProgress(prev => ({
-          ...prev,
-          [jobId]: { status: 'processing', progress: 25, taskId: taskId }
-        }));
-
-        // Poll for completion
-        let pollAttempts = 0;
-        const maxPollAttempts = 120; // 10 minutes max (5 second intervals)
-        
-        while (pollAttempts < maxPollAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-          pollAttempts++;
-
-          try {
-            const statusResponse = await fetch(`${API_BASE}/runway-status?taskId=${taskId}&apiKey=${encodeURIComponent(runwayApiKey)}`);
-            
-            if (!statusResponse.ok) {
-              const errorData = await statusResponse.json();
-              throw new Error(errorData.error || `Status check failed: ${statusResponse.status}`);
-            }
-
-            const statusData = await statusResponse.json();
-            const status = statusData.status;
-
-            // Update progress based on status
-            let progress = 25;
-            if (status === 'RUNNING') {
-              progress = Math.min(25 + (pollAttempts * 2), 90);
-            } else if (status === 'SUCCEEDED') {
-              progress = 100;
-            }
-
-            setGenerationProgress(prev => ({
-              ...prev,
-              [jobId]: { status: status.toLowerCase(), progress: progress, taskId: taskId }
-            }));
-
-            if (status === 'SUCCEEDED') {
-              const videoUrl = statusData.output && statusData.output[0];
-              if (videoUrl) {
-                addLog(`🎉 ${jobId} completed successfully!`, 'success');
-                
-                // Add to results
-                setResults(prev => [...prev, {
-                  jobId: jobId,
-                  taskId: taskId,
-                  video_url: videoUrl,
-                  status: 'completed',
-                  prompt: job.prompt,
-                  model: job.model,
-                  aspectRatio: job.aspectRatio,
-                  duration: job.duration,
-                  timestamp: new Date().toISOString(),
-                  credits_deducted: statusData.credits_deducted || 'unknown'
-                }]);
-
-                // Remove from progress tracking
-                setGenerationProgress(prev => {
-                  const newProgress = { ...prev };
-                  delete newProgress[jobId];
-                  return newProgress;
-                });
-
-                setVideoCounter(prev => prev + 1);
-                return { success: true, jobId, videoUrl, taskId };
-              } else {
-                throw new Error('Video generation completed but no video URL returned');
-              }
-            } else if (status === 'FAILED') {
-              throw new Error(`Video generation failed: ${statusData.failure_reason || 'Unknown error'}`);
-            } else if (status === 'CANCELLED') {
-              throw new Error('Video generation was cancelled');
-            }
-
-            // Continue polling for PENDING, RUNNING statuses
-            if (pollAttempts % 6 === 0) { // Every 30 seconds
-              addLog(`⏳ ${jobId} still processing... (${Math.floor(pollAttempts * 5 / 60)}m ${(pollAttempts * 5) % 60}s)`, 'info');
-            }
-
-          } catch (statusError) {
-            addLog(`❌ Error checking status for ${jobId}: ${statusError.message}`, 'error');
-            
-            // If it's a temporary network error, continue polling
-            if (pollAttempts < maxPollAttempts - 10) {
-              continue;
-            } else {
-              throw statusError;
-            }
-          }
-        }
