@@ -1307,14 +1307,24 @@ export default function RunwayAutomationApp() {
       return;
     }
 
+    // Generate timestamp for folder name
+    const timestamp = new Date().toLocaleTimeString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour12: true,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const folderName = `Runway Videos ${timestamp}`;
+
     addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
 
     try {
       // Create a new JSZip instance
       const zip = new JSZip();
       
-      // Create the "Runway Videos" folder
-      const videosFolder = zip.folder("Runway Videos");
+      // Create the folder with timestamp
+      const videosFolder = zip.folder(folderName);
       
       // Download all videos and add to zip inside the folder
       for (let i = 0; i < videosWithUrls.length; i++) {
@@ -1331,7 +1341,7 @@ export default function RunwayAutomationApp() {
           
           const blob = await response.blob();
           
-          // Add the video file to the "Runway Videos" folder in the zip
+          // Add the video file to the timestamped folder in the zip
           videosFolder.file(filename, blob);
           
         } catch (error) {
@@ -1399,11 +1409,21 @@ export default function RunwayAutomationApp() {
       return;
     }
 
+    // Generate timestamp for folder name
+    const timestamp = new Date().toLocaleTimeString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour12: true,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const folderName = `Favorited Videos ${timestamp}`;
+
     addLog(`📦 Creating zip file with ${favoritedVideos.length} favorited videos...`, 'info');
 
     try {
       const zip = new JSZip();
-      const videosFolder = zip.folder("Favorited Videos");
+      const videosFolder = zip.folder(folderName);
       
       for (let i = 0; i < favoritedVideos.length; i++) {
         const result = favoritedVideos[i];
@@ -2257,7 +2277,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
+                            <span className="text-primary">[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2531,13 +2551,10 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
-                <svg width="170" height="20" viewBox="0 0 170 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(96, 2)">
-                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
-                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
-                    <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
-                  </g>
+                <svg width="100" height="24" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8.85714 0C13.7321 0 17.7143 4.02857 17.7143 9V24H8.85714C3.98214 24 0 19.9714 0 15C0 10.0286 3.98214 6 8.85714 6V0Z" fill="white" fillOpacity="0.7"/>
+                  <path d="M26.5714 24C21.6964 24 17.7143 19.9714 17.7143 15V0H26.5714C31.4464 0 35.4286 4.02857 35.4286 9C35.4286 13.9714 31.4464 18 26.5714 18V24Z" fill="white" fillOpacity="0.7"/>
+                  <text x="44" y="16" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
                 </svg>
               </a>
             </div>
