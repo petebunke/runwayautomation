@@ -1515,11 +1515,11 @@ export default function RunwayAutomationApp() {
                           <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead style={{ backgroundColor: '#0071c5' }}>
-                                <tr>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
+                              <thead>
+                                <tr style={{ backgroundColor: '#0071c5' }}>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#0071c5' }}>Tier</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#0071c5' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#0071c5' }}>Criteria</th>
                                 </tr>
                               </thead>
                               <tbody className="small">
@@ -1714,7 +1714,7 @@ export default function RunwayAutomationApp() {
                                   borderRadius: '50%', 
                                   width: '32px', 
                                   height: '32px',
-                                  fontSize: '18px',
+                                  fontSize: '20px',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -1756,8 +1756,12 @@ export default function RunwayAutomationApp() {
                                 borderRadius: '8px', 
                                 fontWeight: '600',
                                 backgroundColor: '#28a745',
-                                borderColor: '#28a745'
+                                borderColor: '#28a745',
+                                opacity: '1',
+                                transition: 'opacity 0.1s ease-in-out'
                               }}
+                              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                              onMouseLeave={(e) => e.target.style.opacity = '1'}
                             >
                               <Play size={20} className="me-2" />
                               Generate Video{concurrency > 1 ? 's' : ''}
@@ -1820,11 +1824,11 @@ export default function RunwayAutomationApp() {
                             marginTop: '5px', 
                             marginBottom: '5px',
                             opacity: '1',
-                            transition: 'opacity 0.2s ease-in-out',
+                            transition: 'opacity 0.1s ease-in-out',
                             backgroundColor: '#28a745',
                             borderColor: '#28a745'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
@@ -2054,10 +2058,10 @@ export default function RunwayAutomationApp() {
                             borderRadius: '8px', 
                             fontWeight: '600',
                             opacity: '1',
-                            transition: 'opacity 0.2s ease-in-out'
+                            transition: 'opacity 0.1s ease-in-out'
                           }}
                           title="Clear all generated videos from browser storage"
-                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Trash2 size={20} className="me-2" />
@@ -2215,7 +2219,7 @@ export default function RunwayAutomationApp() {
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
                 <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(80, 2)">
+                  <g transform="translate(84, 2)">
                     <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
                     <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
                     <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
