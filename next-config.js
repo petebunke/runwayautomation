@@ -3,14 +3,34 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   
-  // Enable experimental features for better performance
+  // Configure for Vercel deployment
   experimental: {
     optimizeCss: true,
   },
 
+  // Add output configuration for Vercel
+  output: 'standalone',
+
   // Configure headers for security and performance
   async headers() {
     return [
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
@@ -39,6 +59,16 @@ const nextConfig = {
   // Environment variables configuration
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
+  },
+
+  // Add serverless function configuration
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+    mySecret: 'secret',
+  },
+  publicRuntimeConfig: {
+    // Will be available on both server and client
+    staticFolder: '/static',
   },
 };
 
