@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -24,6 +24,7 @@ export default function RunwayAutomationApp() {
   const [completedGeneration, setCompletedGeneration] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [favoriteVideos, setFavoriteVideos] = useState(new Set());
   const fileInputRef = useRef(null);
 
   // Handle client-side mounting to avoid hydration issues
@@ -104,6 +105,20 @@ export default function RunwayAutomationApp() {
       const savedGenerationCounter = localStorage.getItem('runway-automation-generation-counter');
       if (savedGenerationCounter && savedGenerationCounter.trim()) {
         setGenerationCounter(parseInt(savedGenerationCounter));
+      }
+
+      // Load favorite videos
+      const savedFavorites = localStorage.getItem('runway-automation-favorites');
+      if (savedFavorites && savedFavorites.trim()) {
+        try {
+          const parsedFavorites = JSON.parse(savedFavorites);
+          if (Array.isArray(parsedFavorites)) {
+            setFavoriteVideos(new Set(parsedFavorites));
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse saved favorites:', parseError);
+          localStorage.removeItem('runway-automation-favorites');
+        }
       }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
@@ -237,6 +252,21 @@ export default function RunwayAutomationApp() {
     }
   }, [generationCounter, mounted]);
 
+  // Save favorites to localStorage when they change
+  useEffect(() => {
+    if (!mounted) return;
+    
+    try {
+      if (favoriteVideos.size > 0) {
+        localStorage.setItem('runway-automation-favorites', JSON.stringify([...favoriteVideos]));
+      } else {
+        localStorage.removeItem('runway-automation-favorites');
+      }
+    } catch (error) {
+      console.warn('Failed to save favorites to localStorage:', error);
+    }
+  }, [favoriteVideos, mounted]);
+
   // Clear API key function for security
   const clearStoredApiKey = () => {
     try {
@@ -260,6 +290,7 @@ export default function RunwayAutomationApp() {
       localStorage.removeItem('runway-automation-concurrency');
       localStorage.removeItem('runway-automation-results');
       localStorage.removeItem('runway-automation-generation-counter');
+      localStorage.removeItem('runway-automation-favorites');
       setRunwayApiKey('');
       setPrompt('');
       setImageUrl('');
@@ -269,6 +300,7 @@ export default function RunwayAutomationApp() {
       setConcurrency(1);
       setResults([]);
       setGenerationCounter(0);
+      setFavoriteVideos(new Set());
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -288,7 +320,7 @@ export default function RunwayAutomationApp() {
 
     const confirmClear = window.confirm(
       `🗑️ Clear All Videos?\n\n` +
-      `This will permanently remove all ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from your browser.\n\n` +
+      `This will permanently remove ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from your browser.\n\n` +
       `Videos will still be accessible via their original URLs if you have them saved elsewhere.\n\n` +
       `Are you sure you want to continue?`
     );
@@ -297,15 +329,30 @@ export default function RunwayAutomationApp() {
       try {
         localStorage.removeItem('runway-automation-results');
         localStorage.removeItem('runway-automation-generation-counter');
+        localStorage.removeItem('runway-automation-favorites');
         setResults([]);
         setGenerationCounter(0);
         setCompletedGeneration(null);
+        setFavoriteVideos(new Set());
         addLog(`🗑️ Cleared ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from browser storage`, 'info');
       } catch (error) {
         console.warn('Failed to clear videos:', error);
         addLog('❌ Failed to clear videos: ' + error.message, 'error');
       }
     }
+  };
+
+  // Toggle favorite status for a video
+  const toggleFavorite = (videoId) => {
+    setFavoriteVideos(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(videoId)) {
+        newFavorites.delete(videoId);
+      } else {
+        newFavorites.add(videoId);
+      }
+      return newFavorites;
+    });
   };
 
   const isValidImageUrl = (url) => {
@@ -421,7 +468,13 @@ export default function RunwayAutomationApp() {
   ];
 
   const addLog = (message, type = 'info') => {
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new Date().toLocaleTimeString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour12: true,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit'
+    });
     setLogs(prev => [...prev, { message, type, timestamp }]);
   };
 
@@ -1372,7 +1425,7 @@ export default function RunwayAutomationApp() {
                           <Key className="text-white" size={32} />
                         </div>
                         
-                        <div className="text-white text-center">
+                        <div className="text-white text-center" style={{ backgroundColor: '#0071c5' }}>
                           <h3 className="mb-0 fw-bold">API Setup</h3>
                         </div>
                       </div>
@@ -1584,7 +1637,7 @@ export default function RunwayAutomationApp() {
                           <Film className="text-white" size={32} />
                         </div>
                         
-                        <div className="text-white text-center">
+                        <div className="text-white text-center" style={{ backgroundColor: '#0071c5' }}>
                           <h3 className="mb-0 fw-bold">Video Setup</h3>
                         </div>
                       </div>
@@ -1718,10 +1771,11 @@ export default function RunwayAutomationApp() {
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  lineHeight: '1'
+                                  lineHeight: '1',
+                                  padding: '0'
                                 }}
                               >
-                                ×
+                                <span style={{ transform: 'translateY(-1px)' }}>×</span>
                               </button>
                             </div>
                           )}
@@ -1808,7 +1862,7 @@ export default function RunwayAutomationApp() {
                       <Video className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                    <div className="text-white text-center" style={{ marginLeft: '105px', backgroundColor: '#0071c5' }}>
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
@@ -2021,7 +2075,7 @@ export default function RunwayAutomationApp() {
                       <Download className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                    <div className="text-white text-center" style={{ marginLeft: '105px', backgroundColor: '#0071c5' }}>
                       <h2 className="mb-0 fw-bold">Generated Videos</h2>
                     </div>
                     
@@ -2031,7 +2085,14 @@ export default function RunwayAutomationApp() {
                           className="btn btn-light shadow"
                           onClick={downloadAllVideos}
                           disabled={isDownloadingAll}
-                          style={{ borderRadius: '8px', fontWeight: '600' }}
+                          style={{ 
+                            borderRadius: '8px', 
+                            fontWeight: '600',
+                            opacity: '1',
+                            transition: 'opacity 0.1s ease-in-out'
+                          }}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                          onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           {isDownloadingAll ? (
                             <>
@@ -2158,7 +2219,25 @@ export default function RunwayAutomationApp() {
                               </div>
                               
                               <div className="card-body p-3">
-                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
+                                <div className="d-flex justify-content-between align-items-center mb-2">
+                                  <div className="fw-bold text-primary">{result.jobId}</div>
+                                  <button
+                                    className="btn btn-sm p-1"
+                                    onClick={() => toggleFavorite(result.id)}
+                                    style={{
+                                      border: 'none',
+                                      background: 'none',
+                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
+                                      transition: 'color 0.2s ease'
+                                    }}
+                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Heart 
+                                      size={18} 
+                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                    />
+                                  </button>
+                                </div>
                                 <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
