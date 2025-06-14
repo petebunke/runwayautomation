@@ -1777,7 +1777,16 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
+                          <label className="form-label fw-bold mb-2">
+                            Video Generation Limits by Tier
+                            <i 
+                              className="bi bi-info-circle ms-1 text-primary" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="RunwayML automatically queues jobs beyond your tier's concurrent limit. Higher tiers allow more simultaneous video generations."
+                            ></i>
+                          </label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
                               <thead>
@@ -2480,25 +2489,23 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
-                                    <div className="row g-1">
-                                      <div className="col-6">
-                                        <button
-                                          className="btn btn-primary btn-sm w-100"
-                                          onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
-                                        >
-                                          <Download size={16} className="me-1" />
-                                          Download
-                                        </button>
-                                      </div>
-                                      <div className="col-6">
-                                        <button
-                                          className="btn btn-outline-primary btn-sm w-100"
-                                          onClick={() => window.open(result.video_url, '_blank')}
-                                        >
-                                          <ExternalLink size={16} className="me-1" />
-                                          View
-                                        </button>
-                                      </div>
+                                    <div className="btn-group w-100" role="group">
+                                      <button
+                                        className="btn btn-primary btn-sm"
+                                        style={{ width: '50%' }}
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                      >
+                                        <Download size={16} className="me-1" />
+                                        Download
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm"
+                                        style={{ width: '50%' }}
+                                        onClick={() => window.open(result.video_url, '_blank')}
+                                      >
+                                        <ExternalLink size={16} className="me-1" />
+                                        View
+                                      </button>
                                     </div>
                                   )}
                                 </div>
@@ -2522,7 +2529,7 @@ export default function RunwayAutomationApp() {
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
                 <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(88, 2)">
+                  <g transform="translate(92, 2)">
                     <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
                     <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
                     <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
