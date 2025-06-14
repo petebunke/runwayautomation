@@ -1353,7 +1353,8 @@ export default function RunwayAutomationApp() {
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '8px 8px 0 0'
+                          borderRadius: '8px 8px 0 0',
+                          backgroundColor: '#0071c5'
                         }}
                       >
                         <div 
@@ -1514,11 +1515,11 @@ export default function RunwayAutomationApp() {
                           <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead className="table-secondary">
+                              <thead style={{ backgroundColor: '#0071c5' }}>
                                 <tr>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
                                 </tr>
                               </thead>
                               <tbody className="small">
@@ -1564,7 +1565,8 @@ export default function RunwayAutomationApp() {
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '8px 8px 0 0'
+                          borderRadius: '8px 8px 0 0',
+                          backgroundColor: '#0071c5'
                         }}
                       >
                         <div 
@@ -1708,7 +1710,16 @@ export default function RunwayAutomationApp() {
                                     fileInputRef.current.value = '';
                                   }
                                 }}
-                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
+                                style={{ 
+                                  borderRadius: '50%', 
+                                  width: '32px', 
+                                  height: '32px',
+                                  fontSize: '18px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  lineHeight: '1'
+                                }}
                               >
                                 ×
                               </button>
@@ -1774,7 +1785,8 @@ export default function RunwayAutomationApp() {
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '8px 8px 0 0'
+                      borderRadius: '8px 8px 0 0',
+                      backgroundColor: '#0071c5'
                     }}
                   >
                     <div 
@@ -1986,7 +1998,8 @@ export default function RunwayAutomationApp() {
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '8px 8px 0 0'
+                      borderRadius: '8px 8px 0 0',
+                      backgroundColor: '#0071c5'
                     }}
                   >
                     <div 
@@ -2035,10 +2048,17 @@ export default function RunwayAutomationApp() {
                         </button>
                         
                         <button
-                          className="btn btn-outline-danger shadow"
+                          className="btn btn-danger shadow"
                           onClick={clearGeneratedVideos}
-                          style={{ borderRadius: '8px', fontWeight: '600' }}
+                          style={{ 
+                            borderRadius: '8px', 
+                            fontWeight: '600',
+                            opacity: '1',
+                            transition: 'opacity 0.2s ease-in-out'
+                          }}
                           title="Clear all generated videos from browser storage"
+                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
+                          onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Trash2 size={20} className="me-2" />
                           Clear Videos
@@ -2187,15 +2207,15 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center mt-5">
+          <div className="text-center mt-4">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
                 <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(75, 2)">
+                  <g transform="translate(80, 2)">
                     <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
                     <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
                     <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
@@ -2209,4 +2229,3 @@ export default function RunwayAutomationApp() {
     </>
   );
 }
-                                  
