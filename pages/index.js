@@ -23,164 +23,170 @@ export default function RunwayAutomationApp() {
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [completedGeneration, setCompletedGeneration] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Handle client-side mounting to avoid hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Load saved data from localStorage on component mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        // Load API key
-        const savedApiKey = localStorage.getItem('runway-automation-api-key');
-        if (savedApiKey && savedApiKey.trim()) {
-          console.log('Loading saved API key from localStorage');
-          setRunwayApiKey(savedApiKey);
-        }
-        
-        // Load prompt
-        const savedPrompt = localStorage.getItem('runway-automation-prompt');
-        if (savedPrompt && savedPrompt.trim()) {
-          console.log('Loading saved prompt from localStorage');
-          setPrompt(savedPrompt);
-        }
-        
-        // Load image URL
-        const savedImageUrl = localStorage.getItem('runway-automation-image-url');
-        if (savedImageUrl && savedImageUrl.trim()) {
-          console.log('Loading saved image URL from localStorage');
-          setImageUrl(savedImageUrl);
-        }
-
-        // Load model
-        const savedModel = localStorage.getItem('runway-automation-model');
-        if (savedModel && savedModel.trim()) {
-          console.log('Loading saved model from localStorage');
-          setModel(savedModel);
-        }
-
-        // Load aspect ratio
-        const savedAspectRatio = localStorage.getItem('runway-automation-aspect-ratio');
-        if (savedAspectRatio && savedAspectRatio.trim()) {
-          console.log('Loading saved aspect ratio from localStorage');
-          setAspectRatio(savedAspectRatio);
-        }
-
-        // Load duration
-        const savedDuration = localStorage.getItem('runway-automation-duration');
-        if (savedDuration && savedDuration.trim()) {
-          console.log('Loading saved duration from localStorage');
-          setDuration(parseInt(savedDuration));
-        }
-
-        // Load concurrency
-        const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
-        if (savedConcurrency && savedConcurrency.trim()) {
-          console.log('Loading saved concurrency from localStorage');
-          setConcurrency(parseInt(savedConcurrency));
-        }
-      } catch (error) {
-        console.warn('Failed to load saved data from localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      // Load API key
+      const savedApiKey = localStorage.getItem('runway-automation-api-key');
+      if (savedApiKey && savedApiKey.trim()) {
+        console.log('Loading saved API key from localStorage');
+        setRunwayApiKey(savedApiKey);
       }
+      
+      // Load prompt
+      const savedPrompt = localStorage.getItem('runway-automation-prompt');
+      if (savedPrompt && savedPrompt.trim()) {
+        console.log('Loading saved prompt from localStorage');
+        setPrompt(savedPrompt);
+      }
+      
+      // Load image URL
+      const savedImageUrl = localStorage.getItem('runway-automation-image-url');
+      if (savedImageUrl && savedImageUrl.trim()) {
+        console.log('Loading saved image URL from localStorage');
+        setImageUrl(savedImageUrl);
+      }
+
+      // Load model
+      const savedModel = localStorage.getItem('runway-automation-model');
+      if (savedModel && savedModel.trim()) {
+        console.log('Loading saved model from localStorage');
+        setModel(savedModel);
+      }
+
+      // Load aspect ratio
+      const savedAspectRatio = localStorage.getItem('runway-automation-aspect-ratio');
+      if (savedAspectRatio && savedAspectRatio.trim()) {
+        console.log('Loading saved aspect ratio from localStorage');
+        setAspectRatio(savedAspectRatio);
+      }
+
+      // Load duration
+      const savedDuration = localStorage.getItem('runway-automation-duration');
+      if (savedDuration && savedDuration.trim()) {
+        console.log('Loading saved duration from localStorage');
+        setDuration(parseInt(savedDuration));
+      }
+
+      // Load concurrency
+      const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
+      if (savedConcurrency && savedConcurrency.trim()) {
+        console.log('Loading saved concurrency from localStorage');
+        setConcurrency(parseInt(savedConcurrency));
+      }
+    } catch (error) {
+      console.warn('Failed to load saved data from localStorage:', error);
     }
-  }, []);
+  }, [mounted]);
 
   // Save API key to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
-          console.log('Saving API key to localStorage');
-          localStorage.setItem('runway-automation-api-key', runwayApiKey);
-        } else if (runwayApiKey === '') {
-          console.log('Removing API key from localStorage');
-          localStorage.removeItem('runway-automation-api-key');
-        }
-      } catch (error) {
-        console.warn('Failed to save API key to localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
+        console.log('Saving API key to localStorage');
+        localStorage.setItem('runway-automation-api-key', runwayApiKey);
+      } else if (runwayApiKey === '') {
+        console.log('Removing API key from localStorage');
+        localStorage.removeItem('runway-automation-api-key');
       }
+    } catch (error) {
+      console.warn('Failed to save API key to localStorage:', error);
     }
-  }, [runwayApiKey]);
+  }, [runwayApiKey, mounted]);
 
   // Save prompt to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (prompt && prompt.trim()) {
-          localStorage.setItem('runway-automation-prompt', prompt);
-        } else if (prompt === '') {
-          localStorage.removeItem('runway-automation-prompt');
-        }
-      } catch (error) {
-        console.warn('Failed to save prompt to localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      if (prompt && prompt.trim()) {
+        localStorage.setItem('runway-automation-prompt', prompt);
+      } else if (prompt === '') {
+        localStorage.removeItem('runway-automation-prompt');
       }
+    } catch (error) {
+      console.warn('Failed to save prompt to localStorage:', error);
     }
-  }, [prompt]);
+  }, [prompt, mounted]);
 
   // Save image URL to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (imageUrl && imageUrl.trim()) {
-          localStorage.setItem('runway-automation-image-url', imageUrl);
-        } else if (imageUrl === '') {
-          localStorage.removeItem('runway-automation-image-url');
-        }
-      } catch (error) {
-        console.warn('Failed to save image URL to localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      if (imageUrl && imageUrl.trim()) {
+        localStorage.setItem('runway-automation-image-url', imageUrl);
+      } else if (imageUrl === '') {
+        localStorage.removeItem('runway-automation-image-url');
       }
+    } catch (error) {
+      console.warn('Failed to save image URL to localStorage:', error);
     }
-  }, [imageUrl]);
+  }, [imageUrl, mounted]);
 
   // Save model to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (model && model.trim()) {
-          localStorage.setItem('runway-automation-model', model);
-        }
-      } catch (error) {
-        console.warn('Failed to save model to localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      if (model && model.trim()) {
+        localStorage.setItem('runway-automation-model', model);
       }
+    } catch (error) {
+      console.warn('Failed to save model to localStorage:', error);
     }
-  }, [model]);
+  }, [model, mounted]);
 
   // Save aspect ratio to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (aspectRatio && aspectRatio.trim()) {
-          localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
-        }
-      } catch (error) {
-        console.warn('Failed to save aspect ratio to localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      if (aspectRatio && aspectRatio.trim()) {
+        localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
       }
+    } catch (error) {
+      console.warn('Failed to save aspect ratio to localStorage:', error);
     }
-  }, [aspectRatio]);
+  }, [aspectRatio, mounted]);
 
   // Save duration to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (duration) {
-          localStorage.setItem('runway-automation-duration', duration.toString());
-        }
-      } catch (error) {
-        console.warn('Failed to save duration to localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      if (duration) {
+        localStorage.setItem('runway-automation-duration', duration.toString());
       }
+    } catch (error) {
+      console.warn('Failed to save duration to localStorage:', error);
     }
-  }, [duration]);
+  }, [duration, mounted]);
 
   // Save concurrency to localStorage when it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (concurrency) {
-          localStorage.setItem('runway-automation-concurrency', concurrency.toString());
-        }
-      } catch (error) {
-        console.warn('Failed to save concurrency to localStorage:', error);
+    if (!mounted) return;
+    
+    try {
+      if (concurrency) {
+        localStorage.setItem('runway-automation-concurrency', concurrency.toString());
       }
+    } catch (error) {
+      console.warn('Failed to save concurrency to localStorage:', error);
     }
-  }, [concurrency]);
+  }, [concurrency, mounted]);
 
   // Clear API key function for security
   const clearStoredApiKey = () => {
@@ -295,6 +301,8 @@ export default function RunwayAutomationApp() {
 
   // Initialize Bootstrap tooltips
   useEffect(() => {
+    if (!mounted) return;
+    
     if (typeof window !== 'undefined' && window.bootstrap) {
       // Dispose existing tooltips first to prevent duplicates
       const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
@@ -311,7 +319,7 @@ export default function RunwayAutomationApp() {
         new window.bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
-  }, [activeTab, model, results]);
+  }, [activeTab, model, results, mounted]);
 
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
@@ -1074,6 +1082,11 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Don't render until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <>
       <Head>
@@ -1259,6 +1272,141 @@ export default function RunwayAutomationApp() {
                           <div className="d-flex align-items-center mb-2">
                             <CreditCard size={20} className="text-warning me-2" />
                             <strong>Credits Required</strong>
+                          </div>
+                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
+                          <ul className="small mb-0 ps-3">
+                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Minimum $10 (1000 credits)</li>
+                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li>Credits are separate from web app credits</li>
+                          </ul>
+                        </div>
+
+                        <div className="row g-3">
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Model</label>
+                            <select
+                              className="form-select"
+                              value={model}
+                              onChange={(e) => setModel(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {modelOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              Aspect Ratio
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
+                              ></i>
+                            </label>
+                            <select
+                              className="form-select"
+                              value={aspectRatio}
+                              onChange={(e) => setAspectRatio(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {aspectRatioOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Duration (seconds)</label>
+                            <select
+                              className="form-select"
+                              value={duration}
+                              onChange={(e) => setDuration(parseInt(e.target.value))}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              <option value={5}>5 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              # of Videos Generated
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
+                              ></i>
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              className="form-control"
+                              value={concurrency}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                const safeValue = Math.min(Math.max(value, 1), 20);
+                                setConcurrency(safeValue);
+                                
+                                if (value > 20) {
+                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
+                                }
+                              }}
+                              style={{ borderRadius: '8px' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-light rounded border">
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
+                          <div className="table-responsive">
+                            <table className="table table-sm table-bordered border-dark mb-0">
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
+                                </tr>
+                              </thead>
+                              <tbody className="small">
+                                <tr>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">Default (new accounts)</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">2</td>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">1 day after $50 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">7 days after $100 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">4</td>
+                                  <td className="border-dark">10</td>
+                                  <td className="border-dark">14 days after $1,000 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">20</td>
+                                  <td className="border-dark">7 days after $5,000 purchased</td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                           <p className="small text-muted mt-2 mb-0">
                             Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
@@ -1905,139 +2053,5 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}="mb-2 small">The RunwayML API requires credits for all video generations.</p>
-                          <ul className="small mb-0 ps-3">
-                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
-                            <li>Minimum $10 (1000 credits)</li>
-                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>Credits are separate from web app credits</li>
-                          </ul>
-                        </div>
-
-                        <div className="row g-3">
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Model</label>
-                            <select
-                              className="form-select"
-                              value={model}
-                              onChange={(e) => setModel(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {modelOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              Aspect Ratio
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
-                              ></i>
-                            </label>
-                            <select
-                              className="form-select"
-                              value={aspectRatio}
-                              onChange={(e) => setAspectRatio(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {aspectRatioOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Duration (seconds)</label>
-                            <select
-                              className="form-select"
-                              value={duration}
-                              onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              <option value={5}>5 seconds</option>
-                              <option value={10}>10 seconds</option>
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              # of Videos Generated
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
-                              ></i>
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="20"
-                              className="form-control"
-                              value={concurrency}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value) || 1;
-                                const safeValue = Math.min(Math.max(value, 1), 20);
-                                setConcurrency(safeValue);
-                                
-                                if (value > 20) {
-                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
-                                }
-                              }}
-                              style={{ borderRadius: '8px' }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
-                          <div className="table-responsive">
-                            <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead className="table-secondary">
-                                <tr>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
-                                </tr>
-                              </thead>
-                              <tbody className="small">
-                                <tr>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">Default (new accounts)</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">2</td>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">1 day after $50 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">7 days after $100 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">4</td>
-                                  <td className="border-dark">10</td>
-                                  <td className="border-dark">14 days after $1,000 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">20</td>
-                                  <td className="border-dark">7 days after $5,000 purchased</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                          <p className
+}
+                                  
