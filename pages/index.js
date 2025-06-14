@@ -1,37 +1,4 @@
-const upscaleVideo = async (videoId, videoTitle) => {
-    try {
-      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
-      
-      // Find the video result to get the video URL
-      const videoResult = results.find(result => result.id === videoId);
-      if (!videoResult || !videoResult.video_url) {
-        throw new Error('Video not found or video URL not available');
-      }
-
-      const payload = {
-        promptVideo: videoResult.video_url
-      };
-
-      addLog('📤 Submitting 4K upscale request...', 'info');
-
-      const response = await fetch(API_BASE + '/runway-upscale', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          payload: payload
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to start 4K upscale: ' + response.status);
-      }
-
-      const upscaleTask = await response.json();
-      addLog('✓ 4K upimport React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
 import Head from 'next/head';
 
@@ -1554,8 +1521,8 @@ export default function RunwayAutomationApp() {
         <meta name="robots" content="index, follow" />
         
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#667eea" />
-        <meta name="msapplication-navbutton-color" content="#667eea" />
+        <meta name="theme-color" content="#1a7fd4" />
+        <meta name="msapplication-navbutton-color" content="#1a7fd4" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         <link 
@@ -1651,7 +1618,7 @@ export default function RunwayAutomationApp() {
                         style={{ 
                           height: '80px',
                           borderRadius: '8px 8px 0 0',
-                          backgroundColor: '#0071c5'
+                          backgroundColor: '#1a7fd4'
                         }}
                       >
                         <div 
@@ -1813,10 +1780,10 @@ export default function RunwayAutomationApp() {
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
                               <thead>
-                                <tr style={{ backgroundColor: '#0071c5' }}>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#0071c5' }}>Tier</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#0071c5' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#0071c5' }}>Criteria</th>
+                                <tr style={{ backgroundColor: '#1a7fd4' }}>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#1a7fd4' }}>Tier</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#1a7fd4' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#1a7fd4' }}>Criteria</th>
                                 </tr>
                               </thead>
                               <tbody className="small">
@@ -1863,7 +1830,7 @@ export default function RunwayAutomationApp() {
                         style={{ 
                           height: '80px',
                           borderRadius: '8px 8px 0 0',
-                          backgroundColor: '#0071c5'
+                          backgroundColor: '#1a7fd4'
                         }}
                       >
                         <div 
@@ -2088,7 +2055,7 @@ export default function RunwayAutomationApp() {
                     style={{ 
                       height: '80px',
                       borderRadius: '8px 8px 0 0',
-                      backgroundColor: '#0071c5'
+                      backgroundColor: '#1a7fd4'
                     }}
                   >
                     <div 
@@ -2301,7 +2268,7 @@ export default function RunwayAutomationApp() {
                     style={{ 
                       height: '80px',
                       borderRadius: '8px 8px 0 0',
-                      backgroundColor: '#0071c5'
+                      backgroundColor: '#1a7fd4'
                     }}
                   >
                     <div 
