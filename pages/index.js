@@ -1651,7 +1651,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '80px',
+                          height: '60px',
                           borderRadius: '8px 8px 0 0',
                           backgroundColor: HEADER_BLUE
                         }}
@@ -1662,7 +1662,7 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '40px',
+                            top: '20px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
@@ -1872,7 +1872,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '80px',
+                          height: '60px',
                           borderRadius: '8px 8px 0 0',
                           backgroundColor: HEADER_BLUE
                         }}
@@ -1883,7 +1883,7 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '40px',
+                            top: '20px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
@@ -2050,7 +2050,7 @@ export default function RunwayAutomationApp() {
                           {/* Generate Video Button */}
                           <div className="mt-4">
                             <button
-                              className="btn btn-success btn-lg w-100 shadow"
+                              className="btn btn-success w-100 shadow"
                               onClick={() => {
                                 setActiveTab('generation');
                                 // Small delay to ensure tab switch completes before starting generation
@@ -2067,7 +2067,8 @@ export default function RunwayAutomationApp() {
                                 backgroundColor: '#28a745',
                                 borderColor: '#28a745',
                                 opacity: '1',
-                                transition: 'opacity 0.1s ease-in-out'
+                                transition: 'opacity 0.1s ease-in-out',
+                                padding: '8px 16px'
                               }}
                               onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                               onMouseLeave={(e) => e.target.style.opacity = '1'}
@@ -2108,7 +2109,7 @@ export default function RunwayAutomationApp() {
                         width: '80px', 
                         height: '80px',
                         left: '20px',
-                        top: '40px',
+                        top: '20px',
                         zIndex: 10,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         backgroundColor: '#4dd0ff'
@@ -2121,21 +2122,20 @@ export default function RunwayAutomationApp() {
                       <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
-                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
+                    <div style={{ marginRight: '30px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-success btn-lg shadow"
+                          className="btn btn-success shadow"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600', 
-                            marginTop: '5px', 
-                            marginBottom: '5px',
                             opacity: '1',
                             transition: 'opacity 0.1s ease-in-out',
                             backgroundColor: '#28a745',
-                            borderColor: '#28a745'
+                            borderColor: '#28a745',
+                            padding: '8px 16px'
                           }}
                           onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
@@ -2150,9 +2150,9 @@ export default function RunwayAutomationApp() {
                         </button>
                       ) : (
                         <button
-                          className="btn btn-danger btn-lg shadow"
+                          className="btn btn-danger shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
+                          style={{ borderRadius: '8px', fontWeight: '600', padding: '8px 16px' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
@@ -2310,7 +2310,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '80px',
+                      height: '60px',
                       borderRadius: '8px 8px 0 0',
                       backgroundColor: HEADER_BLUE
                     }}
@@ -2417,7 +2417,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     {results.length === 0 ? (
                       <div className="text-center py-5">
-                        <div className="mb-4">
+                        <div className="mb-3">
                           <Film size={80} className="text-muted" />
                         </div>
                         <h4 className="text-muted mb-3">No videos generated yet</h4>
@@ -2561,10 +2561,10 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
-                <svg width="100" height="24" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8.85714 0C13.7321 0 17.7143 4.02857 17.7143 9V24H8.85714C3.98214 24 0 19.9714 0 15C0 10.0286 3.98214 6 8.85714 6V0Z" fill="white" fillOpacity="0.7"/>
-                  <path d="M26.5714 24C21.6964 24 17.7143 19.9714 17.7143 15V0H26.5714C31.4464 0 35.4286 4.02857 35.4286 9C35.4286 13.9714 31.4464 18 26.5714 18V24Z" fill="white" fillOpacity="0.7"/>
-                  <text x="44" y="16" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                <svg width="80" height="19" viewBox="0 0 80 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7.09375 0C11.0625 0 14.375 3.34375 14.375 7.5V19H7.09375C3.125 19 0 15.6563 0 11.5C0 7.34375 3.125 4 7.09375 4V0Z" fill="white" fillOpacity="0.7"/>
+                  <path d="M21.2812 19C17.3125 19 14.375 15.6563 14.375 11.5V0H21.2812C25.25 0 28.375 3.34375 28.375 7.5C28.375 11.6563 25.25 15 21.2812 15V19Z" fill="white" fillOpacity="0.7"/>
+                  <text x="34" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
                 </svg>
               </a>
             </div>
