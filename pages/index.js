@@ -530,27 +530,31 @@ export default function RunwayAutomationApp() {
     fileInputRef.current?.click();
   };
 
-  // Initialize Bootstrap tooltips
+  // Initialize Bootstrap tooltips - optimized for performance
   useEffect(() => {
     if (!mounted) return;
     
-    if (typeof window !== 'undefined' && window.bootstrap) {
-      // Dispose existing tooltips first to prevent duplicates
-      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      existingTooltips.forEach(function (tooltipEl) {
-        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
-        if (existingTooltip) {
-          existingTooltip.dispose();
-        }
-      });
+    // Only reinitialize tooltips when switching to setup tab or when results change
+    if (typeof window !== 'undefined' && window.bootstrap && (activeTab === 'setup' || activeTab === 'results')) {
+      // Use requestAnimationFrame to avoid blocking the UI
+      requestAnimationFrame(() => {
+        // Dispose existing tooltips first to prevent duplicates
+        const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        existingTooltips.forEach(function (tooltipEl) {
+          const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
+          if (existingTooltip) {
+            existingTooltip.dispose();
+          }
+        });
 
-      // Initialize new tooltips
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new window.bootstrap.Tooltip(tooltipTriggerEl);
+        // Initialize new tooltips only for the current tab
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+          new window.bootstrap.Tooltip(tooltipTriggerEl);
+        });
       });
     }
-  }, [activeTab, model, results, mounted]);
+  }, [activeTab, mounted]);
 
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
@@ -1080,12 +1084,12 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Cost estimation and user confirmation - show modal on first generation or if cost > $20
+    // Cost estimation and user confirmation - show modal only for first generation or if cost > $20
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
-    // Show modal if it's the first generation ever OR if estimated max cost > $20
-    if (!hasShownCostWarning || estimatedCostMax > 20) {
+    // Show modal if it's the first generation ever (totalJobs == 1) OR if estimated max cost > $20
+    if ((!hasShownCostWarning && totalJobs === 1) || estimatedCostMax > 20) {
       showModalDialog({
         title: estimatedCostMax > 20 ? "High Cost Warning" : "Cost Warning",
         type: "warning",
@@ -1784,7 +1788,7 @@ export default function RunwayAutomationApp() {
                               style={{ cursor: 'help' }}
                               data-bs-toggle="tooltip" 
                               data-bs-placement="top" 
-                              title="All tiers can generate 20 videos, but you will be throttled past your tier's limits."
+                              title="All tiers can generate up to 20 videos, but you will be throttled past your tier's limits."
                             ></i>
                           </label>
                           <div className="table-responsive">
@@ -2473,7 +2477,7 @@ export default function RunwayAutomationApp() {
                                       color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
                                       transition: 'color 0.2s ease',
                                       flexShrink: 0,
-                                      marginTop: '-3px'
+                                      marginTop: '-5px'
                                     }}
                                     title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
@@ -2529,7 +2533,7 @@ export default function RunwayAutomationApp() {
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
                 <svg width="170" height="20" viewBox="0 0 170 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(92, 2)">
+                  <g transform="translate(96, 2)">
                     <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
                     <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
                     <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
