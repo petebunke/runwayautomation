@@ -1784,7 +1784,7 @@ export default function RunwayAutomationApp() {
                               style={{ cursor: 'help' }}
                               data-bs-toggle="tooltip" 
                               data-bs-placement="top" 
-                              title="RunwayML automatically queues jobs beyond your tier's concurrent limit. Higher tiers allow more simultaneous video generations."
+                              title="All tiers can generate 20 videos, but you will be throttled past your tier's limits."
                             ></i>
                           </label>
                           <div className="table-responsive">
@@ -2473,7 +2473,7 @@ export default function RunwayAutomationApp() {
                                       color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
                                       transition: 'color 0.2s ease',
                                       flexShrink: 0,
-                                      marginTop: '0px'
+                                      marginTop: '-3px'
                                     }}
                                     title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
@@ -2527,7 +2527,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
-                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="170" height="20" viewBox="0 0 170 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
                   <g transform="translate(92, 2)">
                     <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
