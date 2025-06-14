@@ -1238,6 +1238,173 @@ export default function RunwayAutomationApp() {
     setIsDownloadingAll(false);
   };
 
+  const downloadFavoritedVideos = async () => {
+    setIsDownloadingAll(true);
+    
+    // Get favorited videos that are completed
+    const favoritedVideos = results
+      .filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id))
+      .sort((a, b) => {
+        const parseJobId = (jobId) => {
+          if (!jobId) return { generation: 0, video: 0 };
+          const genMatch = jobId.match(/Generation (\d+)/);
+          const vidMatch = jobId.match(/Video (\d+)/);
+          return {
+            generation: genMatch ? parseInt(genMatch[1]) : 0,
+            video: vidMatch ? parseInt(vidMatch[1]) : 0
+          };
+        };
+        
+        const aData = parseJobId(a.jobId);
+        const bData = parseJobId(b.jobId);
+        
+        if (aData.generation !== bData.generation) {
+          return aData.generation - bData.generation;
+        }
+        return aData.video - bData.video;
+      });
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      setIsDownloadingAll(false);
+      return;
+    }
+
+    addLog(`📦 Creating zip file with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      const zip = new JSZip();
+      const videosFolder = zip.folder("Favorited Videos");
+      
+      for (let i = 0; i < favoritedVideos.length; i++) {
+        const result = favoritedVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        try {
+          addLog(`📥 Adding to zip ${i + 1}/${favoritedVideos.length}: ${filename}...`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          videosFolder.file(filename, blob);
+          
+        } catch (error) {
+          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          continue;
+        }
+      }
+
+      addLog('🗜️ Generating zip file...', 'info');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      const zipUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = zipUrl;
+      a.download = 'favorited-videos.zip';
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(zipUrl);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded favorited-videos.zip with ${favoritedVideos.length} videos successfully!`, 'success');
+      
+    } catch (error) {
+      addLog(`❌ Failed to create favorited videos zip file: ${error.message}`, 'error');
+    }
+
+    setIsDownloadingAll(false);
+  };
+
+  const download4KVideos = async () => {
+    setIsDownloadingAll(true);
+    
+    // Get 4K/upscaled videos (this would need to be tracked during generation)
+    // For now, we'll filter based on a hypothetical property or all videos
+    const fourKVideos = results
+      .filter(result => result.video_url && result.status === 'completed' && result.is4K)
+      .sort((a, b) => {
+        const parseJobId = (jobId) => {
+          if (!jobId) return { generation: 0, video: 0 };
+          const genMatch = jobId.match(/Generation (\d+)/);
+          const vidMatch = jobId.match(/Video (\d+)/);
+          return {
+            generation: genMatch ? parseInt(genMatch[1]) : 0,
+            video: vidMatch ? parseInt(vidMatch[1]) : 0
+          };
+        };
+        
+        const aData = parseJobId(a.jobId);
+        const bData = parseJobId(b.jobId);
+        
+        if (aData.generation !== bData.generation) {
+          return aData.generation - bData.generation;
+        }
+        return aData.video - bData.video;
+      });
+    
+    if (fourKVideos.length === 0) {
+      addLog('❌ No 4K videos available for download', 'error');
+      setIsDownloadingAll(false);
+      return;
+    }
+
+    addLog(`📦 Creating zip file with ${fourKVideos.length} 4K videos...`, 'info');
+
+    try {
+      const zip = new JSZip();
+      const videosFolder = zip.folder("4K Videos");
+      
+      for (let i = 0; i < fourKVideos.length; i++) {
+        const result = fourKVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        try {
+          addLog(`📥 Adding to zip ${i + 1}/${fourKVideos.length}: ${filename}...`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          videosFolder.file(filename, blob);
+          
+        } catch (error) {
+          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          continue;
+        }
+      }
+
+      addLog('🗜️ Generating zip file...', 'info');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      const zipUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = zipUrl;
+      a.download = '4k-videos.zip';
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(zipUrl);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded 4k-videos.zip with ${fourKVideos.length} videos successfully!`, 'success');
+      
+    } catch (error) {
+      addLog(`❌ Failed to create 4K videos zip file: ${error.message}`, 'error');
+    }
+
+    setIsDownloadingAll(false);
+  };
+
   const exportResults = () => {
     const exportData = {
       generated_at: new Date().toISOString(),
@@ -1403,7 +1570,7 @@ export default function RunwayAutomationApp() {
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        className="position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
                           borderRadius: '8px 8px 0 0',
@@ -1425,7 +1592,7 @@ export default function RunwayAutomationApp() {
                           <Key className="text-white" size={32} />
                         </div>
                         
-                        <div className="text-white text-center" style={{ backgroundColor: '#0071c5' }}>
+                        <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">API Setup</h3>
                         </div>
                       </div>
@@ -1615,7 +1782,7 @@ export default function RunwayAutomationApp() {
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        className="position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
                           borderRadius: '8px 8px 0 0',
@@ -1637,7 +1804,7 @@ export default function RunwayAutomationApp() {
                           <Film className="text-white" size={32} />
                         </div>
                         
-                        <div className="text-white text-center" style={{ backgroundColor: '#0071c5' }}>
+                        <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">Video Setup</h3>
                         </div>
                       </div>
@@ -1840,7 +2007,7 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    className="position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
                       borderRadius: '8px 8px 0 0',
@@ -1862,7 +2029,7 @@ export default function RunwayAutomationApp() {
                       <Video className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white text-center" style={{ marginLeft: '105px', backgroundColor: '#0071c5' }}>
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
                       <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
@@ -2053,7 +2220,7 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    className="position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
                       borderRadius: '8px 8px 0 0',
@@ -2075,12 +2242,12 @@ export default function RunwayAutomationApp() {
                       <Download className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white text-center" style={{ marginLeft: '105px', backgroundColor: '#0071c5' }}>
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
                       <h2 className="mb-0 fw-bold">Generated Videos</h2>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px' }} className="d-flex gap-2">
+                      <div style={{ marginRight: '30px' }} className="d-flex gap-2 flex-wrap">
                         <button
                           className="btn btn-light shadow"
                           onClick={downloadAllVideos}
@@ -2103,14 +2270,64 @@ export default function RunwayAutomationApp() {
                             </>
                           ) : (
                             <>
-                              <Download size={20} className="me-2" />
-                              Download All as ZIP
+                              <Download size={16} className="me-2" />
+                              All Videos
                               <span className="ms-2 badge bg-primary">
                                 {results.filter(result => result.video_url && result.status === 'completed').length}
                               </span>
                             </>
                           )}
                         </button>
+                        
+                        {favoriteVideos.size > 0 && (
+                          <button
+                            className="btn btn-outline-danger shadow"
+                            onClick={downloadFavoritedVideos}
+                            disabled={isDownloadingAll}
+                            style={{ 
+                              borderRadius: '8px', 
+                              fontWeight: '600',
+                              opacity: '1',
+                              transition: 'opacity 0.1s ease-in-out'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          >
+                            <Heart size={16} className="me-2" />
+                            Favorited
+                            <span className="ms-2 badge bg-danger">
+                              {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                            </span>
+                          </button>
+                        )}
+                        
+                        {results.filter(result => result.video_url && result.status === 'completed' && result.is4K).length > 0 && (
+                          <button
+                            className="btn btn-outline-success shadow"
+                            onClick={download4KVideos}
+                            disabled={isDownloadingAll}
+                            style={{ 
+                              borderRadius: '8px', 
+                              fontWeight: '600',
+                              opacity: '1',
+                              transition: 'opacity 0.1s ease-in-out'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-2">
+                              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                              <polyline points="7.5 4.21,12 6.81,16.5 4.21"/>
+                              <polyline points="7.5 19.79,7.5 14.6,3 12"/>
+                              <polyline points="21 12,16.5 14.6,16.5 19.79"/>
+                              <polyline points="12 22.81,12 17"/>
+                            </svg>
+                            4K Videos
+                            <span className="ms-2 badge bg-success">
+                              {results.filter(result => result.video_url && result.status === 'completed' && result.is4K).length}
+                            </span>
+                          </button>
+                        )}
                         
                         <button
                           className="btn btn-danger shadow"
@@ -2125,9 +2342,9 @@ export default function RunwayAutomationApp() {
                           onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
-                          <Trash2 size={20} className="me-2" />
+                          <Trash2 size={16} className="me-2" />
                           Clear Videos
-                          <span className="ms-2 badge bg-danger">
+                          <span className="ms-2 badge bg-light text-dark">
                             {results.length}
                           </span>
                         </button>
@@ -2219,16 +2436,17 @@ export default function RunwayAutomationApp() {
                               </div>
                               
                               <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-center mb-2">
-                                  <div className="fw-bold text-primary">{result.jobId}</div>
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                  <div className="fw-bold text-primary flex-grow-1">{result.jobId}</div>
                                   <button
-                                    className="btn btn-sm p-1"
+                                    className="btn btn-sm p-1 ms-2"
                                     onClick={() => toggleFavorite(result.id)}
                                     style={{
                                       border: 'none',
                                       background: 'none',
                                       color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
-                                      transition: 'color 0.2s ease'
+                                      transition: 'color 0.2s ease',
+                                      flexShrink: 0
                                     }}
                                     title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
