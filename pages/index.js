@@ -25,12 +25,100 @@ export default function RunwayAutomationApp() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [favoriteVideos, setFavoriteVideos] = useState(new Set());
+  const [showModal, setShowModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({});
   const fileInputRef = useRef(null);
+
+  // Original blue color to match buttons
+  const HEADER_BLUE = '#0071c5'; // Back to the original blue
 
   // Handle client-side mounting to avoid hydration issues
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Modal component
+  const Modal = ({ show, onClose, title, children, onConfirm, confirmText = "Confirm", cancelText = "Cancel", type = "confirm" }) => {
+    if (!show) return null;
+
+    return (
+      <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ 
+        backgroundColor: 'rgba(0,0,0,0.5)', 
+        zIndex: 9999 
+      }}>
+        <div className="card shadow-lg border-0" style={{ 
+          borderRadius: '8px', 
+          overflow: 'hidden',
+          maxWidth: '500px',
+          width: '90%',
+          maxHeight: '80vh',
+          overflowY: 'auto'
+        }}>
+          <div 
+            className="position-relative d-flex align-items-center justify-content-center" 
+            style={{ 
+              height: '80px',
+              borderRadius: '8px 8px 0 0',
+              backgroundColor: HEADER_BLUE
+            }}
+          >
+            <div 
+              className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+              style={{ 
+                width: '80px', 
+                height: '80px',
+                left: '20px',
+                top: '40px',
+                zIndex: 10,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                backgroundColor: '#4dd0ff'
+              }}
+            >
+              {type === 'warning' ? <AlertCircle className="text-white" size={32} /> : <CreditCard className="text-white" size={32} />}
+            </div>
+            
+            <div className="text-white text-center">
+              <h3 className="mb-0 fw-bold">{title}</h3>
+            </div>
+          </div>
+          
+          <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+            <div className="mb-4">
+            </div>
+            {children}
+            
+            <div className="d-flex gap-3 justify-content-end mt-4">
+              <button
+                className="btn btn-secondary"
+                onClick={onClose}
+                style={{ borderRadius: '8px', fontWeight: '600' }}
+              >
+                {cancelText}
+              </button>
+              {onConfirm && (
+                <button
+                  className={`btn ${type === 'warning' ? 'btn-danger' : 'btn-primary'} shadow`}
+                  onClick={() => {
+                    onConfirm();
+                    onClose();
+                  }}
+                  style={{ borderRadius: '8px', fontWeight: '600' }}
+                >
+                  {confirmText}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Show modal helper function
+  const showModalDialog = (config) => {
+    setModalConfig(config);
+    setShowModal(true);
+  };
 
   // Load saved data from localStorage on component mount
   useEffect(() => {
@@ -310,7 +398,7 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // Clear generated videos function
+  // Clear generated videos function with modal
   const clearGeneratedVideos = () => {
     const videoCount = results.length;
     if (videoCount === 0) {
@@ -318,28 +406,40 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    const confirmClear = window.confirm(
-      `🗑️ Clear All Videos?\n\n` +
-      `This will permanently remove ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from your browser.\n\n` +
-      `Videos will still be accessible via their original URLs if you have them saved elsewhere.\n\n` +
-      `Are you sure you want to continue?`
-    );
-    
-    if (confirmClear) {
-      try {
-        localStorage.removeItem('runway-automation-results');
-        localStorage.removeItem('runway-automation-generation-counter');
-        localStorage.removeItem('runway-automation-favorites');
-        setResults([]);
-        setGenerationCounter(0);
-        setCompletedGeneration(null);
-        setFavoriteVideos(new Set());
-        addLog(`🗑️ Cleared ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from browser storage`, 'info');
-      } catch (error) {
-        console.warn('Failed to clear videos:', error);
-        addLog('❌ Failed to clear videos: ' + error.message, 'error');
-      }
-    }
+    showModalDialog({
+      title: "Clear All Videos",
+      type: "warning",
+      confirmText: "Clear Videos",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        try {
+          localStorage.removeItem('runway-automation-results');
+          localStorage.removeItem('runway-automation-generation-counter');
+          localStorage.removeItem('runway-automation-favorites');
+          setResults([]);
+          setGenerationCounter(0);
+          setCompletedGeneration(null);
+          setFavoriteVideos(new Set());
+          addLog(`🗑️ Cleared ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from browser storage`, 'info');
+        } catch (error) {
+          console.warn('Failed to clear videos:', error);
+          addLog('❌ Failed to clear videos: ' + error.message, 'error');
+        }
+      },
+      content: (
+        <div>
+          <p className="mb-3">
+            <strong>This will permanently remove {videoCount} generated video{videoCount !== 1 ? 's' : ''} from your browser.</strong>
+          </p>
+          <p className="mb-3">
+            Videos will still be accessible via their original URLs if you have them saved elsewhere.
+          </p>
+          <p className="mb-0 text-muted">
+            Are you sure you want to continue?
+          </p>
+        </div>
+      )
+    });
   };
 
   // Toggle favorite status for a video
@@ -947,8 +1047,89 @@ export default function RunwayAutomationApp() {
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
-  // Improved generation logic with safety features
+  // Improved generation logic with safety features and modal for cost warning
   const generateVideos = async () => {
+    // SAFETY CHECK: Prevent massive API costs
+    const requestedJobs = parseInt(concurrency) || 1;
+    const MAX_CONCURRENT_JOBS = 20;
+    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
+    
+    if (!prompt.trim()) {
+      addLog('❌ No prompt provided!', 'error');
+      return;
+    }
+
+    if (!imageUrl.trim()) {
+      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
+      return;
+    }
+
+    if (!runwayApiKey.trim()) {
+      addLog('❌ RunwayML API key is required!', 'error');
+      return;
+    }
+
+    if (requestedJobs > MAX_CONCURRENT_JOBS) {
+      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
+      return;
+    }
+    
+    if (isNaN(totalJobs) || totalJobs < 1) {
+      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
+      return;
+    }
+    
+    // Cost estimation and user confirmation for larger batches with modal
+    const estimatedCostMin = totalJobs * 0.25;
+    const estimatedCostMax = totalJobs * 0.75;
+    
+    // Extra confirmation for large batches (10+ videos) - ALWAYS show modal
+    if (totalJobs >= 10) {
+      showModalDialog({
+        title: "Cost Warning",
+        type: "warning",
+        confirmText: "Proceed with Generation",
+        cancelText: "Cancel",
+        onConfirm: () => startGeneration(totalJobs, estimatedCostMin, estimatedCostMax),
+        content: (
+          <div>
+            <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
+              <div className="d-flex align-items-center mb-2">
+                <AlertCircle size={20} className="text-warning me-2" />
+                <strong>High Cost Warning</strong>
+              </div>
+              <p className="mb-0">You are about to generate <strong>{totalJobs} videos</strong>.</p>
+            </div>
+            
+            <div className="row g-3 mb-3">
+              <div className="col-6">
+                <div className="text-center p-3 border rounded">
+                  <div className="h5 mb-1">${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}</div>
+                  <small className="text-muted">Estimated Cost</small>
+                </div>
+              </div>
+              <div className="col-6">
+                <div className="text-center p-3 border rounded">
+                  <div className="h5 mb-1">{totalJobs * 25} - {totalJobs * 50}</div>
+                  <small className="text-muted">Credits Required</small>
+                </div>
+              </div>
+            </div>
+            
+            <p className="mb-0 text-muted">
+              This will use credits from your RunwayML account. Are you sure you want to proceed?
+            </p>
+          </div>
+        )
+      });
+      return;
+    }
+
+    // For smaller batches, proceed directly
+    startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
+  };
+
+  const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
     setIsRunning(true);
     setLogs([]);
     
@@ -957,67 +1138,7 @@ export default function RunwayAutomationApp() {
     
     addLog('🚀 Starting Runway video generation...', 'info');
     addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
-    
-    if (!prompt.trim()) {
-      addLog('❌ No prompt provided!', 'error');
-      setIsRunning(false);
-      return;
-    }
-
-    if (!imageUrl.trim()) {
-      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
-      setIsRunning(false);
-      return;
-    }
-
-    if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required!', 'error');
-      setIsRunning(false);
-      return;
-    }
-
-    // SAFETY CHECK: Prevent massive API costs
-    const requestedJobs = parseInt(concurrency) || 1;
-    const MAX_CONCURRENT_JOBS = 20;
-    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
-    
-    if (requestedJobs > MAX_CONCURRENT_JOBS) {
-      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
-      setIsRunning(false);
-      return;
-    }
-    
-    if (isNaN(totalJobs) || totalJobs < 1) {
-      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
-      setIsRunning(false);
-      return;
-    }
-    
-    // Cost estimation and user confirmation for larger batches
-    const estimatedCostMin = totalJobs * 0.25;
-    const estimatedCostMax = totalJobs * 0.75;
-    
     addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
-    
-    // Extra confirmation for large batches (10+ videos) - ALWAYS show popup
-    if (totalJobs >= 10) {
-      const confirmLargeBatch = window.confirm(
-        `⚠️ COST WARNING ⚠️\n\n` +
-        `You are about to generate ${totalJobs} videos.\n` +
-        `Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}\n\n` +
-        `This will use ${totalJobs * 25}-${totalJobs * 50} credits from your RunwayML account.\n\n` +
-        `Are you sure you want to proceed?`
-      );
-      
-      if (!confirmLargeBatch) {
-        addLog('🛑 Generation cancelled by user (cost protection)', 'warning');
-        setIsRunning(false);
-        return;
-      }
-      
-      addLog('✅ User confirmed large batch generation', 'info');
-    }
-
     addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
     addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
@@ -1321,90 +1442,6 @@ export default function RunwayAutomationApp() {
     setIsDownloadingAll(false);
   };
 
-  const download4KVideos = async () => {
-    setIsDownloadingAll(true);
-    
-    // Get 4K/upscaled videos (this would need to be tracked during generation)
-    // For now, we'll filter based on a hypothetical property or all videos
-    const fourKVideos = results
-      .filter(result => result.video_url && result.status === 'completed' && result.is4K)
-      .sort((a, b) => {
-        const parseJobId = (jobId) => {
-          if (!jobId) return { generation: 0, video: 0 };
-          const genMatch = jobId.match(/Generation (\d+)/);
-          const vidMatch = jobId.match(/Video (\d+)/);
-          return {
-            generation: genMatch ? parseInt(genMatch[1]) : 0,
-            video: vidMatch ? parseInt(vidMatch[1]) : 0
-          };
-        };
-        
-        const aData = parseJobId(a.jobId);
-        const bData = parseJobId(b.jobId);
-        
-        if (aData.generation !== bData.generation) {
-          return aData.generation - bData.generation;
-        }
-        return aData.video - bData.video;
-      });
-    
-    if (fourKVideos.length === 0) {
-      addLog('❌ No 4K videos available for download', 'error');
-      setIsDownloadingAll(false);
-      return;
-    }
-
-    addLog(`📦 Creating zip file with ${fourKVideos.length} 4K videos...`, 'info');
-
-    try {
-      const zip = new JSZip();
-      const videosFolder = zip.folder("4K Videos");
-      
-      for (let i = 0; i < fourKVideos.length; i++) {
-        const result = fourKVideos[i];
-        const filename = generateFilename(result.jobId, result.id);
-        
-        try {
-          addLog(`📥 Adding to zip ${i + 1}/${fourKVideos.length}: ${filename}...`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const blob = await response.blob();
-          videosFolder.file(filename, blob);
-          
-        } catch (error) {
-          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
-          continue;
-        }
-      }
-
-      addLog('🗜️ Generating zip file...', 'info');
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      const zipUrl = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = zipUrl;
-      a.download = '4k-videos.zip';
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      window.URL.revokeObjectURL(zipUrl);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded 4k-videos.zip with ${fourKVideos.length} videos successfully!`, 'success');
-      
-    } catch (error) {
-      addLog(`❌ Failed to create 4K videos zip file: ${error.message}`, 'error');
-    }
-
-    setIsDownloadingAll(false);
-  };
-
   const exportResults = () => {
     const exportData = {
       generated_at: new Date().toISOString(),
@@ -1433,59 +1470,6 @@ export default function RunwayAutomationApp() {
     window.URL.revokeObjectURL(url);
     
     addLog('📊 Results exported to JSON', 'success');
-  };
-
-  const upscaleVideo = async (videoId, videoTitle) => {
-    try {
-      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
-      
-      // Find the video result to get the video URL
-      const videoResult = results.find(result => result.id === videoId);
-      if (!videoResult || !videoResult.video_url) {
-        throw new Error('Video not found or video URL not available');
-      }
-
-      const payload = {
-        promptVideo: videoResult.video_url
-      };
-
-      addLog('📤 Submitting 4K upscale request...', 'info');
-
-      const response = await fetch(API_BASE + '/runway-upscale', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          payload: payload
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to start 4K upscale: ' + response.status);
-      }
-
-      const upscaleTask = await response.json();
-      addLog('✓ 4K upscale started successfully (Task ID: ' + upscaleTask.id + ')', 'success');
-      
-      // Poll for completion
-      const upscaledVideo = await pollTaskCompletion(upscaleTask.id, '4K Upscale - ' + videoTitle, videoResult.prompt, videoResult.image_url, 0);
-      
-      if (upscaledVideo) {
-        // Mark the new video as 4K and add it to results
-        upscaledVideo.is4K = true;
-        upscaledVideo.originalVideoId = videoId;
-        upscaledVideo.jobId = '4K Upscale - ' + videoTitle;
-        
-        setResults(prev => [...prev, upscaledVideo]);
-        addLog('✅ 4K upscale completed successfully!', 'success');
-      }
-      
-    } catch (error) {
-      addLog('❌ 4K upscale failed: ' + error.message, 'error');
-    }
   };
 
   // Don't render until mounted to avoid hydration mismatch
@@ -1521,8 +1505,8 @@ export default function RunwayAutomationApp() {
         <meta name="robots" content="index, follow" />
         
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#1a7fd4" />
-        <meta name="msapplication-navbutton-color" content="#1a7fd4" />
+        <meta name="theme-color" content="#0071c5" />
+        <meta name="msapplication-navbutton-color" content="#0071c5" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         <link 
@@ -1549,6 +1533,19 @@ export default function RunwayAutomationApp() {
           }
         `}</style>
       </Head>
+
+      {/* Modal */}
+      <Modal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        title={modalConfig.title}
+        type={modalConfig.type}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm}
+      >
+        {modalConfig.content}
+      </Modal>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
         <div className="container-fluid py-4">
@@ -1618,7 +1615,7 @@ export default function RunwayAutomationApp() {
                         style={{ 
                           height: '80px',
                           borderRadius: '8px 8px 0 0',
-                          backgroundColor: '#1a7fd4'
+                          backgroundColor: HEADER_BLUE
                         }}
                       >
                         <div 
@@ -1780,10 +1777,10 @@ export default function RunwayAutomationApp() {
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
                               <thead>
-                                <tr style={{ backgroundColor: '#1a7fd4' }}>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#1a7fd4' }}>Tier</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#1a7fd4' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: '#1a7fd4' }}>Criteria</th>
+                                <tr style={{ backgroundColor: HEADER_BLUE }}>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Tier</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Criteria</th>
                                 </tr>
                               </thead>
                               <tbody className="small">
@@ -1830,7 +1827,7 @@ export default function RunwayAutomationApp() {
                         style={{ 
                           height: '80px',
                           borderRadius: '8px 8px 0 0',
-                          backgroundColor: '#1a7fd4'
+                          backgroundColor: HEADER_BLUE
                         }}
                       >
                         <div 
@@ -2055,7 +2052,7 @@ export default function RunwayAutomationApp() {
                     style={{ 
                       height: '80px',
                       borderRadius: '8px 8px 0 0',
-                      backgroundColor: '#1a7fd4'
+                      backgroundColor: HEADER_BLUE
                     }}
                   >
                     <div 
@@ -2268,7 +2265,7 @@ export default function RunwayAutomationApp() {
                     style={{ 
                       height: '80px',
                       borderRadius: '8px 8px 0 0',
-                      backgroundColor: '#1a7fd4'
+                      backgroundColor: HEADER_BLUE
                     }}
                   >
                     <div 
@@ -2325,7 +2322,7 @@ export default function RunwayAutomationApp() {
                         
                         {favoriteVideos.size > 0 && (
                           <button
-                            className="btn btn-outline-danger shadow"
+                            className="btn btn-light shadow"
                             onClick={downloadFavoritedVideos}
                             disabled={isDownloadingAll}
                             style={{ 
@@ -2337,38 +2334,10 @@ export default function RunwayAutomationApp() {
                             onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                             onMouseLeave={(e) => e.target.style.opacity = '1'}
                           >
-                            <Heart size={16} className="me-2" />
-                            Favorited
-                            <span className="ms-2 badge bg-danger">
+                            <Download size={16} className="me-2" />
+                            Favorite Videos
+                            <span className="ms-2 badge bg-primary">
                               {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
-                            </span>
-                          </button>
-                        )}
-                        
-                        {results.filter(result => result.video_url && result.status === 'completed' && result.is4K).length > 0 && (
-                          <button
-                            className="btn btn-outline-success shadow"
-                            onClick={download4KVideos}
-                            disabled={isDownloadingAll}
-                            style={{ 
-                              borderRadius: '8px', 
-                              fontWeight: '600',
-                              opacity: '1',
-                              transition: 'opacity 0.1s ease-in-out'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-2">
-                              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                              <polyline points="7.5 4.21,12 6.81,16.5 4.21"/>
-                              <polyline points="7.5 19.79,7.5 14.6,3 12"/>
-                              <polyline points="21 12,16.5 14.6,16.5 19.79"/>
-                              <polyline points="12 22.81,12 17"/>
-                            </svg>
-                            4K Videos
-                            <span className="ms-2 badge bg-success">
-                              {results.filter(result => result.video_url && result.status === 'completed' && result.is4K).length}
                             </span>
                           </button>
                         )}
@@ -2520,20 +2489,6 @@ export default function RunwayAutomationApp() {
                                       >
                                         <ExternalLink size={16} className="me-1" />
                                         View
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm"
-                                        onClick={() => upscaleVideo(result.id, result.jobId)}
-                                        title="Upscale this video to 4K resolution"
-                                      >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1">
-                                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                                          <polyline points="7.5 4.21,12 6.81,16.5 4.21"/>
-                                          <polyline points="7.5 19.79,7.5 14.6,3 12"/>
-                                          <polyline points="21 12,16.5 14.6,16.5 19.79"/>
-                                          <polyline points="12 22.81,12 17"/>
-                                        </svg>
-                                        4K
                                       </button>
                                     </div>
                                   )}
