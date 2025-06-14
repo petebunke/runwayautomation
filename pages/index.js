@@ -84,6 +84,27 @@ export default function RunwayAutomationApp() {
         console.log('Loading saved concurrency from localStorage');
         setConcurrency(parseInt(savedConcurrency));
       }
+
+      // Load generated videos
+      const savedResults = localStorage.getItem('runway-automation-results');
+      if (savedResults && savedResults.trim()) {
+        try {
+          const parsedResults = JSON.parse(savedResults);
+          if (Array.isArray(parsedResults) && parsedResults.length > 0) {
+            console.log('Loading saved results from localStorage:', parsedResults.length, 'videos');
+            setResults(parsedResults);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse saved results:', parseError);
+          localStorage.removeItem('runway-automation-results');
+        }
+      }
+
+      // Load generation counter
+      const savedGenerationCounter = localStorage.getItem('runway-automation-generation-counter');
+      if (savedGenerationCounter && savedGenerationCounter.trim()) {
+        setGenerationCounter(parseInt(savedGenerationCounter));
+      }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
     }
@@ -188,6 +209,34 @@ export default function RunwayAutomationApp() {
     }
   }, [concurrency, mounted]);
 
+  // Save results to localStorage when they change
+  useEffect(() => {
+    if (!mounted) return;
+    
+    try {
+      if (results && results.length > 0) {
+        localStorage.setItem('runway-automation-results', JSON.stringify(results));
+      } else if (results.length === 0) {
+        localStorage.removeItem('runway-automation-results');
+      }
+    } catch (error) {
+      console.warn('Failed to save results to localStorage:', error);
+    }
+  }, [results, mounted]);
+
+  // Save generation counter to localStorage when it changes
+  useEffect(() => {
+    if (!mounted) return;
+    
+    try {
+      if (generationCounter > 0) {
+        localStorage.setItem('runway-automation-generation-counter', generationCounter.toString());
+      }
+    } catch (error) {
+      console.warn('Failed to save generation counter to localStorage:', error);
+    }
+  }, [generationCounter, mounted]);
+
   // Clear API key function for security
   const clearStoredApiKey = () => {
     try {
@@ -209,6 +258,8 @@ export default function RunwayAutomationApp() {
       localStorage.removeItem('runway-automation-aspect-ratio');
       localStorage.removeItem('runway-automation-duration');
       localStorage.removeItem('runway-automation-concurrency');
+      localStorage.removeItem('runway-automation-results');
+      localStorage.removeItem('runway-automation-generation-counter');
       setRunwayApiKey('');
       setPrompt('');
       setImageUrl('');
@@ -216,12 +267,44 @@ export default function RunwayAutomationApp() {
       setAspectRatio('16:9');
       setDuration(5);
       setConcurrency(1);
+      setResults([]);
+      setGenerationCounter(0);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
       addLog('🔒 All stored data cleared', 'info');
     } catch (error) {
       console.warn('Failed to clear stored data:', error);
+    }
+  };
+
+  // Clear generated videos function
+  const clearGeneratedVideos = () => {
+    const videoCount = results.length;
+    if (videoCount === 0) {
+      addLog('ℹ️ No videos to clear', 'info');
+      return;
+    }
+
+    const confirmClear = window.confirm(
+      `🗑️ Clear All Videos?\n\n` +
+      `This will permanently remove all ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from your browser.\n\n` +
+      `Videos will still be accessible via their original URLs if you have them saved elsewhere.\n\n` +
+      `Are you sure you want to continue?`
+    );
+    
+    if (confirmClear) {
+      try {
+        localStorage.removeItem('runway-automation-results');
+        localStorage.removeItem('runway-automation-generation-counter');
+        setResults([]);
+        setGenerationCounter(0);
+        setCompletedGeneration(null);
+        addLog(`🗑️ Cleared ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from browser storage`, 'info');
+      } catch (error) {
+        console.warn('Failed to clear videos:', error);
+        addLog('❌ Failed to clear videos: ' + error.message, 'error');
+      }
     }
   };
 
@@ -1926,7 +2009,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px' }}>
+                      <div style={{ marginRight: '30px' }} className="d-flex gap-2">
                         <button
                           className="btn btn-light shadow"
                           onClick={downloadAllVideos}
@@ -1949,6 +2032,19 @@ export default function RunwayAutomationApp() {
                               </span>
                             </>
                           )}
+                        </button>
+                        
+                        <button
+                          className="btn btn-outline-danger shadow"
+                          onClick={clearGeneratedVideos}
+                          style={{ borderRadius: '8px', fontWeight: '600' }}
+                          title="Clear all generated videos from browser storage"
+                        >
+                          <Trash2 size={20} className="me-2" />
+                          Clear Videos
+                          <span className="ms-2 badge bg-danger">
+                            {results.length}
+                          </span>
                         </button>
                       </div>
                     )}
