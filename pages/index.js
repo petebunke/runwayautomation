@@ -1,4 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+const upscaleVideo = async (videoId, videoTitle) => {
+    try {
+      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
+      
+      // Find the video result to get the video URL
+      const videoResult = results.find(result => result.id === videoId);
+      if (!videoResult || !videoResult.video_url) {
+        throw new Error('Video not found or video URL not available');
+      }
+
+      const payload = {
+        promptVideo: videoResult.video_url
+      };
+
+      addLog('📤 Submitting 4K upscale request...', 'info');
+
+      const response = await fetch(API_BASE + '/runway-upscale', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          payload: payload
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start 4K upscale: ' + response.status);
+      }
+
+      const upscaleTask = await response.json();
+      addLog('✓ 4K upimport React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
 import Head from 'next/head';
 
@@ -1438,7 +1471,51 @@ export default function RunwayAutomationApp() {
   const upscaleVideo = async (videoId, videoTitle) => {
     try {
       addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
-      addLog('⚠️ 4K upscaling is not yet implemented in the API. This feature would require RunwayML to add upscaling to their API endpoints.', 'warning');
+      
+      // Find the video result to get the video URL
+      const videoResult = results.find(result => result.id === videoId);
+      if (!videoResult || !videoResult.video_url) {
+        throw new Error('Video not found or video URL not available');
+      }
+
+      const payload = {
+        promptVideo: videoResult.video_url
+      };
+
+      addLog('📤 Submitting 4K upscale request...', 'info');
+
+      const response = await fetch(API_BASE + '/runway-upscale', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          payload: payload
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start 4K upscale: ' + response.status);
+      }
+
+      const upscaleTask = await response.json();
+      addLog('✓ 4K upscale started successfully (Task ID: ' + upscaleTask.id + ')', 'success');
+      
+      // Poll for completion
+      const upscaledVideo = await pollTaskCompletion(upscaleTask.id, '4K Upscale - ' + videoTitle, videoResult.prompt, videoResult.image_url, 0);
+      
+      if (upscaledVideo) {
+        // Mark the new video as 4K and add it to results
+        upscaledVideo.is4K = true;
+        upscaledVideo.originalVideoId = videoId;
+        upscaledVideo.jobId = '4K Upscale - ' + videoTitle;
+        
+        setResults(prev => [...prev, upscaledVideo]);
+        addLog('✅ 4K upscale completed successfully!', 'success');
+      }
+      
     } catch (error) {
       addLog('❌ 4K upscale failed: ' + error.message, 'error');
     }
@@ -2030,7 +2107,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Video Generation</h2>
+                      <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
                     <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
@@ -2243,7 +2320,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
+                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
@@ -2480,9 +2557,7 @@ export default function RunwayAutomationApp() {
                                       <button
                                         className="btn btn-outline-secondary btn-sm"
                                         onClick={() => upscaleVideo(result.id, result.jobId)}
-                                        data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        title="4K upscaling API endpoints are not yet documented by RunwayML. This feature will be available when the API is officially released."
+                                        title="Upscale this video to 4K resolution"
                                       >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1">
                                           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
