@@ -1,5 +1,5 @@
 // /pages/api/runway-upscale.js
-// This file handles 4K upscale requests to RunwayML API
+// This file handles 4K upscale requests to RunwayML API using the new video_upscale endpoint
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -19,90 +19,104 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { apiKey, taskId } = req.body;
+    const { apiKey, payload } = req.body;
 
     // Validate required fields
     if (!apiKey) {
       return res.status(400).json({ error: 'API key is required' });
     }
 
-    if (!taskId) {
-      return res.status(400).json({ error: 'Task ID is required' });
+    if (!payload || !payload.promptVideo) {
+      return res.status(400).json({ error: 'Video URL is required for upscaling' });
     }
 
-    console.log('Starting 4K upscale for task:', taskId);
+    console.log('Starting 4K upscale for video:', payload.promptVideo);
 
-    // First, get the video URL from the completed task
-    const statusResponse = await fetch(`https://api.dev.runwayml.com/v1/tasks/${taskId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'X-Runway-Version': '2024-11-06'
-      }
-    });
-
-    if (!statusResponse.ok) {
-      const errorData = await statusResponse.json();
-      throw new Error(`Failed to get task details: ${errorData.error || statusResponse.status}`);
-    }
-
-    const taskData = await statusResponse.json();
-    
-    if (taskData.status !== 'SUCCEEDED' || !taskData.output || !taskData.output[0]) {
-      throw new Error('Task must be completed successfully before upscaling');
-    }
-
-    const videoUrl = taskData.output[0];
-    console.log('Video URL for upscaling:', videoUrl);
-
-    // Now call the upscale endpoint with the video URL
+    // Use the new video_upscale endpoint format
     const requestBody = {
-      model: 'upscale_v1',
-      promptVideo: videoUrl
+      promptVideo: payload.promptVideo
     };
 
     console.log('Upscale request body:', JSON.stringify(requestBody, null, 2));
 
-    // Make request to RunwayML upscale API using the same pattern as other endpoints
-    const response = await fetch('https://api.dev.runwayml.com/v1/video_to_video', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'X-Runway-Version': '2024-11-06'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    // Create abort controller for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
-    const responseText = await response.text();
-    console.log('RunwayML upscale API response status:', response.status);
-    console.log('RunwayML upscale API response:', responseText);
-
-    let data;
     try {
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse upscale response as JSON:', parseError);
-      return res.status(502).json({
-        error: 'Invalid response from RunwayML upscale API',
-        rawResponse: responseText.substring(0, 300)
+      const response = await fetch('https://api.dev.runwayml.com/v1/video_upscale', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'X-Runway-Version': '2024-11-06'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
       });
-    }
 
-    // Handle API errors
-    if (!response.ok) {
-      console.error('RunwayML upscale API error:', response.status, data);
+      clearTimeout(timeoutId);
+
+      const responseText = await response.text();
+      console.log('RunwayML upscale API response status:', response.status);
+      console.log('RunwayML upscale API response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse upscale response as JSON:', parseError);
+        return res.status(502).json({
+          error: 'Invalid response from RunwayML upscale API',
+          rawResponse: responseText.substring(0, 300)
+        });
+      }
+
+      // Handle API errors
+      if (!response.ok) {
+        console.error('RunwayML upscale API error:', response.status, data);
+        
+        // Provide specific error handling for common issues
+        if (response.status === 429) {
+          return res.status(429).json({
+            error: 'Rate limit exceeded',
+            message: 'You have exceeded your tier\'s concurrent generation limit. Please wait for current generations to complete.',
+            retryAfter: '30'
+          });
+        }
+
+        if (response.status >= 500) {
+          return res.status(response.status).json({
+            error: `RunwayML server error (${response.status})`,
+            message: 'RunwayML API is experiencing issues. This is usually temporary.',
+            retryable: true
+          });
+        }
+        
+        // Return the actual error from RunwayML
+        return res.status(response.status).json({
+          error: `RunwayML Upscale API Error (${response.status}): ${data.error || data.message || 'Unknown error'}`,
+          details: data,
+          rawResponse: responseText.substring(0, 500)
+        });
+      }
+
+      console.log('4K upscale request successful');
+      res.status(200).json(data);
+
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
       
-      return res.status(response.status).json({
-        error: `RunwayML Upscale API Error (${response.status}): ${data.error || data.message || 'Unknown error'}`,
-        details: data,
-        rawResponse: responseText.substring(0, 500)
-      });
+      if (fetchError.name === 'AbortError') {
+        return res.status(504).json({ 
+          error: 'Upscale request timeout',
+          message: 'RunwayML API took too long to respond (60s)',
+          retryable: true
+        });
+      }
+      
+      throw fetchError;
     }
-
-    console.log('4K upscale request successful');
-    res.status(200).json(data);
 
   } catch (error) {
     console.error('Upscale proxy error:', error);
