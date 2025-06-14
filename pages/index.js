@@ -30,8 +30,8 @@ export default function RunwayAutomationApp() {
   const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Original blue color to match buttons
-  const HEADER_BLUE = '#0071c5'; // Back to the original blue
+  // Blue color to match tab buttons
+  const HEADER_BLUE = '#0d6efd'; // Match Bootstrap primary blue
 
   // Handle client-side mounting to avoid hydration issues
   useEffect(() => {
@@ -1080,26 +1080,29 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Cost estimation and user confirmation for larger batches with modal
+    // Cost estimation and user confirmation - show modal on first generation OR for large batches (10+)
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
-    // Extra confirmation for large batches (10+ videos) - ALWAYS show modal
-    if (totalJobs >= 10) {
+    // Show modal if it's the first generation ever OR if it's 10+ videos
+    if (!hasShownCostWarning || totalJobs >= 10) {
       showModalDialog({
-        title: "Cost Warning",
+        title: totalJobs >= 10 ? "High Cost Warning" : "Cost Warning",
         type: "warning",
         confirmText: "Proceed with Generation",
         cancelText: "Cancel",
-        onConfirm: () => startGeneration(totalJobs, estimatedCostMin, estimatedCostMax),
+        onConfirm: () => {
+          setHasShownCostWarning(true);
+          startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
+        },
         content: (
           <div>
             <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
               <div className="d-flex align-items-center mb-2">
                 <AlertCircle size={20} className="text-warning me-2" />
-                <strong>High Cost Warning</strong>
+                <strong>{totalJobs >= 10 ? "High Cost Warning" : "Cost Confirmation"}</strong>
               </div>
-              <p className="mb-0">You are about to generate <strong>{totalJobs} videos</strong>.</p>
+              <p className="mb-0">You are about to generate <strong>{totalJobs} video{totalJobs !== 1 ? 's' : ''}</strong>.</p>
             </div>
             
             <div className="row g-3 mb-3">
@@ -1126,7 +1129,7 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // For smaller batches, proceed directly
+    // For subsequent generations (after first warning), proceed directly
     startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
   };
 
@@ -1506,8 +1509,8 @@ export default function RunwayAutomationApp() {
         <meta name="robots" content="index, follow" />
         
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#0071c5" />
-        <meta name="msapplication-navbutton-color" content="#0071c5" />
+        <meta name="theme-color" content="#0d6efd" />
+        <meta name="msapplication-navbutton-color" content="#0d6efd" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         <link 
@@ -2336,7 +2339,7 @@ export default function RunwayAutomationApp() {
                             onMouseLeave={(e) => e.target.style.opacity = '1'}
                           >
                             <Download size={16} className="me-2" />
-                            Favorite Videos
+                            Favorited Videos
                             <span className="ms-2 badge bg-primary">
                               {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
                             </span>
@@ -2450,7 +2453,7 @@ export default function RunwayAutomationApp() {
                               </div>
                               
                               <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                <div className="d-flex justify-content-between align-items-start mb-3">
                                   <div className="fw-bold text-primary flex-grow-1">{result.jobId}</div>
                                   <button
                                     className="btn btn-sm p-1 ms-2"
@@ -2460,7 +2463,8 @@ export default function RunwayAutomationApp() {
                                       background: 'none',
                                       color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
                                       transition: 'color 0.2s ease',
-                                      flexShrink: 0
+                                      flexShrink: 0,
+                                      marginTop: '-6px'
                                     }}
                                     title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
