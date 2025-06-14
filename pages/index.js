@@ -1080,14 +1080,14 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Cost estimation and user confirmation - show modal on first generation OR for large batches (10+)
+    // Cost estimation and user confirmation - show modal on first generation or if cost > $20
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
-    // Show modal if it's the first generation ever OR if it's 10+ videos
-    if (!hasShownCostWarning || totalJobs >= 10) {
+    // Show modal if it's the first generation ever OR if estimated max cost > $20
+    if (!hasShownCostWarning || estimatedCostMax > 20) {
       showModalDialog({
-        title: totalJobs >= 10 ? "High Cost Warning" : "Cost Warning",
+        title: estimatedCostMax > 20 ? "High Cost Warning" : "Cost Warning",
         type: "warning",
         confirmText: "Proceed with Generation",
         cancelText: "Cancel",
@@ -1100,7 +1100,7 @@ export default function RunwayAutomationApp() {
             <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
               <div className="d-flex align-items-center mb-2">
                 <AlertCircle size={20} className="text-warning me-2" />
-                <strong>{totalJobs >= 10 ? "High Cost Warning" : "Cost Confirmation"}</strong>
+                <strong>{estimatedCostMax > 20 ? "High Cost Warning" : "Cost Confirmation"}</strong>
               </div>
               <p className="mb-0">You are about to generate <strong>{totalJobs} video{totalJobs !== 1 ? 's' : ''}</strong>.</p>
             </div>
@@ -2340,7 +2340,7 @@ export default function RunwayAutomationApp() {
                           >
                             <Download size={16} className="me-2" />
                             Favorited Videos
-                            <span className="ms-2 badge bg-primary">
+                            <span className="ms-2 badge bg-danger">
                               {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
                             </span>
                           </button>
@@ -2464,7 +2464,7 @@ export default function RunwayAutomationApp() {
                                       color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
                                       transition: 'color 0.2s ease',
                                       flexShrink: 0,
-                                      marginTop: '-6px'
+                                      marginTop: '0px'
                                     }}
                                     title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
@@ -2480,21 +2480,25 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
-                                    <div className="btn-group" role="group">
-                                      <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
-                                      >
-                                        <Download size={16} className="me-1" />
-                                        Download
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm"
-                                        onClick={() => window.open(result.video_url, '_blank')}
-                                      >
-                                        <ExternalLink size={16} className="me-1" />
-                                        View
-                                      </button>
+                                    <div className="row g-1">
+                                      <div className="col-6">
+                                        <button
+                                          className="btn btn-primary btn-sm w-100"
+                                          onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                        >
+                                          <Download size={16} className="me-1" />
+                                          Download
+                                        </button>
+                                      </div>
+                                      <div className="col-6">
+                                        <button
+                                          className="btn btn-outline-primary btn-sm w-100"
+                                          onClick={() => window.open(result.video_url, '_blank')}
+                                        >
+                                          <ExternalLink size={16} className="me-1" />
+                                          View
+                                        </button>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
@@ -2518,7 +2522,7 @@ export default function RunwayAutomationApp() {
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
                 <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(84, 2)">
+                  <g transform="translate(88, 2)">
                     <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
                     <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
                     <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
