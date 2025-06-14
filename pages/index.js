@@ -374,7 +374,7 @@ export default function RunwayAutomationApp() {
     return null; // Return null if we can't check credits
   };
 
-  // Improved generateVideo function with better error handling
+  // Improved generateVideo function with better error handling and reliability
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
@@ -428,14 +428,14 @@ export default function RunwayAutomationApp() {
         seed: Math.floor(Math.random() * 1000000)
       };
 
-      // Add retry logic for initial API call
+      // Enhanced retry logic with exponential backoff and jitter
       let retryCount = 0;
-      const maxRetries = 3;
+      const maxRetries = 5; // Increased from 3
       
       while (retryCount <= maxRetries) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 45000);
+          const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s
 
           const response = await fetch(API_BASE + '/runway-generate', {
             method: 'POST',
@@ -455,12 +455,17 @@ export default function RunwayAutomationApp() {
             const errorData = await response.json();
             let errorMessage = errorData.error || 'API Error: ' + response.status;
             
-            // Handle retryable errors
+            // Handle retryable errors with exponential backoff
             if (response.status === 429 || response.status >= 500) {
               if (retryCount < maxRetries) {
-                const retryDelay = (retryCount + 1) * 10000;
-                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                // Exponential backoff with jitter: base * 2^retry + random(0-50% of base)
+                const baseDelay = 15000;
+                const exponentialDelay = baseDelay * Math.pow(2, retryCount);
+                const jitter = Math.random() * (baseDelay * 0.5);
+                const totalDelay = Math.min(exponentialDelay + jitter, 120000); // Cap at 2 minutes
+                
+                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, totalDelay));
                 retryCount++;
                 continue;
               }
@@ -469,6 +474,11 @@ export default function RunwayAutomationApp() {
             // Handle insufficient credits - don't retry, fail immediately
             if (response.status === 400 && errorMessage.includes('not have enough credits')) {
               throw new Error('Insufficient credits: ' + errorMessage);
+            }
+            
+            // Handle content safety failures - don't retry
+            if (response.status === 400 && errorMessage.toLowerCase().includes('safety')) {
+              throw new Error('Content safety violation: ' + errorMessage);
             }
             
             if (errorMessage.includes('Invalid asset aspect ratio')) {
@@ -488,11 +498,16 @@ export default function RunwayAutomationApp() {
           if (retryCount < maxRetries && (
             fetchError.name === 'AbortError' || 
             fetchError.message.includes('fetch') ||
-            fetchError.message.includes('network')
+            fetchError.message.includes('network') ||
+            fetchError.message.includes('Failed to fetch')
           )) {
-            const retryDelay = (retryCount + 1) * 5000;
-            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            const baseDelay = 10000;
+            const exponentialDelay = baseDelay * Math.pow(1.5, retryCount);
+            const jitter = Math.random() * (baseDelay * 0.3);
+            const totalDelay = Math.min(exponentialDelay + jitter, 60000);
+            
+            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, totalDelay));
             retryCount++;
             continue;
           }
@@ -512,21 +527,25 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // Improved polling logic with better error handling and backoff
+  // Enhanced polling logic with better error handling and timeout management
   const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
-    const maxPolls = Math.floor(2400 / 12);
+    const maxPolls = Math.floor(3600 / 12); // Increased to 60 minutes total
     let pollCount = 0;
     let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 3;
+    const maxConsecutiveErrors = 5; // Increased tolerance
     let isThrottled = false;
     let throttledStartTime = null;
     let lastKnownStatus = 'unknown';
     let stuckInPendingCount = 0;
-    const maxStuckInPending = 10;
+    const maxStuckInPending = 15; // Increased tolerance
+    let processingStartTime = null;
 
     while (pollCount < maxPolls) {
       try {
-        const timeoutMs = consecutiveErrors > 0 ? 45000 : (isThrottled ? 60000 : 30000);
+        // Adaptive timeout based on current status
+        const timeoutMs = consecutiveErrors > 0 ? 60000 : 
+                          isThrottled ? 90000 : 
+                          lastKnownStatus === 'RUNNING' ? 45000 : 30000;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -551,8 +570,9 @@ export default function RunwayAutomationApp() {
           
           if (consecutiveErrors < maxConsecutiveErrors) {
             consecutiveErrors++;
-            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 15000 + (consecutiveErrors * 5000)));
+            const backoffDelay = 20000 + (consecutiveErrors * 10000) + (Math.random() * 5000);
+            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
             pollCount++;
             continue;
           }
@@ -562,8 +582,8 @@ export default function RunwayAutomationApp() {
 
         if (!response.ok) {
           if (response.status === 429) {
-            const backoffTime = 30000 + (consecutiveErrors * 15000);
-            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${backoffTime/1000}s...`, 'warning');
+            const backoffTime = 45000 + (consecutiveErrors * 20000) + (Math.random() * 15000);
+            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${Math.round(backoffTime/1000)}s...`, 'warning');
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             consecutiveErrors++;
             pollCount++;
@@ -573,8 +593,9 @@ export default function RunwayAutomationApp() {
             if (consecutiveErrors >= maxConsecutiveErrors) {
               throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
             }
-            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 20000 + (consecutiveErrors * 10000)));
+            const backoffDelay = 30000 + (consecutiveErrors * 15000) + (Math.random() * 10000);
+            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
             pollCount++;
             continue;
           }
@@ -584,6 +605,7 @@ export default function RunwayAutomationApp() {
         
         consecutiveErrors = 0;
         
+        // Enhanced throttling detection and handling
         if (task.status === 'THROTTLED') {
           if (!isThrottled) {
             isThrottled = true;
@@ -597,51 +619,65 @@ export default function RunwayAutomationApp() {
             [jobId]: { 
               status: 'throttled', 
               progress: 5,
-              message: `Queued for ${throttledDuration}s` 
+              message: `Queued for ${Math.floor(throttledDuration / 60)}m ${throttledDuration % 60}s` 
             }
           }));
           
-          if (throttledDuration > 0 && throttledDuration % 120 === 0) {
+          // More frequent logging for throttled jobs
+          if (throttledDuration > 0 && throttledDuration % 180 === 0) { // Every 3 minutes
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
-          await new Promise(resolve => setTimeout(resolve, 20000));
+          await new Promise(resolve => setTimeout(resolve, 25000)); // Slightly longer wait
           pollCount++;
           continue;
         }
         
         if (isThrottled && task.status !== 'THROTTLED') {
           const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
-          addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + queueTime + 's in queue', 'info');
+          addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + Math.floor(queueTime / 60) + 'm ' + (queueTime % 60) + 's in queue', 'info');
           isThrottled = false;
           stuckInPendingCount = 0;
+          processingStartTime = Date.now();
         }
         
+        // Enhanced PENDING status handling
         if (task.status === 'PENDING') {
           if (lastKnownStatus === 'PENDING') {
             stuckInPendingCount++;
           } else {
             stuckInPendingCount = 1;
+            if (!processingStartTime) processingStartTime = Date.now();
           }
           
           if (stuckInPendingCount >= maxStuckInPending) {
-            addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING, using longer polling interval...`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 30000));
+            addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING for ${stuckInPendingCount} cycles, using longer polling interval...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 40000));
           } else {
-            await new Promise(resolve => setTimeout(resolve, 15000));
+            await new Promise(resolve => setTimeout(resolve, 18000));
           }
+        } else if (task.status === 'RUNNING') {
+          if (!processingStartTime) processingStartTime = Date.now();
+          stuckInPendingCount = 0;
+          await new Promise(resolve => setTimeout(resolve, 12000));
         } else {
           stuckInPendingCount = 0;
         }
         
         lastKnownStatus = task.status;
         
+        // Enhanced progress calculation
         let progress = 10;
+        const now = Date.now();
+        let runningTime = 0;
+        
         if (task.status === 'PENDING') {
-          progress = 20 + Math.min(stuckInPendingCount * 2, 20);
+          progress = Math.min(20 + (stuckInPendingCount * 1.5), 35);
         } else if (task.status === 'RUNNING') {
-          const runningTime = Math.max(0, pollCount - 5);
-          progress = Math.min(40 + (runningTime * 2), 90);
+          runningTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
+          const expectedDuration = duration * 8; // Rough estimate: 8 seconds processing per 1 second of video
+          const runningProgress = Math.min((runningTime / expectedDuration) * 60, 60);
+          progress = Math.min(35 + runningProgress, 95);
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
         }
@@ -650,15 +686,18 @@ export default function RunwayAutomationApp() {
           ...prev,
           [jobId]: { 
             status: task.status.toLowerCase(), 
-            progress: progress,
-            message: task.status === 'RUNNING' ? 'Processing...' : 
-                    task.status === 'PENDING' && stuckInPendingCount > 5 ? 'Processing (high load)...' :
-                    task.status.toLowerCase()
+            progress: Math.round(progress),
+            message: task.status === 'RUNNING' ? 
+              `Processing... (${Math.floor(runningTime / 60)}m ${runningTime % 60}s)` : 
+              task.status === 'PENDING' && stuckInPendingCount > 8 ? 
+                'Processing (high load)...' :
+              task.status.toLowerCase()
           }
         }));
 
         if (task.status === 'SUCCEEDED') {
-          addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully', 'success');
+          const totalTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
+          addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully in ' + Math.floor(totalTime / 60) + 'm ' + (totalTime % 60) + 's', 'success');
           
           // Remove from progress tracking since it's now completed
           setGenerationProgress(prev => {
@@ -675,7 +714,8 @@ export default function RunwayAutomationApp() {
             image_url: imageUrlText,
             status: 'completed',
             created_at: new Date().toISOString(),
-            jobId: jobId
+            jobId: jobId,
+            processingTime: totalTime
           };
 
           setResults(prev => [...prev, completedVideo]);
@@ -683,8 +723,19 @@ export default function RunwayAutomationApp() {
         }
 
         if (task.status === 'FAILED') {
-          const failureReason = task.failure_reason || task.error || 'Generation failed - no specific reason provided';
-          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
+          const failureReason = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
+          
+          // Enhanced failure reason handling
+          let enhancedFailureReason = failureReason;
+          if (failureReason.includes('SAFETY')) {
+            enhancedFailureReason = 'Content safety violation: ' + failureReason;
+          } else if (failureReason.includes('INTERNAL.BAD_OUTPUT')) {
+            enhancedFailureReason = 'Output quality issue: ' + failureReason + ' (Try different prompt/image)';
+          } else if (failureReason.includes('INTERNAL')) {
+            enhancedFailureReason = 'Internal processing error: ' + failureReason + ' (Retryable)';
+          }
+          
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + enhancedFailureReason, 'error');
           
           // Remove from progress tracking since it failed
           setGenerationProgress(prev => {
@@ -693,13 +744,16 @@ export default function RunwayAutomationApp() {
             return updated;
           });
           
-          throw new Error(failureReason);
+          throw new Error(enhancedFailureReason);
         }
 
+        // Adaptive polling intervals based on status and load
         const pollInterval = 
-          task.status === 'PENDING' && stuckInPendingCount > 5 ? 25000 :
-          task.status === 'RUNNING' ? 10000 :
-          12000;
+          task.status === 'PENDING' && stuckInPendingCount > 8 ? 35000 :
+          task.status === 'RUNNING' ? 15000 :
+          task.status === 'THROTTLED' ? 25000 :
+          isThrottled ? 30000 :
+          15000;
         
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         pollCount++;
@@ -707,11 +761,14 @@ export default function RunwayAutomationApp() {
       } catch (error) {
         consecutiveErrors++;
         
-        if (error.message.includes('Generation failed') && 
-            !error.message.includes('timeout') && 
-            !error.message.includes('network') && 
-            !error.message.includes('rate limit') &&
-            !error.message.includes('server error')) {
+        // Don't retry certain permanent failures
+        if (error.message.includes('Content safety violation') || 
+            error.message.includes('Insufficient credits') ||
+            (error.message.includes('Generation failed') && 
+             !error.message.includes('timeout') && 
+             !error.message.includes('network') && 
+             !error.message.includes('rate limit') &&
+             !error.message.includes('server error'))) {
           addLog('✗ Job ' + (jobIndex + 1) + ' permanently failed: ' + error.message, 'error');
           setGenerationProgress(prev => ({
             ...prev,
@@ -726,7 +783,7 @@ export default function RunwayAutomationApp() {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('429') || error.message.includes('rate limit')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
-          await new Promise(resolve => setTimeout(resolve, 60000));
+          await new Promise(resolve => setTimeout(resolve, 90000)); // 1.5 minutes
         } else {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         }
@@ -737,10 +794,12 @@ export default function RunwayAutomationApp() {
           throw new Error(finalError);
         }
         
-        const baseDelay = 15000;
-        const maxDelay = 120000;
-        const jitter = Math.random() * 5000;
-        const backoffDelay = Math.min(baseDelay * Math.pow(1.5, consecutiveErrors) + jitter, maxDelay);
+        // Enhanced exponential backoff with jitter
+        const baseDelay = 20000;
+        const maxDelay = 180000; // 3 minutes max
+        const exponentialDelay = baseDelay * Math.pow(1.8, consecutiveErrors);
+        const jitter = Math.random() * (baseDelay * 0.5);
+        const backoffDelay = Math.min(exponentialDelay + jitter, maxDelay);
         
         addLog(`⏳ Job ${jobIndex + 1} waiting ${Math.round(backoffDelay/1000)}s before retry...`, 'info');
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
@@ -748,7 +807,7 @@ export default function RunwayAutomationApp() {
       }
     }
 
-    const totalTime = Math.floor((pollCount * 12) / 60);
+    const totalTime = Math.floor((pollCount * 15) / 60); // Updated for new intervals
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
