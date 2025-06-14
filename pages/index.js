@@ -27,6 +27,7 @@ export default function RunwayAutomationApp() {
   const [favoriteVideos, setFavoriteVideos] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
+  const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
   const fileInputRef = useRef(null);
 
   // Original blue color to match buttons
