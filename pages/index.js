@@ -28,6 +28,7 @@ export default function RunwayAutomationApp() {
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const fileInputRef = useRef(null);
 
   // Blue color to match tab buttons
@@ -37,6 +38,72 @@ export default function RunwayAutomationApp() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // API Test function
+  const testRunwayAPI = async () => {
+    if (!runwayApiKey.trim()) {
+      addLog('❌ API key required for testing', 'error');
+      return;
+    }
+
+    setIsTesting(true);
+    addLog('🧪 Testing RunwayML API connection...', 'info');
+
+    try {
+      const response = await fetch('/api/runway-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ apiKey: runwayApiKey })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        addLog('✅ API test completed successfully', 'success');
+        
+        const analysis = result.analysis;
+        
+        // Account endpoint results
+        if (analysis.accountEndpoint.working) {
+          addLog(`✅ Account: ${analysis.accountEndpoint.credits} credits, Tier ${analysis.accountEndpoint.tier}`, 'success');
+        } else {
+          addLog(`❌ Account endpoint failed: ${analysis.accountEndpoint.status}`, 'error');
+        }
+        
+        // Generation endpoint results
+        if (analysis.generationEndpoint.working) {
+          addLog('✅ Generation endpoint working correctly', 'success');
+        } else {
+          addLog(`❌ Generation endpoint issue: ${analysis.generationEndpoint.error}`, 'error');
+          addLog(`📝 Response type: ${analysis.generationEndpoint.responseType}`, 'info');
+          addLog(`📝 Status code: ${analysis.generationEndpoint.status}`, 'info');
+          
+          if (analysis.generationEndpoint.responseType === 'Binary') {
+            addLog('🔍 Binary response detected - this explains your "Unexpected token B" error', 'warning');
+            addLog('💡 This usually means: Invalid image URL, wrong API version, or server error', 'info');
+          }
+          
+          if (analysis.generationEndpoint.responseType === 'HTML') {
+            addLog('🔍 HTML response detected - API is returning error pages', 'warning');
+            addLog('💡 This usually means: Server error, maintenance, or authentication issue', 'info');
+          }
+        }
+        
+      } else {
+        addLog(`❌ API test failed: ${result.error}`, 'error');
+        if (result.message) {
+          addLog(`📝 Details: ${result.message}`, 'error');
+        }
+      }
+      
+    } catch (error) {
+      addLog(`❌ Test request failed: ${error.message}`, 'error');
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   // Modal component
   const Modal = ({ show, onClose, title, children, onConfirm, confirmText = "Confirm", cancelText = "Cancel", type = "confirm" }) => {
@@ -1467,17 +1534,40 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
                             <label className="form-label fw-bold mb-0">RunwayML API Key</label>
-                            {runwayApiKey && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={clearStoredApiKey}
-                                title="Clear stored API key"
-                                style={{ fontSize: '12px' }}
-                              >
-                                Clear
-                              </button>
-                            )}
+                            <div className="d-flex gap-2">
+                              {runwayApiKey && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={testRunwayAPI}
+                                    disabled={isTesting}
+                                    title="Test API connection and diagnose issues"
+                                    style={{ fontSize: '12px' }}
+                                  >
+                                    {isTesting ? (
+                                      <>
+                                        <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
+                                          <span className="visually-hidden">Testing...</span>
+                                        </div>
+                                        Testing...
+                                      </>
+                                    ) : (
+                                      'Test API'
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger"
+                                    onClick={clearStoredApiKey}
+                                    title="Clear stored API key"
+                                    style={{ fontSize: '12px' }}
+                                  >
+                                    Clear
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                           <input
                             type="password"
@@ -2352,4 +2442,17 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
+}import React, { useState, useEffect, useRef } from 'react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
+import Head from 'next/head';
+
+export default function RunwayAutomationApp() {
+  const [activeTab, setActiveTab] = useState('setup');
+  const [runwayApiKey, setRunwayApiKey] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [model, setModel] = useState('gen3a_turbo');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [duration, setDuration] = useState(5);
+  const [concurrency, setConcurrency] = useState(1);
+  const [minWait, setMinWait] = useState(
