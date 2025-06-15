@@ -1,4 +1,4 @@
-// /pages/api/runway-generate.js (Fixed version with better error handling)
+// /pages/api/runway-generate.js (Fixed deployment version)
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
         console.error('Failed to parse response as JSON:', parseError);
         console.log('Raw response causing parse error:', responseText.substring(0, 500));
         
-        // Check if it's a binary response
+        // Check if it's a binary response (starts with B or null character)
         if (responseText.charCodeAt(0) === 0 || responseText.includes('\u0000')) {
           return res.status(502).json({
             error: 'Binary response received instead of JSON',

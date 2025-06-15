@@ -1,5 +1,4 @@
-// /pages/api/runway-credits.js (Fixed version with better error handling)
-// This file handles credit balance requests to RunwayML API
+// /pages/api/runway-credits.js (Fixed deployment version)
 
 export default async function handler(req, res) {
   // Enable CORS for all origins

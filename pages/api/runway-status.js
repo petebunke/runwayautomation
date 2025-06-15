@@ -1,5 +1,4 @@
-// /pages/api/runway-status.js (Fixed version with better error handling)
-// This file handles task status polling requests to RunwayML API
+// /pages/api/runway-status.js (Fixed deployment version)
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
