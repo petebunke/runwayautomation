@@ -1,4 +1,4 @@
-// /pages/api/runway-status.js (Fixed deployment version)
+// /pages/api/runway-status.js (Fixed version with better error handling)
 // This file handles task status polling requests to RunwayML API
 
 export default async function handler(req, res) {
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
 
       // Get the response as text first to handle potential issues
       const responseText = await response.text();
-      console.log('Status response:', responseText.substring(0, 300));
+      console.log('Status response (first 300 chars):', responseText.substring(0, 300));
 
       // Check if response is HTML (indicates server error or non-JSON response)
       if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
@@ -93,7 +93,8 @@ export default async function handler(req, res) {
           error: 'Invalid response from RunwayML API',
           message: 'The API returned an unexpected response format',
           rawResponse: responseText.substring(0, 200),
-          taskId: taskId
+          taskId: taskId,
+          parseError: parseError.message
         });
       }
 
@@ -157,6 +158,15 @@ export default async function handler(req, res) {
         });
       }
       
+      // Handle network errors gracefully
+      if (fetchError.code === 'ENOTFOUND' || fetchError.code === 'ECONNREFUSED') {
+        return res.status(503).json({ 
+          error: 'Unable to connect to RunwayML API',
+          message: 'Network error while checking task status',
+          retryable: true
+        });
+      }
+      
       throw fetchError;
     }
 
@@ -183,7 +193,7 @@ export default async function handler(req, res) {
     // Handle other errors
     res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
+      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred',
       retryable: true
     });
   }
