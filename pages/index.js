@@ -558,7 +558,11 @@ export default function RunwayAutomationApp() {
         // Initialize new tooltips only for the current tab
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-          new window.bootstrap.Tooltip(tooltipTriggerEl);
+          new window.bootstrap.Tooltip(tooltipTriggerEl, {
+            boundary: 'viewport',
+            customClass: 'solid-tooltip',
+            delay: { show: 300, hide: 100 }
+          });
         });
       });
     }
@@ -700,10 +704,10 @@ export default function RunwayAutomationApp() {
 
           clearTimeout(timeoutId);
 
-          // Get response text first to handle potential JSON parsing issues
-          const responseText = await response.text();
-          
           if (!response.ok) {
+            // Get response text for error handling
+            const responseText = await response.text();
+            
             let errorData;
             try {
               errorData = JSON.parse(responseText);
@@ -749,6 +753,7 @@ export default function RunwayAutomationApp() {
           }
 
           // Parse successful response
+          const responseText = await response.text();
           let task;
           try {
             task = JSON.parse(responseText);
@@ -1386,6 +1391,99 @@ export default function RunwayAutomationApp() {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = zipUrl;
+      a.download = 'runway-videos.zip';
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(zipUrl);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded runway-videos.zip with ${videosWithUrls.length} videos successfully!`, 'success');
+      
+    } catch (error) {
+      addLog(`❌ Failed to create zip file: ${error.message}`, 'error');
+    }
+
+    setIsDownloadingAll(false);
+  };
+
+  const downloadFavoritedVideos = async () => {
+    setIsDownloadingAll(true);
+    
+    // Get favorited videos that are completed
+    const favoritedVideos = results
+      .filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id))
+      .sort((a, b) => {
+        const parseJobId = (jobId) => {
+          if (!jobId) return { generation: 0, video: 0 };
+          const genMatch = jobId.match(/Generation (\d+)/);
+          const vidMatch = jobId.match(/Video (\d+)/);
+          return {
+            generation: genMatch ? parseInt(genMatch[1]) : 0,
+            video: vidMatch ? parseInt(vidMatch[1]) : 0
+          };
+        };
+        
+        const aData = parseJobId(a.jobId);
+        const bData = parseJobId(b.jobId);
+        
+        if (aData.generation !== bData.generation) {
+          return aData.generation - bData.generation;
+        }
+        return aData.video - bData.video;
+      });
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      setIsDownloadingAll(false);
+      return;
+    }
+
+    // Generate timestamp for folder name
+    const timestamp = new Date().toLocaleTimeString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour12: true,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const folderName = `Favorited Videos ${timestamp}`;
+
+    addLog(`📦 Creating zip file with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      const zip = new JSZip();
+      const videosFolder = zip.folder(folderName);
+      
+      for (let i = 0; i < favoritedVideos.length; i++) {
+        const result = favoritedVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        try {
+          addLog(`📥 Adding to zip ${i + 1}/${favoritedVideos.length}: ${filename}...`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          videosFolder.file(filename, blob);
+          
+        } catch (error) {
+          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          continue;
+        }
+      }
+
+      addLog('🗜️ Generating zip file...', 'info');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      const zipUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = zipUrl;
       a.download = 'favorited-videos.zip';
       
       document.body.appendChild(a);
@@ -1483,26 +1581,47 @@ export default function RunwayAutomationApp() {
         />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <style>{`
-          .tooltip .tooltip-inner {
+          .solid-tooltip .tooltip-inner {
             background-color: rgba(0, 0, 0, 1) !important;
-            max-width: 250px;
+            max-width: 300px;
             white-space: pre-line;
             opacity: 1 !important;
+            z-index: 10000 !important;
+            border: none !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
           }
-          .tooltip.bs-tooltip-top .tooltip-arrow::before,
-          .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
-          .tooltip.bs-tooltip-start .tooltip-arrow::before,
-          .tooltip.bs-tooltip-end .tooltip-arrow::before {
+          
+          .solid-tooltip {
+            z-index: 10000 !important;
+            opacity: 1 !important;
+          }
+          
+          .solid-tooltip.bs-tooltip-top .tooltip-arrow::before,
+          .solid-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+          .solid-tooltip.bs-tooltip-start .tooltip-arrow::before,
+          .solid-tooltip.bs-tooltip-end .tooltip-arrow::before {
             border-color: rgba(0, 0, 0, 1) transparent !important;
           }
           
-          /* Log line wrapping styles - align text properly */
+          /* Log line alignment - align to message text, not emojis */
           .log-message {
             padding-left: 0;
             text-indent: 0;
-            padding-left: 125px;
-            text-indent: -125px;
             margin-left: 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+          }
+          
+          .log-message .log-timestamp {
+            display: inline-block;
+            width: 85px;
+            flex-shrink: 0;
+          }
+          
+          .log-message .log-content {
+            display: inline;
+            margin-left: 8px;
           }
         `}</style>
       </Head>
@@ -1986,42 +2105,42 @@ export default function RunwayAutomationApp() {
                               style={{ borderRadius: '8px' }}
                             />
                           </div>
-                          
-                          {/* Generate Video Button with equal spacing */}
-                          <div className="mt-4 mb-3" style={{ padding: '16px 0' }}>
-                            <button
-                              className="btn btn-success w-100 shadow"
-                              onClick={() => {
-                                setActiveTab('generation');
-                                // Small delay to ensure tab switch completes before starting generation
-                                setTimeout(() => {
-                                  if (!isRunning) {
-                                    generateVideos();
-                                  }
-                                }, 100);
-                              }}
-                              disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
-                              style={{ 
-                                borderRadius: '8px', 
-                                fontWeight: '600',
-                                backgroundColor: '#28a745',
-                                borderColor: '#28a745',
-                                opacity: '1',
-                                transition: 'opacity 0.1s ease-in-out',
-                                padding: '8px 16px'
-                              }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
-                            >
-                              <Play size={20} className="me-2" />
-                              Generate Video{concurrency > 1 ? 's' : ''}
-                              {concurrency > 1 && (
-                                <span className="ms-2 badge bg-light text-dark">
-                                  {concurrency}
-                                </span>
-                              )}
-                            </button>
-                          </div>
+                        </div>
+                        
+                        {/* Generate Video Button with equal spacing above and below */}
+                        <div className="d-grid gap-2" style={{ marginTop: '32px', marginBottom: '32px' }}>
+                          <button
+                            className="btn btn-success shadow"
+                            onClick={() => {
+                              setActiveTab('generation');
+                              // Small delay to ensure tab switch completes before starting generation
+                              setTimeout(() => {
+                                if (!isRunning) {
+                                  generateVideos();
+                                }
+                              }, 100);
+                            }}
+                            disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
+                            style={{ 
+                              borderRadius: '8px', 
+                              fontWeight: '600',
+                              backgroundColor: '#28a745',
+                              borderColor: '#28a745',
+                              opacity: '1',
+                              transition: 'opacity 0.1s ease-in-out',
+                              padding: '16px'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          >
+                            <Play size={20} className="me-2" />
+                            Generate Video{concurrency > 1 ? 's' : ''}
+                            {concurrency > 1 && (
+                              <span className="ms-2 badge bg-light text-dark">
+                                {concurrency}
+                              </span>
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2221,13 +2340,14 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
                         {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 log-message ${
+                          <div key={index} className={`small mb-1 log-message d-flex ${
                             log.type === 'error' ? 'text-danger' :
                             log.type === 'success' ? 'text-light' :
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span className="text-primary">[{log.timestamp}]</span> {log.message}
+                            <span className="text-primary log-timestamp">[{log.timestamp}]</span>
+                            <span className="log-content">{log.message}</span>
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2502,7 +2622,7 @@ export default function RunwayAutomationApp() {
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3" style={{ paddingLeft: '8px' }}>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3" style={{ paddingLeft: '12px' }}>
               <img 
                 src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
                 alt="Powered by Runway" 
@@ -2514,100 +2634,4 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-} to zip: ${error.message}`, 'error');
-          // Continue with next video even if one fails
-          continue;
-        }
-      }
-
-      // Generate the zip file
-      addLog('🗜️ Generating zip file...', 'info');
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      // Download the zip file
-      const zipUrl = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = zipUrl;
-      a.download = 'runway-videos.zip';
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      window.URL.revokeObjectURL(zipUrl);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded runway-videos.zip with ${videosWithUrls.length} videos successfully!`, 'success');
-      
-    } catch (error) {
-      addLog(`❌ Failed to create zip file: ${error.message}`, 'error');
-    }
-
-    setIsDownloadingAll(false);
-  };
-
-  const downloadFavoritedVideos = async () => {
-    setIsDownloadingAll(true);
-    
-    // Get favorited videos that are completed
-    const favoritedVideos = results
-      .filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id))
-      .sort((a, b) => {
-        const parseJobId = (jobId) => {
-          if (!jobId) return { generation: 0, video: 0 };
-          const genMatch = jobId.match(/Generation (\d+)/);
-          const vidMatch = jobId.match(/Video (\d+)/);
-          return {
-            generation: genMatch ? parseInt(genMatch[1]) : 0,
-            video: vidMatch ? parseInt(vidMatch[1]) : 0
-          };
-        };
-        
-        const aData = parseJobId(a.jobId);
-        const bData = parseJobId(b.jobId);
-        
-        if (aData.generation !== bData.generation) {
-          return aData.generation - bData.generation;
-        }
-        return aData.video - bData.video;
-      });
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
-      setIsDownloadingAll(false);
-      return;
-    }
-
-    // Generate timestamp for folder name
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      hour12: true,
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    const folderName = `Favorited Videos ${timestamp}`;
-
-    addLog(`📦 Creating zip file with ${favoritedVideos.length} favorited videos...`, 'info');
-
-    try {
-      const zip = new JSZip();
-      const videosFolder = zip.folder(folderName);
-      
-      for (let i = 0; i < favoritedVideos.length; i++) {
-        const result = favoritedVideos[i];
-        const filename = generateFilename(result.jobId, result.id);
-        
-        try {
-          addLog(`📥 Adding to zip ${i + 1}/${favoritedVideos.length}: ${filename}...`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const blob = await response.blob();
-          videosFolder.file(filename, blob);
-          
-        } catch (error) {
-          addLog(`❌ Failed to add ${filename}
+}
