@@ -1,4 +1,5 @@
-// /pages/api/runway-credits.js (Fixed deployment version)
+// /pages/api/runway-credits.js
+// This file handles credit balance requests to RunwayML API
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -46,46 +47,16 @@ export default async function handler(req, res) {
       clearTimeout(timeoutId);
 
       const responseText = await response.text();
-      console.log('Credits API response (first 300 chars):', responseText.substring(0, 300));
-
-      // Check if response is HTML (error page)
-      if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
-        console.error('Received HTML response instead of JSON');
-        return res.status(502).json({
-          error: 'RunwayML API returned HTML instead of JSON',
-          message: 'This usually indicates a server error or maintenance on RunwayML\'s side.'
-        });
-      }
-
-      // Check if response is empty
-      if (!responseText || responseText.trim() === '') {
-        console.error('Received empty response from RunwayML credits API');
-        return res.status(502).json({
-          error: 'Empty response from RunwayML API',
-          message: 'The credits API returned an empty response'
-        });
-      }
+      console.log('Credits API response:', responseText.substring(0, 300));
 
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('Failed to parse credits response as JSON:', parseError);
-        console.log('Raw response causing parse error:', responseText.substring(0, 500));
-        
-        // Check if it's a binary response
-        if (responseText.charCodeAt(0) === 0 || responseText.includes('\u0000')) {
-          return res.status(502).json({
-            error: 'Binary response received instead of JSON',
-            message: 'RunwayML credits API returned binary data instead of expected JSON response'
-          });
-        }
-
         return res.status(502).json({
           error: 'Invalid response from RunwayML API',
-          message: 'Could not parse credit balance response as JSON',
-          rawResponse: responseText.substring(0, 300),
-          parseError: parseError.message
+          message: 'Could not parse credit balance response'
         });
       }
 
@@ -144,15 +115,6 @@ export default async function handler(req, res) {
         });
       }
       
-      // Handle network errors gracefully
-      if (fetchError.code === 'ENOTFOUND' || fetchError.code === 'ECONNREFUSED') {
-        return res.status(503).json({ 
-          error: 'Unable to connect to RunwayML API',
-          message: 'Network error while checking credits',
-          retryable: true
-        });
-      }
-      
       throw fetchError;
     }
 
@@ -171,7 +133,7 @@ export default async function handler(req, res) {
     // Handle other errors
     res.status(500).json({ 
       error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred',
+      message: 'Could not check credit balance: ' + error.message,
       retryable: true
     });
   }
