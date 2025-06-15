@@ -52,11 +52,22 @@ export default async function handler(req, res) {
       const responseText = await response.text();
       console.log('Status response:', responseText.substring(0, 300));
 
+      // Check if response is HTML (indicates server error or non-JSON response)
+      if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
+        console.error('Received HTML response instead of JSON:', responseText.substring(0, 300));
+        return res.status(502).json({
+          error: 'RunwayML API returned an HTML page instead of JSON',
+          message: 'This usually indicates a server error or maintenance on RunwayML\'s side.',
+          taskId: taskId
+        });
+      }
+
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('Failed to parse status response as JSON:', parseError);
+        console.log('Raw response causing parse error:', responseText.substring(0, 500));
         return res.status(502).json({
           error: 'Invalid response from RunwayML API',
           message: 'The API returned an unexpected response format',
@@ -156,3 +167,4 @@ export default async function handler(req, res) {
     });
   }
 }
+        
