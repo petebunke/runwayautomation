@@ -46,42 +46,14 @@ export default async function handler(req, res) {
 
       clearTimeout(timeoutId);
 
-      // Get the response as text first to handle potential issues
       const responseText = await response.text();
       console.log('Credits API response:', responseText.substring(0, 300));
-
-      // Check if response is HTML (indicates server error or non-JSON response)
-      if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
-        console.error('Received HTML response instead of JSON:', responseText.substring(0, 300));
-        return res.status(502).json({
-          error: 'RunwayML API returned an HTML page instead of JSON',
-          message: 'This usually indicates a server error or maintenance on RunwayML\'s side.'
-        });
-      }
-
-      // Check if response is empty
-      if (!responseText || responseText.trim() === '') {
-        console.error('Received empty response from RunwayML credits API');
-        return res.status(502).json({
-          error: 'Empty response from RunwayML API',
-          message: 'The credits API returned an empty response'
-        });
-      }
 
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('Failed to parse credits response as JSON:', parseError);
-        
-        // Check if it's a binary response
-        if (responseText.charCodeAt(0) === 0 || responseText.includes('\u0000')) {
-          return res.status(502).json({
-            error: 'Binary response received instead of JSON',
-            message: 'RunwayML credits API returned binary data instead of expected JSON response'
-          });
-        }
-
         return res.status(502).json({
           error: 'Invalid response from RunwayML API',
           message: 'Could not parse credit balance response'
