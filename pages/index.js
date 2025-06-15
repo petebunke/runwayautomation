@@ -660,11 +660,19 @@ export default function RunwayAutomationApp() {
         [jobId]: { status: 'starting', progress: 0 }
       }));
 
+      // NEW API FORMAT: Build payload according to 2024-11-06 API changes
       const payload = {
-        text_prompt: promptText,
-        image_prompt: imageUrlText.trim(),
+        promptText: promptText,
+        // NEW: promptImage is now an array of objects with uri and position
+        promptImage: [
+          {
+            uri: imageUrlText.trim(),
+            position: "first" // Image will be the first frame
+          }
+        ],
         model: model,
-        aspect_ratio: model === 'gen4_turbo' ? 
+        // NEW: ratio now expects exact resolution instead of 16:9/9:16
+        ratio: model === 'gen4_turbo' ? 
           (aspectRatio === '16:9' ? '1280:720' : 
            aspectRatio === '9:16' ? '720:1280' : 
            aspectRatio === '1:1' ? '960:960' : 
@@ -1313,108 +1321,6 @@ export default function RunwayAutomationApp() {
     
     if (videosWithUrls.length === 0) {
       addLog('❌ No completed videos available for download', 'error');
-      setIsDownloadingAll(false);
-      return;
-    }
-
-    // Generate timestamp for folder name
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      hour12: true,
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    const folderName = `Runway Videos ${timestamp}`;
-
-    addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
-
-    try {
-      // Create a new JSZip instance
-      const zip = new JSZip();
-      
-      // Create the folder with timestamp
-      const videosFolder = zip.folder(folderName);
-      
-      // Download all videos and add to zip inside the folder
-      for (let i = 0; i < videosWithUrls.length; i++) {
-        const result = videosWithUrls[i];
-        const filename = generateFilename(result.jobId, result.id);
-        
-        try {
-          addLog(`📥 Adding to zip ${i + 1}/${videosWithUrls.length}: ${filename}...`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Add the video file to the timestamped folder in the zip
-          videosFolder.file(filename, blob);
-          
-        } catch (error) {
-          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
-          // Continue with next video even if one fails
-          continue;
-        }
-      }
-
-      // Generate the zip file
-      addLog('🗜️ Generating zip file...', 'info');
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      // Download the zip file
-      const zipUrl = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = zipUrl;
-      a.download = 'runway-videos.zip';
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      window.URL.revokeObjectURL(zipUrl);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded runway-videos.zip with ${videosWithUrls.length} videos successfully!`, 'success');
-      
-    } catch (error) {
-      addLog(`❌ Failed to create zip file: ${error.message}`, 'error');
-    }
-
-    setIsDownloadingAll(false);
-  };
-
-  const downloadFavoritedVideos = async () => {
-    setIsDownloadingAll(true);
-    
-    // Get favorited videos that are completed
-    const favoritedVideos = results
-      .filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id))
-      .sort((a, b) => {
-        const parseJobId = (jobId) => {
-          if (!jobId) return { generation: 0, video: 0 };
-          const genMatch = jobId.match(/Generation (\d+)/);
-          const vidMatch = jobId.match(/Video (\d+)/);
-          return {
-            generation: genMatch ? parseInt(genMatch[1]) : 0,
-            video: vidMatch ? parseInt(vidMatch[1]) : 0
-          };
-        };
-        
-        const aData = parseJobId(a.jobId);
-        const bData = parseJobId(b.jobId);
-        
-        if (aData.generation !== bData.generation) {
-          return aData.generation - bData.generation;
-        }
-        return aData.video - bData.video;
-      });
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
       setIsDownloadingAll(false);
       return;
     }
@@ -2573,4 +2479,106 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
+}America/Los_Angeles',
+      hour12: true,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const folderName = `Runway Videos ${timestamp}`;
+
+    addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
+
+    try {
+      // Create a new JSZip instance
+      const zip = new JSZip();
+      
+      // Create the folder with timestamp
+      const videosFolder = zip.folder(folderName);
+      
+      // Download all videos and add to zip inside the folder
+      for (let i = 0; i < videosWithUrls.length; i++) {
+        const result = videosWithUrls[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        try {
+          addLog(`📥 Adding to zip ${i + 1}/${videosWithUrls.length}: ${filename}...`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Add the video file to the timestamped folder in the zip
+          videosFolder.file(filename, blob);
+          
+        } catch (error) {
+          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          // Continue with next video even if one fails
+          continue;
+        }
+      }
+
+      // Generate the zip file
+      addLog('🗜️ Generating zip file...', 'info');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Download the zip file
+      const zipUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = zipUrl;
+      a.download = 'runway-videos.zip';
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(zipUrl);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded runway-videos.zip with ${videosWithUrls.length} videos successfully!`, 'success');
+      
+    } catch (error) {
+      addLog(`❌ Failed to create zip file: ${error.message}`, 'error');
+    }
+
+    setIsDownloadingAll(false);
+  };
+
+  const downloadFavoritedVideos = async () => {
+    setIsDownloadingAll(true);
+    
+    // Get favorited videos that are completed
+    const favoritedVideos = results
+      .filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id))
+      .sort((a, b) => {
+        const parseJobId = (jobId) => {
+          if (!jobId) return { generation: 0, video: 0 };
+          const genMatch = jobId.match(/Generation (\d+)/);
+          const vidMatch = jobId.match(/Video (\d+)/);
+          return {
+            generation: genMatch ? parseInt(genMatch[1]) : 0,
+            video: vidMatch ? parseInt(vidMatch[1]) : 0
+          };
+        };
+        
+        const aData = parseJobId(a.jobId);
+        const bData = parseJobId(b.jobId);
+        
+        if (aData.generation !== bData.generation) {
+          return aData.generation - bData.generation;
+        }
+        return aData.video - bData.video;
+      });
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      setIsDownloadingAll(false);
+      return;
+    }
+
+    // Generate timestamp for folder name
+    const timestamp = new Date().toLocaleTimeString('en-US', {
+      timeZone: '
