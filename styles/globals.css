@@ -79,33 +79,3 @@
 .focus-ring {
   @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
 }
-
-/* Fixed tooltip styles - make them fully opaque and consistent */
-.tooltip .tooltip-inner {
-  background-color: rgba(0, 0, 0, 1) !important;
-  max-width: 250px;
-  white-space: pre-line;
-  opacity: 1 !important;
-  z-index: 10000 !important;
-}
-
-.tooltip {
-  z-index: 10000 !important;
-  opacity: 1 !important;
-}
-
-.tooltip.bs-tooltip-top .tooltip-arrow::before,
-.tooltip.bs-tooltip-bottom .tooltip-arrow::before,
-.tooltip.bs-tooltip-start .tooltip-arrow::before,
-.tooltip.bs-tooltip-end .tooltip-arrow::before {
-  border-color: rgba(0, 0, 0, 1) transparent !important;
-}
-
-/* Fix log text alignment - align to the message text, not timestamp */
-.log-message {
-  padding-left: 125px;
-  text-indent: -125px;
-  margin-left: 0;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
