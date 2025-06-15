@@ -28,7 +28,6 @@ export default function RunwayAutomationApp() {
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
   const fileInputRef = useRef(null);
 
   // Blue color to match tab buttons
@@ -38,72 +37,6 @@ export default function RunwayAutomationApp() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // API Test function
-  const testRunwayAPI = async () => {
-    if (!runwayApiKey.trim()) {
-      addLog('❌ API key required for testing', 'error');
-      return;
-    }
-
-    setIsTesting(true);
-    addLog('🧪 Testing RunwayML API connection...', 'info');
-
-    try {
-      const response = await fetch('/api/runway-test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ apiKey: runwayApiKey })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        addLog('✅ API test completed successfully', 'success');
-        
-        const analysis = result.analysis;
-        
-        // Account endpoint results
-        if (analysis.accountEndpoint.working) {
-          addLog(`✅ Account: ${analysis.accountEndpoint.credits} credits, Tier ${analysis.accountEndpoint.tier}`, 'success');
-        } else {
-          addLog(`❌ Account endpoint failed: ${analysis.accountEndpoint.status}`, 'error');
-        }
-        
-        // Generation endpoint results
-        if (analysis.generationEndpoint.working) {
-          addLog('✅ Generation endpoint working correctly', 'success');
-        } else {
-          addLog(`❌ Generation endpoint issue: ${analysis.generationEndpoint.error}`, 'error');
-          addLog(`📝 Response type: ${analysis.generationEndpoint.responseType}`, 'info');
-          addLog(`📝 Status code: ${analysis.generationEndpoint.status}`, 'info');
-          
-          if (analysis.generationEndpoint.responseType === 'Binary') {
-            addLog('🔍 Binary response detected - this explains your "Unexpected token B" error', 'warning');
-            addLog('💡 This usually means: Invalid image URL, wrong API version, or server error', 'info');
-          }
-          
-          if (analysis.generationEndpoint.responseType === 'HTML') {
-            addLog('🔍 HTML response detected - API is returning error pages', 'warning');
-            addLog('💡 This usually means: Server error, maintenance, or authentication issue', 'info');
-          }
-        }
-        
-      } else {
-        addLog(`❌ API test failed: ${result.error}`, 'error');
-        if (result.message) {
-          addLog(`📝 Details: ${result.message}`, 'error');
-        }
-      }
-      
-    } catch (error) {
-      addLog(`❌ Test request failed: ${error.message}`, 'error');
-    } finally {
-      setIsTesting(false);
-    }
-  };
 
   // Modal component
   const Modal = ({ show, onClose, title, children, onConfirm, confirmText = "Confirm", cancelText = "Cancel", type = "confirm" }) => {
@@ -441,6 +374,38 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Clear all stored data function
+  const clearAllStoredData = () => {
+    try {
+      localStorage.removeItem('runway-automation-api-key');
+      localStorage.removeItem('runway-automation-prompt');
+      localStorage.removeItem('runway-automation-image-url');
+      localStorage.removeItem('runway-automation-model');
+      localStorage.removeItem('runway-automation-aspect-ratio');
+      localStorage.removeItem('runway-automation-duration');
+      localStorage.removeItem('runway-automation-concurrency');
+      localStorage.removeItem('runway-automation-results');
+      localStorage.removeItem('runway-automation-generation-counter');
+      localStorage.removeItem('runway-automation-favorites');
+      setRunwayApiKey('');
+      setPrompt('');
+      setImageUrl('');
+      setModel('gen3a_turbo');
+      setAspectRatio('16:9');
+      setDuration(5);
+      setConcurrency(1);
+      setResults([]);
+      setGenerationCounter(0);
+      setFavoriteVideos(new Set());
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      addLog('🔒 All stored data cleared', 'info');
+    } catch (error) {
+      console.warn('Failed to clear stored data:', error);
+    }
+  };
+
   // Clear generated videos function with modal
   const clearGeneratedVideos = () => {
     const videoCount = results.length;
@@ -459,6 +424,7 @@ export default function RunwayAutomationApp() {
           localStorage.removeItem('runway-automation-results');
           localStorage.removeItem('runway-automation-generation-counter');
           localStorage.removeItem('runway-automation-favorites');
+          // Do NOT remove the cost warning flag when clearing videos
           setResults([]);
           setGenerationCounter(0);
           setCompletedGeneration(null);
@@ -657,7 +623,7 @@ export default function RunwayAutomationApp() {
     return null; // Return null if we can't check credits
   };
 
-  // ENHANCED generateVideo function with better JSON error handling
+  // Improved generateVideo function with better error handling and reliability
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
@@ -711,14 +677,14 @@ export default function RunwayAutomationApp() {
         seed: Math.floor(Math.random() * 1000000)
       };
 
-      // Enhanced retry logic with exponential backoff
+      // Enhanced retry logic with exponential backoff and jitter
       let retryCount = 0;
-      const maxRetries = 5;
+      const maxRetries = 5; // Increased from 3
       
       while (retryCount <= maxRetries) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000);
+          const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s
 
           const response = await fetch(API_BASE + '/runway-generate', {
             method: 'POST',
@@ -734,42 +700,18 @@ export default function RunwayAutomationApp() {
 
           clearTimeout(timeoutId);
 
-          // ENHANCED RESPONSE HANDLING - Get as text first
-          const responseText = await response.text();
-          console.log('Generate API response status:', response.status);
-          console.log('Generate API response text (first 500 chars):', responseText.substring(0, 500));
-
-          let data;
-          try {
-            data = JSON.parse(responseText);
-          } catch (parseError) {
-            console.error('Failed to parse generate response as JSON:', parseError);
-            console.log('Raw response:', responseText);
-            
-            // Better error messages for different response types
-            if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
-              throw new Error('API returned HTML instead of JSON - likely a server error or maintenance');
-            } else if (responseText.includes('502 Bad Gateway') || responseText.includes('503 Service Unavailable')) {
-              throw new Error('RunwayML API is temporarily unavailable');
-            } else if (responseText.startsWith('B') || responseText.charCodeAt(0) === 0) {
-              throw new Error('API returned binary data instead of JSON');
-            } else if (!responseText.trim()) {
-              throw new Error('API returned empty response');
-            } else {
-              throw new Error('Invalid JSON response from API: ' + responseText.substring(0, 100));
-            }
-          }
-
           if (!response.ok) {
-            let errorMessage = data.error || 'API Error: ' + response.status;
+            const errorData = await response.json();
+            let errorMessage = errorData.error || 'API Error: ' + response.status;
             
-            // Handle retryable errors
+            // Handle retryable errors with exponential backoff
             if (response.status === 429 || response.status >= 500) {
               if (retryCount < maxRetries) {
+                // Exponential backoff with jitter: base * 2^retry + random(0-50% of base)
                 const baseDelay = 15000;
                 const exponentialDelay = baseDelay * Math.pow(2, retryCount);
                 const jitter = Math.random() * (baseDelay * 0.5);
-                const totalDelay = Math.min(exponentialDelay + jitter, 120000);
+                const totalDelay = Math.min(exponentialDelay + jitter, 120000); // Cap at 2 minutes
                 
                 addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
                 await new Promise(resolve => setTimeout(resolve, totalDelay));
@@ -778,20 +720,24 @@ export default function RunwayAutomationApp() {
               }
             }
 
-            // Handle insufficient credits
+            // Handle insufficient credits - don't retry, fail immediately
             if (response.status === 400 && errorMessage.includes('not have enough credits')) {
               throw new Error('Insufficient credits: ' + errorMessage);
             }
             
-            // Handle content safety failures
+            // Handle content safety failures - don't retry
             if (response.status === 400 && errorMessage.toLowerCase().includes('safety')) {
               throw new Error('Content safety violation: ' + errorMessage);
+            }
+            
+            if (errorMessage.includes('Invalid asset aspect ratio')) {
+              errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that is closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
             }
             
             throw new Error(errorMessage);
           }
 
-          const task = data;
+          const task = await response.json();
           
           addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
           
@@ -802,17 +748,14 @@ export default function RunwayAutomationApp() {
             fetchError.name === 'AbortError' || 
             fetchError.message.includes('fetch') ||
             fetchError.message.includes('network') ||
-            fetchError.message.includes('Failed to fetch') ||
-            fetchError.message.includes('temporarily unavailable') ||
-            fetchError.message.includes('HTML instead of JSON') ||
-            fetchError.message.includes('binary data instead of JSON')
+            fetchError.message.includes('Failed to fetch')
           )) {
             const baseDelay = 10000;
             const exponentialDelay = baseDelay * Math.pow(1.5, retryCount);
             const jitter = Math.random() * (baseDelay * 0.3);
             const totalDelay = Math.min(exponentialDelay + jitter, 60000);
             
-            addLog(`⚠️ Job ${jobIndex + 1} network/parse error, retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
             await new Promise(resolve => setTimeout(resolve, totalDelay));
             retryCount++;
             continue;
@@ -833,17 +776,28 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // Enhanced polling logic with better error handling
+  // Enhanced polling logic with better error handling and timeout management
   const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
-    const maxPolls = Math.floor(3600 / 12); // 60 minutes total
+    const maxPolls = Math.floor(3600 / 12); // Increased to 60 minutes total
     let pollCount = 0;
     let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 5;
+    const maxConsecutiveErrors = 5; // Increased tolerance
+    let isThrottled = false;
+    let throttledStartTime = null;
+    let lastKnownStatus = 'unknown';
+    let stuckInPendingCount = 0;
+    const maxStuckInPending = 15; // Increased tolerance
+    let processingStartTime = null;
 
     while (pollCount < maxPolls) {
       try {
+        // Adaptive timeout based on current status
+        const timeoutMs = consecutiveErrors > 0 ? 60000 : 
+                          isThrottled ? 90000 : 
+                          lastKnownStatus === 'RUNNING' ? 45000 : 30000;
+        
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
           method: 'GET',
@@ -854,8 +808,6 @@ export default function RunwayAutomationApp() {
         });
 
         clearTimeout(timeoutId);
-        
-        // ENHANCED RESPONSE HANDLING - Get as text first
         const responseText = await response.text();
         
         let task;
@@ -865,22 +817,9 @@ export default function RunwayAutomationApp() {
           console.error('Failed to parse response as JSON:', parseError);
           console.log('Raw response:', responseText.substring(0, 300));
           
-          // Better error handling for HTML/binary responses
-          if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
-            if (consecutiveErrors < maxConsecutiveErrors) {
-              consecutiveErrors++;
-              const backoffDelay = 30000 + (consecutiveErrors * 15000);
-              addLog(`⚠️ Job ${jobIndex + 1} received HTML response, retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
-              await new Promise(resolve => setTimeout(resolve, backoffDelay));
-              pollCount++;
-              continue;
-            }
-            throw new Error('RunwayML API returning HTML instead of JSON - likely server maintenance');
-          }
-          
           if (consecutiveErrors < maxConsecutiveErrors) {
             consecutiveErrors++;
-            const backoffDelay = 20000 + (consecutiveErrors * 10000);
+            const backoffDelay = 20000 + (consecutiveErrors * 10000) + (Math.random() * 5000);
             addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
             await new Promise(resolve => setTimeout(resolve, backoffDelay));
             pollCount++;
@@ -892,7 +831,7 @@ export default function RunwayAutomationApp() {
 
         if (!response.ok) {
           if (response.status === 429) {
-            const backoffTime = 45000 + (consecutiveErrors * 20000);
+            const backoffTime = 45000 + (consecutiveErrors * 20000) + (Math.random() * 15000);
             addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${Math.round(backoffTime/1000)}s...`, 'warning');
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             consecutiveErrors++;
@@ -903,7 +842,7 @@ export default function RunwayAutomationApp() {
             if (consecutiveErrors >= maxConsecutiveErrors) {
               throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
             }
-            const backoffDelay = 30000 + (consecutiveErrors * 15000);
+            const backoffDelay = 30000 + (consecutiveErrors * 15000) + (Math.random() * 10000);
             addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
             await new Promise(resolve => setTimeout(resolve, backoffDelay));
             pollCount++;
@@ -915,12 +854,79 @@ export default function RunwayAutomationApp() {
         
         consecutiveErrors = 0;
         
+        // Enhanced throttling detection and handling
+        if (task.status === 'THROTTLED') {
+          if (!isThrottled) {
+            isThrottled = true;
+            throttledStartTime = Date.now();
+            addLog('⏸️ Job ' + (jobIndex + 1) + ' is queued (throttled) - waiting for available slot...', 'info');
+          }
+          
+          const throttledDuration = Math.floor((Date.now() - throttledStartTime) / 1000);
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { 
+              status: 'throttled', 
+              progress: 5,
+              message: `Queued for ${Math.floor(throttledDuration / 60)}m ${throttledDuration % 60}s` 
+            }
+          }));
+          
+          // More frequent logging for throttled jobs
+          if (throttledDuration > 0 && throttledDuration % 180 === 0) { // Every 3 minutes
+            addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 25000)); // Slightly longer wait
+          pollCount++;
+          continue;
+        }
+        
+        if (isThrottled && task.status !== 'THROTTLED') {
+          const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
+          addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + Math.floor(queueTime / 60) + 'm ' + (queueTime % 60) + 's in queue', 'info');
+          isThrottled = false;
+          stuckInPendingCount = 0;
+          processingStartTime = Date.now();
+        }
+        
+        // Enhanced PENDING status handling
+        if (task.status === 'PENDING') {
+          if (lastKnownStatus === 'PENDING') {
+            stuckInPendingCount++;
+          } else {
+            stuckInPendingCount = 1;
+            if (!processingStartTime) processingStartTime = Date.now();
+          }
+          
+          if (stuckInPendingCount >= maxStuckInPending) {
+            addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING for ${stuckInPendingCount} cycles, using longer polling interval...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 40000));
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 18000));
+          }
+        } else if (task.status === 'RUNNING') {
+          if (!processingStartTime) processingStartTime = Date.now();
+          stuckInPendingCount = 0;
+          await new Promise(resolve => setTimeout(resolve, 12000));
+        } else {
+          stuckInPendingCount = 0;
+        }
+        
+        lastKnownStatus = task.status;
+        
         // Enhanced progress calculation
         let progress = 10;
+        const now = Date.now();
+        let runningTime = 0;
+        
         if (task.status === 'PENDING') {
-          progress = 25;
+          progress = Math.min(20 + (stuckInPendingCount * 1.5), 35);
         } else if (task.status === 'RUNNING') {
-          progress = 60;
+          runningTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
+          const expectedDuration = duration * 8; // Rough estimate: 8 seconds processing per 1 second of video
+          const runningProgress = Math.min((runningTime / expectedDuration) * 60, 60);
+          progress = Math.min(35 + runningProgress, 95);
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
         }
@@ -930,12 +936,17 @@ export default function RunwayAutomationApp() {
           [jobId]: { 
             status: task.status.toLowerCase(), 
             progress: Math.round(progress),
-            message: task.status.toLowerCase()
+            message: task.status === 'RUNNING' ? 
+              `Processing... (${Math.floor(runningTime / 60)}m ${runningTime % 60}s)` : 
+              task.status === 'PENDING' && stuckInPendingCount > 8 ? 
+                'Processing (high load)...' :
+              task.status.toLowerCase()
           }
         }));
 
         if (task.status === 'SUCCEEDED') {
-          addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully', 'success');
+          const totalTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
+          addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully in ' + Math.floor(totalTime / 60) + 'm ' + (totalTime % 60) + 's', 'success');
           
           // Remove from progress tracking since it's now completed
           setGenerationProgress(prev => {
@@ -952,7 +963,8 @@ export default function RunwayAutomationApp() {
             image_url: imageUrlText,
             status: 'completed',
             created_at: new Date().toISOString(),
-            jobId: jobId
+            jobId: jobId,
+            processingTime: totalTime
           };
 
           setResults(prev => [...prev, completedVideo]);
@@ -961,7 +973,18 @@ export default function RunwayAutomationApp() {
 
         if (task.status === 'FAILED') {
           const failureReason = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
-          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
+          
+          // Enhanced failure reason handling
+          let enhancedFailureReason = failureReason;
+          if (failureReason.includes('SAFETY')) {
+            enhancedFailureReason = 'Content safety violation: ' + failureReason;
+          } else if (failureReason.includes('INTERNAL.BAD_OUTPUT')) {
+            enhancedFailureReason = 'Output quality issue: ' + failureReason + ' (Try different prompt/image)';
+          } else if (failureReason.includes('INTERNAL')) {
+            enhancedFailureReason = 'Internal processing error: ' + failureReason + ' (Retryable)';
+          }
+          
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + enhancedFailureReason, 'error');
           
           // Remove from progress tracking since it failed
           setGenerationProgress(prev => {
@@ -970,10 +993,18 @@ export default function RunwayAutomationApp() {
             return updated;
           });
           
-          throw new Error(failureReason);
+          throw new Error(enhancedFailureReason);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 15000));
+        // Adaptive polling intervals based on status and load
+        const pollInterval = 
+          task.status === 'PENDING' && stuckInPendingCount > 8 ? 35000 :
+          task.status === 'RUNNING' ? 15000 :
+          task.status === 'THROTTLED' ? 25000 :
+          isThrottled ? 30000 :
+          15000;
+        
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
         pollCount++;
         
       } catch (error) {
@@ -981,7 +1012,12 @@ export default function RunwayAutomationApp() {
         
         // Don't retry certain permanent failures
         if (error.message.includes('Content safety violation') || 
-            error.message.includes('Insufficient credits')) {
+            error.message.includes('Insufficient credits') ||
+            (error.message.includes('Generation failed') && 
+             !error.message.includes('timeout') && 
+             !error.message.includes('network') && 
+             !error.message.includes('rate limit') &&
+             !error.message.includes('server error'))) {
           addLog('✗ Job ' + (jobIndex + 1) + ' permanently failed: ' + error.message, 'error');
           setGenerationProgress(prev => ({
             ...prev,
@@ -990,15 +1026,29 @@ export default function RunwayAutomationApp() {
           throw error;
         }
         
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+          await new Promise(resolve => setTimeout(resolve, 90000)); // 1.5 minutes
+        } else {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        }
+        
         if (consecutiveErrors >= maxConsecutiveErrors) {
           const finalError = 'Failed after ' + maxConsecutiveErrors + ' consecutive errors. Last error: ' + error.message;
           addLog('✗ Job ' + (jobIndex + 1) + ' ' + finalError, 'error');
           throw new Error(finalError);
         }
         
+        // Enhanced exponential backoff with jitter
         const baseDelay = 20000;
+        const maxDelay = 180000; // 3 minutes max
         const exponentialDelay = baseDelay * Math.pow(1.8, consecutiveErrors);
-        const backoffDelay = Math.min(exponentialDelay, 180000);
+        const jitter = Math.random() * (baseDelay * 0.5);
+        const backoffDelay = Math.min(exponentialDelay + jitter, maxDelay);
         
         addLog(`⏳ Job ${jobIndex + 1} waiting ${Math.round(backoffDelay/1000)}s before retry...`, 'info');
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
@@ -1006,7 +1056,8 @@ export default function RunwayAutomationApp() {
       }
     }
 
-    throw new Error('Generation timeout after 60 minutes');
+    const totalTime = Math.floor((pollCount * 15) / 60); // Updated for new intervals
+    throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
   // Improved generation logic with safety features and modal for cost warning
@@ -1036,11 +1087,16 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Cost estimation and user confirmation
+    if (isNaN(totalJobs) || totalJobs < 1) {
+      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
+      return;
+    }
+    
+    // Cost estimation and user confirmation - show modal only the very first time ever
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
-    // Show modal only if user has never seen it before
+    // Show modal only if user has never seen it before (not based on current session)
     if (!hasShownCostWarning) {
       showModalDialog({
         title: estimatedCostMax > 20 ? "High Cost Warning" : "Cost Warning",
@@ -1049,6 +1105,7 @@ export default function RunwayAutomationApp() {
         cancelText: "Cancel",
         onConfirm: () => {
           setHasShownCostWarning(true);
+          // Save to localStorage so it persists across sessions
           localStorage.setItem('runway-automation-cost-warning-shown', 'true');
           startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
         },
@@ -1086,7 +1143,7 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // For subsequent generations, proceed directly
+    // For subsequent generations (after first warning), proceed directly
     startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
   };
 
@@ -1101,9 +1158,12 @@ export default function RunwayAutomationApp() {
     addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
     addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
+    addLog('💳 Note: Each generation requires credits from your API account', 'info');
+    addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
 
     const batchResults = [];
     const errors = [];
+
     const allPromises = [];
     
     for (let i = 0; i < totalJobs; i++) {
@@ -1113,6 +1173,7 @@ export default function RunwayAutomationApp() {
       
       const delayedPromise = new Promise(async (resolve) => {
         if (staggerDelay > 0) {
+          addLog('⏱️ Staggering job ' + (jobIndex + 1) + ' start by ' + (staggerDelay / 1000) + 's...', 'info');
           await new Promise(delayResolve => setTimeout(delayResolve, staggerDelay));
         }
         
@@ -1126,6 +1187,9 @@ export default function RunwayAutomationApp() {
       
       allPromises.push(delayedPromise);
     }
+
+    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
+    addLog('⚡ RunwayML will automatically queue jobs beyond your tier limit', 'info');
 
     try {
       const allResults = await Promise.all(allPromises);
@@ -1143,6 +1207,8 @@ export default function RunwayAutomationApp() {
       errors.push(error);
     }
 
+    setVideoCounter(prev => prev + totalJobs);
+
     const successCount = batchResults.length;
     addLog('🎬 Generation completed! ✅ ' + successCount + (successCount === 1 ? ' video' : ' videos') + ' generated, ❌ ' + errors.length + ' failed', 
            successCount > 0 ? 'success' : 'error');
@@ -1152,8 +1218,7 @@ export default function RunwayAutomationApp() {
       errors.forEach(e => {
         const errorType = e.message.includes('timeout') ? 'Generation timeout' :
                         e.message.includes('rate limit') ? 'Rate limit' :
-                        e.message.includes('HTML instead of JSON') ? 'API server error' :
-                        e.message.includes('binary data') ? 'API response error' :
+                        e.message.includes('failed') ? 'Generation failed' :
                         e.message.split(':')[0] || e.message;
         errorCounts[errorType] = (errorCounts[errorType] || 0) + 1;
       });
@@ -1165,6 +1230,7 @@ export default function RunwayAutomationApp() {
       addLog('⚠️ Failed jobs: ' + errorSummary, 'warning');
     }
 
+    // Show completion message for this generation
     setCompletedGeneration(currentGeneration);
     setIsRunning(false);
   };
@@ -1217,7 +1283,33 @@ export default function RunwayAutomationApp() {
   const downloadAllVideos = async () => {
     setIsDownloadingAll(true);
     
-    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
+    // Get ALL completed videos from ALL generations and sort them
+    const videosWithUrls = results
+      .filter(result => result.video_url && result.status === 'completed')
+      .sort((a, b) => {
+        // Parse the jobId to extract generation and video numbers for sorting
+        const parseJobId = (jobId) => {
+          if (!jobId) return { generation: 0, video: 0 };
+          
+          // Extract numbers from "Generation X - Video Y" format
+          const genMatch = jobId.match(/Generation (\d+)/);
+          const vidMatch = jobId.match(/Video (\d+)/);
+          
+          return {
+            generation: genMatch ? parseInt(genMatch[1]) : 0,
+            video: vidMatch ? parseInt(vidMatch[1]) : 0
+          };
+        };
+        
+        const aData = parseJobId(a.jobId);
+        const bData = parseJobId(b.jobId);
+        
+        // Sort by generation first, then by video number
+        if (aData.generation !== bData.generation) {
+          return aData.generation - bData.generation;
+        }
+        return aData.video - bData.video;
+      });
     
     if (videosWithUrls.length === 0) {
       addLog('❌ No completed videos available for download', 'error');
@@ -1225,6 +1317,7 @@ export default function RunwayAutomationApp() {
       return;
     }
 
+    // Generate timestamp for folder name
     const timestamp = new Date().toLocaleTimeString('en-US', {
       timeZone: 'America/Los_Angeles',
       hour12: true,
@@ -1234,12 +1327,16 @@ export default function RunwayAutomationApp() {
     });
     const folderName = `Runway Videos ${timestamp}`;
 
-    addLog(`📦 Creating zip file with ${videosWithUrls.length} videos...`, 'info');
+    addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
 
     try {
+      // Create a new JSZip instance
       const zip = new JSZip();
+      
+      // Create the folder with timestamp
       const videosFolder = zip.folder(folderName);
       
+      // Download all videos and add to zip inside the folder
       for (let i = 0; i < videosWithUrls.length; i++) {
         const result = videosWithUrls[i];
         const filename = generateFilename(result.jobId, result.id);
@@ -1253,17 +1350,22 @@ export default function RunwayAutomationApp() {
           }
           
           const blob = await response.blob();
+          
+          // Add the video file to the timestamped folder in the zip
           videosFolder.file(filename, blob);
           
         } catch (error) {
           addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          // Continue with next video even if one fails
           continue;
         }
       }
 
+      // Generate the zip file
       addLog('🗜️ Generating zip file...', 'info');
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       
+      // Download the zip file
       const zipUrl = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -1288,7 +1390,28 @@ export default function RunwayAutomationApp() {
   const downloadFavoritedVideos = async () => {
     setIsDownloadingAll(true);
     
-    const favoritedVideos = results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id));
+    // Get favorited videos that are completed
+    const favoritedVideos = results
+      .filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id))
+      .sort((a, b) => {
+        const parseJobId = (jobId) => {
+          if (!jobId) return { generation: 0, video: 0 };
+          const genMatch = jobId.match(/Generation (\d+)/);
+          const vidMatch = jobId.match(/Video (\d+)/);
+          return {
+            generation: genMatch ? parseInt(genMatch[1]) : 0,
+            video: vidMatch ? parseInt(vidMatch[1]) : 0
+          };
+        };
+        
+        const aData = parseJobId(a.jobId);
+        const bData = parseJobId(b.jobId);
+        
+        if (aData.generation !== bData.generation) {
+          return aData.generation - bData.generation;
+        }
+        return aData.video - bData.video;
+      });
     
     if (favoritedVideos.length === 0) {
       addLog('❌ No favorited videos available for download', 'error');
@@ -1296,6 +1419,7 @@ export default function RunwayAutomationApp() {
       return;
     }
 
+    // Generate timestamp for folder name
     const timestamp = new Date().toLocaleTimeString('en-US', {
       timeZone: 'America/Los_Angeles',
       hour12: true,
@@ -1398,6 +1522,30 @@ export default function RunwayAutomationApp() {
         <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://runway-automation.vercel.app/" />
+        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="og:image" content="/og-image.png" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
+        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="twitter:image" content="/og-image.png" />
+
+        {/* Additional SEO tags */}
+        <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
+        <meta name="author" content="Runway Automation Pro" />
+        <meta name="robots" content="index, follow" />
+        
+        {/* Theme color for mobile browsers */}
+        <meta name="theme-color" content="#0d6efd" />
+        <meta name="msapplication-navbutton-color" content="#0d6efd" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
@@ -1534,40 +1682,17 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
                             <label className="form-label fw-bold mb-0">RunwayML API Key</label>
-                            <div className="d-flex gap-2">
-                              {runwayApiKey && (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-primary"
-                                    onClick={testRunwayAPI}
-                                    disabled={isTesting}
-                                    title="Test API connection and diagnose issues"
-                                    style={{ fontSize: '12px' }}
-                                  >
-                                    {isTesting ? (
-                                      <>
-                                        <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
-                                          <span className="visually-hidden">Testing...</span>
-                                        </div>
-                                        Testing...
-                                      </>
-                                    ) : (
-                                      'Test API'
-                                    )}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-danger"
-                                    onClick={clearStoredApiKey}
-                                    title="Clear stored API key"
-                                    style={{ fontSize: '12px' }}
-                                  >
-                                    Clear
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                            {runwayApiKey && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={clearStoredApiKey}
+                                title="Clear stored API key"
+                                style={{ fontSize: '12px' }}
+                              >
+                                Clear
+                              </button>
+                            )}
                           </div>
                           <input
                             type="password"
@@ -2066,10 +2191,13 @@ export default function RunwayAutomationApp() {
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
+                              // During generation
                               return `Generation ${generationCounter || 1} in progress`;
                             } else if (completedGeneration) {
+                              // After completion
                               return `Generation ${completedGeneration} completed`;
                             } else {
+                              // Initial state
                               return `Generation ${generationCounter || 1}`;
                             }
                           })()}
@@ -2077,12 +2205,15 @@ export default function RunwayAutomationApp() {
                         <p className="text-muted mb-0">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
+                              // During generation - show active job count
                               const count = Object.keys(generationProgress).length;
                               return `${count} video${count !== 1 ? 's' : ''} generating`;
                             } else if (completedGeneration) {
+                              // After completion - show completed count from that generation
                               const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
                               return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
                             } else {
+                              // Initial state
                               return '0 videos generated';
                             }
                           })()}
@@ -2442,17 +2573,4 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
-import Head from 'next/head';
-
-export default function RunwayAutomationApp() {
-  const [activeTab, setActiveTab] = useState('setup');
-  const [runwayApiKey, setRunwayApiKey] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [model, setModel] = useState('gen3a_turbo');
-  const [aspectRatio, setAspectRatio] = useState('16:9');
-  const [duration, setDuration] = useState(5);
-  const [concurrency, setConcurrency] = useState(1);
-  const [minWait, setMinWait] = useState(
+}
