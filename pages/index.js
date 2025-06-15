@@ -1333,20 +1333,24 @@ export default function RunwayAutomationApp() {
       minute: '2-digit',
       second: '2-digit'
     });
-    const folderName = `Favorited Videos ${timestamp}`;
+    const folderName = `Runway Videos ${timestamp}`;
 
-    addLog(`📦 Creating zip file with ${favoritedVideos.length} favorited videos...`, 'info');
+    addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
 
     try {
+      // Create a new JSZip instance
       const zip = new JSZip();
+      
+      // Create the folder with timestamp
       const videosFolder = zip.folder(folderName);
       
-      for (let i = 0; i < favoritedVideos.length; i++) {
-        const result = favoritedVideos[i];
+      // Download all videos and add to zip inside the folder
+      for (let i = 0; i < videosWithUrls.length; i++) {
+        const result = videosWithUrls[i];
         const filename = generateFilename(result.jobId, result.id);
         
         try {
-          addLog(`📥 Adding to zip ${i + 1}/${favoritedVideos.length}: ${filename}...`, 'info');
+          addLog(`📥 Adding to zip ${i + 1}/${videosWithUrls.length}: ${filename}...`, 'info');
           
           const response = await fetch(result.video_url);
           if (!response.ok) {
@@ -1354,17 +1358,22 @@ export default function RunwayAutomationApp() {
           }
           
           const blob = await response.blob();
+          
+          // Add the video file to the timestamped folder in the zip
           videosFolder.file(filename, blob);
           
         } catch (error) {
           addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          // Continue with next video even if one fails
           continue;
         }
       }
 
+      // Generate the zip file
       addLog('🗜️ Generating zip file...', 'info');
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       
+      // Download the zip file
       const zipUrl = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -2479,58 +2488,7 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}America/Los_Angeles',
-      hour12: true,
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    const folderName = `Runway Videos ${timestamp}`;
-
-    addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
-
-    try {
-      // Create a new JSZip instance
-      const zip = new JSZip();
-      
-      // Create the folder with timestamp
-      const videosFolder = zip.folder(folderName);
-      
-      // Download all videos and add to zip inside the folder
-      for (let i = 0; i < videosWithUrls.length; i++) {
-        const result = videosWithUrls[i];
-        const filename = generateFilename(result.jobId, result.id);
-        
-        try {
-          addLog(`📥 Adding to zip ${i + 1}/${videosWithUrls.length}: ${filename}...`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Add the video file to the timestamped folder in the zip
-          videosFolder.file(filename, blob);
-          
-        } catch (error) {
-          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
-          // Continue with next video even if one fails
-          continue;
-        }
-      }
-
-      // Generate the zip file
-      addLog('🗜️ Generating zip file...', 'info');
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      // Download the zip file
-      const zipUrl = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = zipUrl;
-      a.download = 'runway-videos.zip';
+}'runway-videos.zip';
       
       document.body.appendChild(a);
       a.click();
@@ -2581,4 +2539,46 @@ export default function RunwayAutomationApp() {
 
     // Generate timestamp for folder name
     const timestamp = new Date().toLocaleTimeString('en-US', {
-      timeZone: '
+      timeZone: 'America/Los_Angeles',
+      hour12: true,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const folderName = `Favorited Videos ${timestamp}`;
+
+    addLog(`📦 Creating zip file with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      const zip = new JSZip();
+      const videosFolder = zip.folder(folderName);
+      
+      for (let i = 0; i < favoritedVideos.length; i++) {
+        const result = favoritedVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        try {
+          addLog(`📥 Adding to zip ${i + 1}/${favoritedVideos.length}: ${filename}...`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          videosFolder.file(filename, blob);
+          
+        } catch (error) {
+          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
+          continue;
+        }
+      }
+
+      addLog('🗜️ Generating zip file...', 'info');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      const zipUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = zipUrl;
+      a.download = 
