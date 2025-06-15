@@ -73,16 +73,30 @@ export default async function handler(req, res) {
 
       clearTimeout(timeoutId);
 
-      const responseText = await response.text();
       console.log('RunwayML API response status:', response.status);
-      console.log('RunwayML API response:', responseText);
+      console.log('RunwayML API response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Get the response as text first to handle potential issues
+      const responseText = await response.text();
+      console.log('RunwayML API response (first 500 chars):', responseText.substring(0, 500));
 
       // Check if response is HTML (indicates server error or non-JSON response)
       if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
         console.error('Received HTML response instead of JSON:', responseText.substring(0, 300));
         return res.status(502).json({
           error: 'RunwayML API returned an HTML page instead of JSON',
-          message: 'This usually indicates a server error or maintenance on RunwayML\'s side.'
+          message: 'This usually indicates a server error or maintenance on RunwayML\'s side.',
+          statusCode: response.status
+        });
+      }
+
+      // Check if response is empty
+      if (!responseText || responseText.trim() === '') {
+        console.error('Received empty response from RunwayML API');
+        return res.status(502).json({
+          error: 'Empty response from RunwayML API',
+          message: 'The API returned an empty response',
+          statusCode: response.status
         });
       }
 
@@ -91,11 +105,23 @@ export default async function handler(req, res) {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('Failed to parse response as JSON:', parseError);
-        console.log('Raw response causing parse error:', responseText.substring(0, 500));
+        console.error('Raw response causing parse error:', responseText);
+        
+        // Check if it's a binary response (like a file download)
+        if (responseText.charCodeAt(0) === 0 || responseText.includes('\u0000')) {
+          return res.status(502).json({
+            error: 'Binary response received instead of JSON',
+            message: 'RunwayML API returned binary data instead of expected JSON response',
+            statusCode: response.status
+          });
+        }
+
         return res.status(502).json({
-          error: 'Invalid response from RunwayML API',
+          error: 'Invalid JSON response from RunwayML API',
           message: 'The API returned a response that could not be parsed as JSON',
-          rawResponse: responseText.substring(0, 300)
+          rawResponse: responseText.substring(0, 300),
+          parseError: parseError.message,
+          statusCode: response.status
         });
       }
 
@@ -104,11 +130,18 @@ export default async function handler(req, res) {
         console.error('RunwayML API error:', response.status, data);
         
         // Provide specific error handling for common issues
+        if (response.status === 401) {
+          return res.status(401).json({
+            error: 'Invalid API key',
+            message: 'Please check your RunwayML API key and try again'
+          });
+        }
+
         if (response.status === 429) {
           return res.status(429).json({
             error: 'Rate limit exceeded',
             message: 'You have exceeded your tier\'s concurrent generation limit. Please wait for current generations to complete.',
-            retryAfter: '30'
+            retryAfter: response.headers.get('Retry-After') || '30'
           });
         }
 
@@ -128,7 +161,7 @@ export default async function handler(req, res) {
         });
       }
 
-      console.log('Video generation request successful');
+      console.log('Video generation request successful, task ID:', data.id);
       res.status(200).json(data);
 
     } catch (fetchError) {
@@ -142,15 +175,40 @@ export default async function handler(req, res) {
         });
       }
       
+      console.error('Fetch error details:', {
+        name: fetchError.name,
+        message: fetchError.message,
+        stack: fetchError.stack
+      });
+      
       throw fetchError;
     }
 
   } catch (error) {
     console.error('Proxy error:', error);
     
+    // Handle network errors gracefully
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ 
+        error: 'Unable to connect to RunwayML API',
+        message: 'Network error while processing generation request',
+        retryable: true
+      });
+    }
+
+    // Handle timeout errors
+    if (error.code === 'ETIMEDOUT') {
+      return res.status(504).json({ 
+        error: 'Request timeout',
+        message: 'RunwayML API took too long to respond'
+      });
+    }
+
+    // Handle other errors
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message
+      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred',
+      retryable: true
     });
   }
 }

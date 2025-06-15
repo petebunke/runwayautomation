@@ -49,8 +49,12 @@ export default async function handler(req, res) {
 
       clearTimeout(timeoutId);
 
+      console.log('Status API response status:', response.status);
+      console.log('Status API response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Get the response as text first to handle potential issues
       const responseText = await response.text();
-      console.log('Status response:', responseText.substring(0, 300));
+      console.log('Status API response (first 300 chars):', responseText.substring(0, 300));
 
       // Check if response is HTML (indicates server error or non-JSON response)
       if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
@@ -58,7 +62,19 @@ export default async function handler(req, res) {
         return res.status(502).json({
           error: 'RunwayML API returned an HTML page instead of JSON',
           message: 'This usually indicates a server error or maintenance on RunwayML\'s side.',
-          taskId: taskId
+          taskId: taskId,
+          statusCode: response.status
+        });
+      }
+
+      // Check if response is empty
+      if (!responseText || responseText.trim() === '') {
+        console.error('Received empty response from RunwayML status API');
+        return res.status(502).json({
+          error: 'Empty response from RunwayML API',
+          message: 'The status API returned an empty response',
+          taskId: taskId,
+          statusCode: response.status
         });
       }
 
@@ -67,12 +83,25 @@ export default async function handler(req, res) {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('Failed to parse status response as JSON:', parseError);
-        console.log('Raw response causing parse error:', responseText.substring(0, 500));
+        console.error('Raw response causing parse error:', responseText);
+        
+        // Check if it's a binary response
+        if (responseText.charCodeAt(0) === 0 || responseText.includes('\u0000')) {
+          return res.status(502).json({
+            error: 'Binary response received instead of JSON',
+            message: 'RunwayML status API returned binary data instead of expected JSON response',
+            taskId: taskId,
+            statusCode: response.status
+          });
+        }
+
         return res.status(502).json({
-          error: 'Invalid response from RunwayML API',
+          error: 'Invalid JSON response from RunwayML status API',
           message: 'The API returned an unexpected response format',
           rawResponse: responseText.substring(0, 200),
-          taskId: taskId
+          parseError: parseError.message,
+          taskId: taskId,
+          statusCode: response.status
         });
       }
 
@@ -91,7 +120,8 @@ export default async function handler(req, res) {
         if (response.status === 404) {
           return res.status(404).json({
             error: 'Task not found',
-            message: 'The requested task ID does not exist'
+            message: 'The requested task ID does not exist',
+            taskId: taskId
           });
         }
 
@@ -119,7 +149,7 @@ export default async function handler(req, res) {
         });
       }
 
-      console.log('Task status retrieved:', taskId, data.status);
+      console.log('Task status retrieved successfully:', taskId, data.status);
 
       // Return successful response
       res.status(200).json(data);
@@ -135,6 +165,12 @@ export default async function handler(req, res) {
           retryable: true
         });
       }
+      
+      console.error('Status fetch error details:', {
+        name: fetchError.name,
+        message: fetchError.message,
+        stack: fetchError.stack
+      });
       
       throw fetchError;
     }
@@ -162,9 +198,8 @@ export default async function handler(req, res) {
     // Handle other errors
     res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
+      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred',
       retryable: true
     });
   }
 }
-        
