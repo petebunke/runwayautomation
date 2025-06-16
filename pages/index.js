@@ -1588,7 +1588,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
+                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download all videos as .mp4 and .json with one button..
               </p>
             </div>
           </div>
