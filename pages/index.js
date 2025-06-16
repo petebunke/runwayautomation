@@ -1,4 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react';
+  // Handle image file upload with compression and progress
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      addLog('❌ Please select a valid image file', 'error');
+      return;
+    }
+
+    // Allow larger files now that we compress (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      addLog('❌ Image file too large. Please use an image under 50MB', 'error');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    addLog(`📤 Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB image...`, 'info');
+    
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      const  // Handle image file upload with compression and progress
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      addLog('❌ Please select a valid image file', 'error');
+      return;
+    }
+
+    // Allow larger files now that we compress (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      addLog('❌ Image file too large. Please use an image under 50MB', 'error');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    ad  // Handle image file upload with compression
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      addLog('❌ Please select a valid image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 5MB for upload)
+    if (file.size > 5 * 1024 * 1024) {
+      addLog('❌ Imageimport React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
 import Head from 'next/head';
 
@@ -436,6 +492,10 @@ export default function RunwayAutomationApp() {
     try {
       // Handle data URLs from uploaded files
       if (url.startsWith('data:image/')) {
+        // Check if data URL is too large (>1MB base64 ≈ 1.5MB)
+        if (url.length > 1.5 * 1024 * 1024) {
+          addLog('⚠️ Uploaded image is very large and may cause API errors', 'warning');
+        }
         return true;
       }
       
@@ -462,7 +522,7 @@ export default function RunwayAutomationApp() {
     setImageError(true);
   };
 
-  // Handle image file upload
+  // Handle image file upload with compression
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -473,31 +533,69 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      addLog('❌ Image file too large. Please use an image under 10MB', 'error');
+    // Validate file size (max 5MB for upload)
+    if (file.size > 5 * 1024 * 1024) {
+      addLog('❌ Image file too large. Please use an image under 5MB', 'error');
       return;
     }
 
     setIsUploadingImage(true);
     
     try {
-      // Create a data URL for the image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        setImageUrl(dataUrl);
+      // Create a compressed version of the image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 1024px on longest side)
+        const maxSize = 1024;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to compressed JPEG (70% quality)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        
+        // Check if compressed size is reasonable (under 1MB base64)
+        if (compressedDataUrl.length > 1.5 * 1024 * 1024) { // ~1MB base64
+          addLog('❌ Image is still too large after compression. Please use a smaller image.', 'error');
+          setIsUploadingImage(false);
+          return;
+        }
+        
+        setImageUrl(compressedDataUrl);
         setImageError(false);
-        addLog('✅ Image uploaded successfully', 'success');
+        addLog(`✅ Image uploaded and compressed to ${width}x${height}`, 'success');
         setIsUploadingImage(false);
       };
-      reader.onerror = () => {
-        addLog('❌ Failed to read image file', 'error');
+      
+      img.onerror = () => {
+        addLog('❌ Failed to load image file', 'error');
         setIsUploadingImage(false);
       };
-      reader.readAsDataURL(file);
+      
+      // Create object URL to load the image
+      img.src = URL.createObjectURL(file);
+      
     } catch (error) {
-      addLog('❌ Error uploading image: ' + error.message, 'error');
+      addLog('❌ Error processing image: ' + error.message, 'error');
       setIsUploadingImage(false);
     }
   };
