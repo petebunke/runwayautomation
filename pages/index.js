@@ -1765,7 +1765,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)\n• 9:16 (Portrait - TikTok, Instagram Stories, mobile)\n• 1:1 (Square - Instagram posts, profile pics)\n• 4:3 (Standard - Classic TV, monitors)\n• 3:4 (Portrait Standard - Print, documents)\n• 21:9 (Cinematic - Ultrawide movies)"
                               ></i>
                             </label>
                             <select
@@ -1834,7 +1834,7 @@ export default function RunwayAutomationApp() {
                               style={{ cursor: 'help' }}
                               data-bs-toggle="tooltip" 
                               data-bs-placement="top" 
-                              title="All tiers can generate up to 20 videos, but you will be throttled past your tier's limits."
+                              title="All tiers can generate up to 20 videos at once, but you will be throttled past your tier's limits."
                             ></i>
                           </label>
                           <div className="table-responsive">
