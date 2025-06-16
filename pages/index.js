@@ -1508,6 +1508,36 @@ export default function RunwayAutomationApp() {
                               Get your API key from RunwayML Developer Portal
                             </a>
                           </div>
+                          
+                          {/* Debug API Button */}
+                          {runwayApiKey && (
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-info"
+                                onClick={async () => {
+                                  addLog('🔍 Testing API connectivity...', 'info');
+                                  try {
+                                    const response = await fetch('/api/runway-debug', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ apiKey: runwayApiKey })
+                                    });
+                                    const data = await response.json();
+                                    addLog('✅ Debug test completed - check browser console for details', 'success');
+                                    console.log('=== RUNWAY API DEBUG RESULTS ===');
+                                    console.log(JSON.stringify(data, null, 2));
+                                  } catch (error) {
+                                    addLog('❌ Debug test failed: ' + error.message, 'error');
+                                    console.error('Debug test error:', error);
+                                  }
+                                }}
+                                style={{ fontSize: '12px' }}
+                              >
+                                🔍 Test API
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
