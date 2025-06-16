@@ -84,11 +84,11 @@ export default function RunwayAutomationApp() {
             <div className="mb-4"></div>
             {children}
             
-            <div className="btn-group w-100" role="group">
+            <div className="d-flex gap-2 justify-content-end mt-4">
               <button
                 className="btn btn-secondary"
                 onClick={onClose}
-                style={{ borderRadius: '8px 0 0 8px', fontWeight: '600', width: '50%' }}
+                style={{ borderRadius: '8px', fontWeight: '600', width: '48%' }}
               >
                 {cancelText}
               </button>
@@ -99,7 +99,7 @@ export default function RunwayAutomationApp() {
                     onConfirm();
                     onClose();
                   }}
-                  style={{ borderRadius: '0 8px 8px 0', fontWeight: '600', width: '50%' }}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: '48%' }}
                 >
                   {confirmText}
                 </button>
@@ -2283,37 +2283,54 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', lineHeight: '1.4' }}>
                         {logs.map((log, index) => {
-                          const lines = log.message.split('\\n');
-                          const timestampText = `[${log.timestamp}] `;
+                          // Check if message contains actual line breaks
+                          const hasLineBreaks = log.message.includes('\n');
                           
-                          return (
-                            <div key={index} className={`small mb-1`}>
-                              <div className={`${
+                          if (hasLineBreaks) {
+                            const lines = log.message.split('\n');
+                            const timestampText = `[${log.timestamp}] `;
+                            
+                            return (
+                              <div key={index} className="small mb-1">
+                                <div className={`${
+                                  log.type === 'error' ? 'text-danger' :
+                                  log.type === 'success' ? 'text-light' :
+                                  log.type === 'warning' ? 'text-warning' :
+                                  'text-light'
+                                }`}>
+                                  <span className="text-primary">{timestampText}</span>{lines[0]}
+                                </div>
+                                {lines.slice(1).map((line, lineIndex) => (
+                                  <div 
+                                    key={lineIndex} 
+                                    className={`${
+                                      log.type === 'error' ? 'text-danger' :
+                                      log.type === 'success' ? 'text-light' :
+                                      log.type === 'warning' ? 'text-warning' :
+                                      'text-light'
+                                    }`}
+                                    style={{ 
+                                      paddingLeft: '12.5ch' // Width of timestamp in monospace
+                                    }}
+                                  >
+                                    {line}
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          } else {
+                            // Single line message
+                            return (
+                              <div key={index} className={`small mb-1 ${
                                 log.type === 'error' ? 'text-danger' :
                                 log.type === 'success' ? 'text-light' :
                                 log.type === 'warning' ? 'text-warning' :
                                 'text-light'
                               }`}>
-                                <span className="text-primary">{timestampText}</span>{lines[0]}
+                                <span className="text-primary">[{log.timestamp}]</span> {log.message}
                               </div>
-                              {lines.slice(1).map((line, lineIndex) => (
-                                <div 
-                                  key={lineIndex} 
-                                  className={`${
-                                    log.type === 'error' ? 'text-danger' :
-                                    log.type === 'success' ? 'text-light' :
-                                    log.type === 'warning' ? 'text-warning' :
-                                    'text-light'
-                                  }`}
-                                  style={{ 
-                                    marginLeft: '13ch' // Approximate width of timestamp in monospace
-                                  }}
-                                >
-                                  {line}
-                                </div>
-                              ))}
-                            </div>
-                          );
+                            );
+                          }
                         })}
                         {logs.length === 0 && (
                           <div className="text-muted small">
@@ -2481,7 +2498,7 @@ export default function RunwayAutomationApp() {
                           })
                           .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                            <div className="card border-0 shadow h-100 d-flex flex-column" style={{ borderRadius: '8px' }}>
                               <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
@@ -2519,7 +2536,7 @@ export default function RunwayAutomationApp() {
                                 )}
                               </div>
                               
-                              <div className="card-body p-3">
+                              <div className="card-body p-3 d-flex flex-column flex-grow-1">
                                 <div className="d-flex justify-content-between align-items-start mb-3">
                                   <div className="fw-bold text-primary flex-grow-1">{result.jobId}</div>
                                   <button
@@ -2541,11 +2558,11 @@ export default function RunwayAutomationApp() {
                                     />
                                   </button>
                                 </div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                <h6 className="card-title mb-3 flex-grow-1" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
                                 
-                                <div className="d-grid gap-2">
+                                <div className="mt-auto">
                                   {result.video_url && (
                                     <div className="btn-group w-100" role="group">
                                       <button
