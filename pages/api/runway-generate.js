@@ -1,4 +1,4 @@
-// /pages/api/runway-generate.js (Minimal fix for "Unexpected token B" error)
+// /pages/api/runway-generate.js (Fixed based on debug results)
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -47,33 +47,36 @@ export default async function handler(req, res) {
     });
 
     console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Response content-type:', response.headers.get('content-type'));
 
     // Get response as text first to debug the issue
     const responseText = await response.text();
-    console.log('Raw response:', responseText.substring(0, 500));
+    console.log('Response length:', responseText.length);
+    console.log('Response first 200 chars:', responseText.substring(0, 200));
 
-    // Check what type of response we got
-    if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
-      return res.status(502).json({
-        error: 'RunwayML API returned HTML instead of JSON',
-        message: 'Server error or maintenance',
-        debug: responseText.substring(0, 200)
+    // Handle HTML error responses (like 404 pages)
+    if (response.headers.get('content-type')?.includes('text/html')) {
+      console.log('Received HTML response instead of JSON');
+      return res.status(response.status).json({
+        error: 'RunwayML API returned HTML error page',
+        message: `HTTP ${response.status}: Server returned HTML instead of JSON`,
+        status: response.status
       });
     }
 
-    if (responseText.charCodeAt(0) === 0 || responseText.includes('\ufffd')) {
-      return res.status(502).json({
-        error: 'RunwayML API returned binary data',
-        message: 'Unexpected binary response',
-        debug: 'Binary data detected'
-      });
-    }
-
+    // Handle empty responses
     if (!responseText.trim()) {
       return res.status(502).json({
         error: 'Empty response from RunwayML API',
         message: 'No data received'
+      });
+    }
+
+    // Handle obvious binary data
+    if (responseText.charCodeAt(0) === 0 || responseText.includes('\ufffd')) {
+      return res.status(502).json({
+        error: 'RunwayML API returned binary data',
+        message: 'Unexpected binary response'
       });
     }
 
@@ -82,12 +85,16 @@ export default async function handler(req, res) {
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('JSON parse error:', parseError);
+      console.error('JSON parse error:', parseError.message);
+      console.log('Failed to parse response:', responseText.substring(0, 500));
+      
       return res.status(502).json({
         error: 'Invalid JSON response from RunwayML API',
-        message: 'Could not parse response',
+        message: 'Could not parse response as JSON',
         parseError: parseError.message,
-        rawResponse: responseText.substring(0, 300)
+        contentType: response.headers.get('content-type'),
+        status: response.status,
+        preview: responseText.substring(0, 200)
       });
     }
 
@@ -100,7 +107,7 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('Success! Returning task:', data);
+    console.log('Success! Task created:', data.id);
     res.status(200).json(data);
 
   } catch (error) {
