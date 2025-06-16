@@ -1210,7 +1210,17 @@ export default function RunwayAutomationApp() {
     return 'video_' + taskId + '.mp4';
   };
 
-  const createZipDownload = async (videos, folderPrefix) => {
+  const downloadAllVideos = async () => {
+    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
+    
+    if (videosWithUrls.length === 0) {
+      addLog('❌ No completed videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${videosWithUrls.length} videos...`, 'info');
+
     try {
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
@@ -1225,10 +1235,10 @@ export default function RunwayAutomationApp() {
         hour12: false
       }).replace(/[/:]/g, '-').replace(', ', '_');
 
-      const folderName = `${folderPrefix} (${timestamp})`;
+      const folderName = `Runway Videos (${timestamp})`;
       const folder = zip.folder(folderName);
 
-      const sortedVideos = videos
+      const sortedVideos = videosWithUrls
         .map(result => ({
           ...result,
           filename: generateFilename(result.jobId, result.id)
@@ -1278,22 +1288,9 @@ export default function RunwayAutomationApp() {
     } catch (error) {
       addLog('❌ Failed to create zip archive: ' + error.message, 'error');
       console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
     }
-  };
-
-  const downloadAllVideos = async () => {
-    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
-    
-    if (videosWithUrls.length === 0) {
-      addLog('❌ No completed videos available for download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating zip archive with ${videosWithUrls.length} videos...`, 'info');
-
-    await createZipDownload(videosWithUrls, 'Runway Videos');
-    setIsDownloadingAll(false);
   };
 
   const downloadFavoritedVideos = async () => {
@@ -1311,8 +1308,76 @@ export default function RunwayAutomationApp() {
     setIsDownloadingAll(true);
     addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
 
-    await createZipDownload(favoritedVideos, 'Favorited Videos');
-    setIsDownloadingAll(false);
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Favorited Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+
+      const sortedVideos = favoritedVideos
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename));
+
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch video: ${response.status}`);
+          }
+          
+          const blob = await response.blob();
+          folder.file(result.filename, blob);
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
   };
 
   const exportResults = () => {
