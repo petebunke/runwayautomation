@@ -1141,7 +1141,7 @@ export default function RunwayAutomationApp() {
     setVideoCounter(prev => prev + totalJobs);
 
     const successCount = batchResults.length;
-    addLog('🎬 Generation completed! ✅ ' + successCount + (successCount === 1 ? ' video' : ' videos') + ' generated, ❌ ' + errors.length + ' failed', 
+    addLog('🎬 Generation completed! ✅ ' + successCount + (successCount === 1 ? ' video' : ' videos') + ' generated, ❌ ' + errors.length + (errors.length === 1 ? ' failed' : ' failed'), 
            successCount > 0 ? 'success' : 'error');
     
     if (errors.length > 0) {
@@ -1163,6 +1163,11 @@ export default function RunwayAutomationApp() {
 
     setCompletedGeneration(currentGeneration);
     setIsRunning(false);
+    
+    // Auto-advance to Results tab when generation completes successfully
+    if (successCount > 0) {
+      setActiveTab('results');
+    }
   };
 
   const stopGeneration = () => {
@@ -2202,19 +2207,19 @@ export default function RunwayAutomationApp() {
                             }
                           })()}
                         </h4>
-                        <p className="text-muted mb-0">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              const count = Object.keys(generationProgress).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generating`;
-                            } else if (completedGeneration) {
-                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            } else {
-                              return '0 videos generated';
-                            }
-                          })()}
-                        </p>
+                          <p className="text-muted mb-0">
+                            {(() => {
+                              if (Object.keys(generationProgress).length > 0) {
+                                const count = Object.keys(generationProgress).length;
+                                return `${count} video${count !== 1 ? 's' : ''} generating`;
+                              } else if (completedGeneration) {
+                                const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                                return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                              } else {
+                                return '0 videos generated';
+                              }
+                            })()}
+                          </p>
                       </div>
                     </div>
 
@@ -2277,16 +2282,26 @@ export default function RunwayAutomationApp() {
                         </button>
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`} style={{ textIndent: '-1.2em', paddingLeft: '1.2em' }}>
-                            <span className="text-primary">[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))}
+                        {logs.map((log, index) => {
+                          const lines = log.message.split('\n');
+                          const timestampPart = `[${log.timestamp}] `;
+                          
+                          return (
+                            <div key={index} className={`small mb-1 ${
+                              log.type === 'error' ? 'text-danger' :
+                              log.type === 'success' ? 'text-light' :
+                              log.type === 'warning' ? 'text-warning' :
+                              'text-light'
+                            }`}>
+                              <span className="text-primary">{timestampPart}</span>{lines[0]}
+                              {lines.slice(1).map((line, lineIndex) => (
+                                <div key={lineIndex} style={{ paddingLeft: `${timestampPart.length * 0.6}em` }}>
+                                  {line}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
                         {logs.length === 0 && (
                           <div className="text-muted small">
                             Ready to start generation... Configure your settings and click "Start Generation"
