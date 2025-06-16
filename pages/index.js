@@ -1267,6 +1267,8 @@ export default function RunwayAutomationApp() {
 
       const folderName = `Runway Videos (${timestamp})`;
       const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
 
       // Sort videos by generation and video number for organized download
       const sortedVideos = videosWithUrls
@@ -1294,9 +1296,10 @@ export default function RunwayAutomationApp() {
             throw new Error('Empty video file received');
           }
           
-          folder.file(result.filename, blob);
+          // Add video to Videos folder
+          videosFolder.file(result.filename, blob);
           
-          // Add metadata file for each video
+          // Add metadata file to JSON folder
           const metadata = {
             id: result.id,
             prompt: result.prompt,
@@ -1306,7 +1309,7 @@ export default function RunwayAutomationApp() {
             processingTime: result.processingTime || 'unknown'
           };
           
-          folder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
           
         } catch (error) {
           addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
@@ -1384,6 +1387,8 @@ export default function RunwayAutomationApp() {
 
       const folderName = `Favorited Videos (${timestamp})`;
       const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
 
       // Sort videos by generation and video number for organized download
       const sortedVideos = favoritedVideos
@@ -1411,9 +1416,10 @@ export default function RunwayAutomationApp() {
             throw new Error('Empty video file received');
           }
           
-          folder.file(result.filename, blob);
+          // Add video to Videos folder
+          videosFolder.file(result.filename, blob);
           
-          // Add metadata file for each favorited video
+          // Add metadata file to JSON folder
           const metadata = {
             id: result.id,
             prompt: result.prompt,
@@ -1424,7 +1430,7 @@ export default function RunwayAutomationApp() {
             favorited: true
           };
           
-          folder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
           
         } catch (error) {
           addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
@@ -2277,7 +2283,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'success' ? 'text-light' :
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
-                          }`}>
+                          }`} style={{ textIndent: '-1.2em', paddingLeft: '1.2em' }}>
                             <span className="text-primary">[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
@@ -2379,27 +2385,6 @@ export default function RunwayAutomationApp() {
                             </span>
                           </button>
                         )}
-                        
-                        <button
-                          className="btn btn-light shadow"
-                          onClick={exportResults}
-                          disabled={results.length === 0}
-                          style={{ 
-                            borderRadius: '8px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out'
-                          }}
-                          title="Export metadata and URLs to JSON file"
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        >
-                          <i className="bi bi-file-earmark-arrow-down me-2"></i>
-                          Export JSON
-                          <span className="ms-2 badge bg-primary text-white">
-                            {results.length}
-                          </span>
-                        </button>
                         
                         <button
                           className="btn btn-danger shadow"
@@ -2570,7 +2555,7 @@ export default function RunwayAutomationApp() {
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3" style={{ marginLeft: '10px' }}>
               <img 
                 src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
                 alt="Powered by Runway" 
