@@ -1,60 +1,4 @@
-  // Handle image file upload with compression and progress
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      addLog('❌ Please select a valid image file', 'error');
-      return;
-    }
-
-    // Allow larger files now that we compress (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      addLog('❌ Image file too large. Please use an image under 50MB', 'error');
-      return;
-    }
-
-    setIsUploadingImage(true);
-    addLog(`📤 Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB image...`, 'info');
-    
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      const  // Handle image file upload with compression and progress
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      addLog('❌ Please select a valid image file', 'error');
-      return;
-    }
-
-    // Allow larger files now that we compress (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      addLog('❌ Image file too large. Please use an image under 50MB', 'error');
-      return;
-    }
-
-    setIsUploadingImage(true);
-    ad  // Handle image file upload with compression
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      addLog('❌ Please select a valid image file', 'error');
-      return;
-    }
-
-    // Validate file size (max 5MB for upload)
-    if (file.size > 5 * 1024 * 1024) {
-      addLog('❌ Imageimport React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
 import Head from 'next/head';
 
@@ -522,7 +466,7 @@ export default function RunwayAutomationApp() {
     setImageError(true);
   };
 
-  // Handle image file upload with compression
+  // Handle image file upload with compression and progress
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -533,66 +477,89 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // Validate file size (max 5MB for upload)
-    if (file.size > 5 * 1024 * 1024) {
-      addLog('❌ Image file too large. Please use an image under 5MB', 'error');
+    // Allow larger files now that we compress (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      addLog('❌ Image file too large. Please use an image under 50MB', 'error');
       return;
     }
 
     setIsUploadingImage(true);
+    addLog(`📤 Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB image...`, 'info');
     
     try {
-      // Create a compressed version of the image
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
       
-      img.onload = () => {
-        // Calculate new dimensions (max 1024px on longest side)
-        const maxSize = 1024;
-        let { width, height } = img;
+      const loadImage = new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load image'));
         
-        if (width > height) {
-          if (width > maxSize) {
-            height = (height * maxSize) / width;
-            width = maxSize;
-          }
-        } else {
-          if (height > maxSize) {
-            width = (width * maxSize) / height;
-            height = maxSize;
-          }
-        }
+        // Create object URL to load the image
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
         
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Convert to compressed JPEG (70% quality)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        
-        // Check if compressed size is reasonable (under 1MB base64)
-        if (compressedDataUrl.length > 1.5 * 1024 * 1024) { // ~1MB base64
-          addLog('❌ Image is still too large after compression. Please use a smaller image.', 'error');
-          setIsUploadingImage(false);
-          return;
-        }
-        
-        setImageUrl(compressedDataUrl);
-        setImageError(false);
-        addLog(`✅ Image uploaded and compressed to ${width}x${height}`, 'success');
-        setIsUploadingImage(false);
-      };
+        // Clean up object URL after image loads
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+      });
       
-      img.onerror = () => {
-        addLog('❌ Failed to load image file', 'error');
-        setIsUploadingImage(false);
-      };
+      await loadImage;
       
-      // Create object URL to load the image
-      img.src = URL.createObjectURL(file);
+      // Calculate new dimensions (max 1024px on longest side for API compatibility)
+      const maxSize = 1024;
+      let { width, height } = img;
+      const originalAspectRatio = width / height;
+      
+      // Log original dimensions
+      addLog(`📏 Original image: ${width}x${height} (${originalAspectRatio.toFixed(2)} aspect ratio)`, 'info');
+      
+      // Check aspect ratio requirements (RunwayML requires 0.5 to 2.0)
+      if (originalAspectRatio < 0.5 || originalAspectRatio > 2.0) {
+        addLog(`⚠️ Warning: Image aspect ratio ${originalAspectRatio.toFixed(2)} is outside RunwayML's accepted range (0.5-2.0). This may cause API errors.`, 'warning');
+      }
+      
+      if (width > height) {
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx.fillStyle = '#FFFFFF'; // White background for JPEGs
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      addLog('🔄 Compressing image...', 'info');
+      
+      // Convert to compressed JPEG (70% quality for good balance of size/quality)
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      
+      // Check final size
+      const finalSizeKB = Math.round((compressedDataUrl.length * 0.75) / 1024); // Rough base64 to binary conversion
+      
+      // Check if compressed size is reasonable (under 1MB base64)
+      if (compressedDataUrl.length > 1.5 * 1024 * 1024) { // ~1MB base64
+        addLog('❌ Image is still too large after compression. Please use a smaller image.', 'error');
+        setIsUploadingImage(false);
+        return;
+      }
+      
+      setImageUrl(compressedDataUrl);
+      setImageError(false);
+      addLog(`✅ Image uploaded and compressed to ${width}x${height} (~${finalSizeKB}KB)`, 'success');
+      setIsUploadingImage(false);
       
     } catch (error) {
       addLog('❌ Error processing image: ' + error.message, 'error');
