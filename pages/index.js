@@ -1539,6 +1539,7 @@ export default function RunwayAutomationApp() {
         <style>{`
           .tooltip .tooltip-inner {
             background-color: rgba(0, 0, 0, 1) !important;
+            color: white !important;
           }
           .tooltip.bs-tooltip-top .tooltip-arrow::before,
           .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
@@ -1590,6 +1591,16 @@ export default function RunwayAutomationApp() {
                     onClick={() => setActiveTab('setup')}
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
+                    <Settings size={20} className="me-2" />
+                    Setup
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('generation')}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                  >
                     <Video size={20} className="me-2" />
                     Generation
                   </button>
@@ -1638,7 +1649,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         
                         <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">API Setup</h3>
+                          <h4 className="mb-0 fw-bold">API Setup</h4>
                         </div>
                       </div>
                       
@@ -1887,7 +1898,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         
                         <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Video Setup</h3>
+                          <h4 className="mb-0 fw-bold">Video Setup</h4>
                         </div>
                       </div>
                       
@@ -2107,7 +2118,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Video Generation</h3>
+                      <h4 className="mb-0 fw-bold">Video Generation</h4>
                     </div>
                     
                     <div style={{ marginRight: '30px' }}>
@@ -2311,7 +2322,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
+                      <h4 className="mb-0 fw-bold">Generated Videos</h4>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
@@ -2370,7 +2381,7 @@ export default function RunwayAutomationApp() {
                         )}
                         
                         <button
-                          className="btn btn-info shadow"
+                          className="btn btn-light shadow"
                           onClick={exportResults}
                           disabled={results.length === 0}
                           style={{ 
@@ -2385,7 +2396,7 @@ export default function RunwayAutomationApp() {
                         >
                           <i className="bi bi-file-earmark-arrow-down me-2"></i>
                           Export JSON
-                          <span className="ms-2 badge bg-light text-dark">
+                          <span className="ms-2 badge bg-primary text-white">
                             {results.length}
                           </span>
                         </button>
@@ -2560,13 +2571,11 @@ export default function RunwayAutomationApp() {
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
-                <svg width="80" height="19" viewBox="0 0 80 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.09375 0C11.0625 0 14.375 3.34375 14.375 7.5V19H7.09375C3.125 19 0 15.6563 0 11.5C0 7.34375 3.125 4 7.09375 4V0Z" fill="white" fillOpacity="0.7"/>
-                  <path d="M21.2812 19C17.3125 19 14.375 15.6563 14.375 11.5V0H21.2812C25.25 0 28.375 3.34375 28.375 7.5C28.375 11.6563 25.25 15 21.2812 15V19Z" fill="white" fillOpacity="0.7"/>
-                  <text x="34" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
-                </svg>
-              </a>
+              <img 
+                src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
+                alt="Powered by Runway" 
+                style={{ height: '20px', width: 'auto' }}
+              />
             </div>
           </div>
         </div>
