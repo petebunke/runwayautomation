@@ -1,4 +1,4 @@
-// /pages/api/runway-generate.js (Fixed for 2024-11-06 API version)
+// /pages/api/runway-generate.js (Fixed deployment version)
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -25,45 +25,30 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'API key is required' });
     }
 
-    if (!payload || !payload.promptText) {
+    if (!payload || !payload.text_prompt) {
       return res.status(400).json({ error: 'Text prompt is required' });
     }
 
-    // Check for promptImage - now expecting array format
-    if (!payload.promptImage || !Array.isArray(payload.promptImage) || payload.promptImage.length === 0) {
+    // Check for image
+    const hasImage = payload.image_prompt && payload.image_prompt.trim();
+    
+    if (!hasImage) {
       return res.status(400).json({ 
         error: 'Image required for video generation',
-        message: 'The RunwayML API requires promptImage as an array of objects with uri and position properties.'
+        message: 'The current RunwayML API only supports image-to-video generation.'
       });
     }
 
-    // Validate promptImage array structure
-    for (let i = 0; i < payload.promptImage.length; i++) {
-      const image = payload.promptImage[i];
-      if (!image.uri || !image.uri.trim()) {
-        return res.status(400).json({
-          error: 'Invalid promptImage format',
-          message: `Image ${i + 1} is missing uri property`
-        });
-      }
-      if (!image.position || !['first', 'last'].includes(image.position)) {
-        return res.status(400).json({
-          error: 'Invalid promptImage format',
-          message: `Image ${i + 1} must have position set to "first" or "last"`
-        });
-      }
-    }
+    console.log('Generating video with prompt:', payload.text_prompt.substring(0, 50) + '...');
+    console.log('Using image:', payload.image_prompt);
+    console.log('Aspect ratio received:', payload.aspect_ratio);
 
-    console.log('Generating video with prompt:', payload.promptText.substring(0, 50) + '...');
-    console.log('Using images:', payload.promptImage.map(img => `${img.position}: ${img.uri.substring(0, 50)}...`));
-    console.log('Aspect ratio received:', payload.ratio);
-
-    // Use the EXACT format from RunwayML 2024-11-06 API documentation
+    // Use the EXACT format from RunwayML documentation
     const requestBody = {
-      promptText: payload.promptText,
-      promptImage: payload.promptImage, // Now expects array format
+      promptText: payload.text_prompt,
+      promptImage: payload.image_prompt.trim(),
       model: payload.model || 'gen3a_turbo',
-      ratio: payload.ratio, // Now expects exact resolution like "1280:720"
+      ratio: payload.aspect_ratio,
       duration: payload.duration || 5,
       seed: payload.seed || Math.floor(Math.random() * 1000000)
     };
@@ -80,7 +65,7 @@ export default async function handler(req, res) {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          'X-Runway-Version': '2024-11-06' // Use the latest API version
+          'X-Runway-Version': '2024-11-06'
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal
@@ -97,12 +82,9 @@ export default async function handler(req, res) {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('Failed to parse response as JSON:', parseError);
-        console.log('Raw response that failed to parse:', responseText.substring(0, 500));
         return res.status(502).json({
           error: 'Invalid response from RunwayML API',
-          message: 'The API returned an unexpected response format',
-          rawResponse: responseText.substring(0, 300),
-          parseError: parseError.message
+          rawResponse: responseText.substring(0, 300)
         });
       }
 
@@ -111,50 +93,11 @@ export default async function handler(req, res) {
         console.error('RunwayML API error:', response.status, data);
         
         // Provide specific error handling for common issues
-        if (response.status === 401) {
-          return res.status(401).json({
-            error: 'Invalid API key',
-            message: 'Please check your RunwayML API key and try again'
-          });
-        }
-
-        if (response.status === 400) {
-          // Handle specific 400 errors
-          let errorMessage = data.error || data.message || 'Bad request';
-          
-          if (errorMessage.includes('credits') || errorMessage.includes('insufficient')) {
-            return res.status(400).json({
-              error: 'Insufficient credits',
-              message: 'You do not have enough credits to generate this video. Please purchase more credits at dev.runwayml.com'
-            });
-          }
-          
-          if (errorMessage.includes('safety') || errorMessage.includes('content policy')) {
-            return res.status(400).json({
-              error: 'Content safety violation',
-              message: 'Your prompt or image was flagged by RunwayML\'s content safety system. Please try different content.'
-            });
-          }
-          
-          if (errorMessage.includes('aspect ratio') || errorMessage.includes('invalid asset')) {
-            return res.status(400).json({
-              error: 'Invalid image format',
-              message: 'Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images are not supported.'
-            });
-          }
-          
-          return res.status(400).json({
-            error: 'RunwayML API Error',
-            message: errorMessage,
-            details: data
-          });
-        }
-
         if (response.status === 429) {
           return res.status(429).json({
             error: 'Rate limit exceeded',
             message: 'You have exceeded your tier\'s concurrent generation limit. Please wait for current generations to complete.',
-            retryAfter: response.headers.get('Retry-After') || '30'
+            retryAfter: '30'
           });
         }
 
@@ -188,15 +131,6 @@ export default async function handler(req, res) {
         });
       }
       
-      // Handle network errors gracefully
-      if (fetchError.code === 'ENOTFOUND' || fetchError.code === 'ECONNREFUSED') {
-        return res.status(503).json({ 
-          error: 'Unable to connect to RunwayML API',
-          message: 'Network error while processing generation request',
-          retryable: true
-        });
-      }
-      
       throw fetchError;
     }
 
@@ -205,8 +139,7 @@ export default async function handler(req, res) {
     
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred',
-      retryable: true
+      message: error.message
     });
   }
 }
