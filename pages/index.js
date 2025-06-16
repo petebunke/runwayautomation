@@ -209,13 +209,6 @@ export default function RunwayAutomationApp() {
           localStorage.removeItem('runway-automation-favorites');
         }
       }
-
-      // Load cost warning status - if user has ever generated videos, don't show modal again
-      const savedHasShownCostWarning = localStorage.getItem('runway-automation-cost-warning-shown');
-      if (savedHasShownCostWarning === 'true') {
-        console.log('Loading cost warning status from localStorage');
-        setHasShownCostWarning(true);
-      }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
     }
@@ -424,7 +417,6 @@ export default function RunwayAutomationApp() {
           localStorage.removeItem('runway-automation-results');
           localStorage.removeItem('runway-automation-generation-counter');
           localStorage.removeItem('runway-automation-favorites');
-          // Do NOT remove the cost warning flag when clearing videos
           setResults([]);
           setGenerationCounter(0);
           setCompletedGeneration(null);
@@ -1092,12 +1084,12 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Cost estimation and user confirmation - show modal only the very first time ever
+    // Cost estimation and user confirmation - show modal only for first generation or if cost > $20
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
-    // Show modal only if user has never seen it before (not based on current session)
-    if (!hasShownCostWarning) {
+    // Show modal if it's the first generation ever (totalJobs == 1) OR if estimated max cost > $20
+    if ((!hasShownCostWarning && totalJobs === 1) || estimatedCostMax > 20) {
       showModalDialog({
         title: estimatedCostMax > 20 ? "High Cost Warning" : "Cost Warning",
         type: "warning",
@@ -1105,8 +1097,6 @@ export default function RunwayAutomationApp() {
         cancelText: "Cancel",
         onConfirm: () => {
           setHasShownCostWarning(true);
-          // Save to localStorage so it persists across sessions
-          localStorage.setItem('runway-automation-cost-warning-shown', 'true');
           startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
         },
         content: (
@@ -2097,7 +2087,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '60px',
+                      height: '80px',
                       borderRadius: '8px 8px 0 0',
                       backgroundColor: HEADER_BLUE
                     }}
@@ -2321,7 +2311,7 @@ export default function RunwayAutomationApp() {
                         width: '80px', 
                         height: '80px',
                         left: '20px',
-                        top: '20px',
+                        top: '40px',
                         zIndex: 10,
                         backgroundColor: '#4dd0ff',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
