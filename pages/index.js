@@ -84,11 +84,11 @@ export default function RunwayAutomationApp() {
             <div className="mb-4"></div>
             {children}
             
-            <div className="d-flex gap-3 justify-content-end mt-4">
+            <div className="btn-group w-100" role="group">
               <button
                 className="btn btn-secondary"
                 onClick={onClose}
-                style={{ borderRadius: '8px', fontWeight: '600' }}
+                style={{ borderRadius: '8px 0 0 8px', fontWeight: '600', width: '50%' }}
               >
                 {cancelText}
               </button>
@@ -99,7 +99,7 @@ export default function RunwayAutomationApp() {
                     onConfirm();
                     onClose();
                   }}
-                  style={{ borderRadius: '8px', fontWeight: '600' }}
+                  style={{ borderRadius: '0 8px 8px 0', fontWeight: '600', width: '50%' }}
                 >
                   {confirmText}
                 </button>
@@ -822,7 +822,7 @@ export default function RunwayAutomationApp() {
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
-          await new Promise(resolve => setTimeout(resolve, 25000));
+          await new Promise(resolve => setTimeout(resolve, 15000));
           pollCount++;
           continue;
         }
@@ -845,14 +845,14 @@ export default function RunwayAutomationApp() {
           
           if (stuckInPendingCount >= maxStuckInPending) {
             addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING for ${stuckInPendingCount} cycles, using longer polling interval...`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 40000));
+            await new Promise(resolve => setTimeout(resolve, 25000));
           } else {
-            await new Promise(resolve => setTimeout(resolve, 18000));
+            await new Promise(resolve => setTimeout(resolve, 10000));
           }
         } else if (task.status === 'RUNNING') {
           if (!processingStartTime) processingStartTime = Date.now();
           stuckInPendingCount = 0;
-          await new Promise(resolve => setTimeout(resolve, 12000));
+          await new Promise(resolve => setTimeout(resolve, 8000));
         } else {
           stuckInPendingCount = 0;
         }
@@ -937,11 +937,11 @@ export default function RunwayAutomationApp() {
         }
 
         const pollInterval = 
-          task.status === 'PENDING' && stuckInPendingCount > 8 ? 35000 :
-          task.status === 'RUNNING' ? 15000 :
-          task.status === 'THROTTLED' ? 25000 :
-          isThrottled ? 30000 :
-          15000;
+          task.status === 'PENDING' && stuckInPendingCount > 8 ? 25000 :
+          task.status === 'RUNNING' ? 8000 :
+          task.status === 'THROTTLED' ? 20000 :
+          isThrottled ? 25000 :
+          10000;
         
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         pollCount++;
@@ -2281,21 +2281,34 @@ export default function RunwayAutomationApp() {
                           <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
                         </button>
                       </div>
-                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
+                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', lineHeight: '1.4' }}>
                         {logs.map((log, index) => {
-                          const lines = log.message.split('\n');
-                          const timestampPart = `[${log.timestamp}] `;
+                          const lines = log.message.split('\\n');
+                          const timestampText = `[${log.timestamp}] `;
                           
                           return (
-                            <div key={index} className={`small mb-1 ${
-                              log.type === 'error' ? 'text-danger' :
-                              log.type === 'success' ? 'text-light' :
-                              log.type === 'warning' ? 'text-warning' :
-                              'text-light'
-                            }`}>
-                              <span className="text-primary">{timestampPart}</span>{lines[0]}
+                            <div key={index} className={`small mb-1`}>
+                              <div className={`${
+                                log.type === 'error' ? 'text-danger' :
+                                log.type === 'success' ? 'text-light' :
+                                log.type === 'warning' ? 'text-warning' :
+                                'text-light'
+                              }`}>
+                                <span className="text-primary">{timestampText}</span>{lines[0]}
+                              </div>
                               {lines.slice(1).map((line, lineIndex) => (
-                                <div key={lineIndex} style={{ paddingLeft: `${timestampPart.length * 0.6}em` }}>
+                                <div 
+                                  key={lineIndex} 
+                                  className={`${
+                                    log.type === 'error' ? 'text-danger' :
+                                    log.type === 'success' ? 'text-light' :
+                                    log.type === 'warning' ? 'text-warning' :
+                                    'text-light'
+                                  }`}
+                                  style={{ 
+                                    marginLeft: '13ch' // Approximate width of timestamp in monospace
+                                  }}
+                                >
                                   {line}
                                 </div>
                               ))}
