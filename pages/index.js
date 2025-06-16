@@ -79,7 +79,7 @@ export default function RunwayAutomationApp() {
             </div>
             
             <div className="text-white text-center">
-              <h4 className="mb-0 fw-bold">{title}</h4>
+              <h3 className="mb-0 fw-bold">{title}</h3>
             </div>
           </div>
           
@@ -1562,24 +1562,12 @@ export default function RunwayAutomationApp() {
         <style>{`
           .tooltip .tooltip-inner {
             background-color: rgba(0, 0, 0, 1) !important;
-            max-width: 250px;
-            white-space: pre-line;
           }
           .tooltip.bs-tooltip-top .tooltip-arrow::before,
           .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
           .tooltip.bs-tooltip-start .tooltip-arrow::before,
           .tooltip.bs-tooltip-end .tooltip-arrow::before {
             border-color: rgba(0, 0, 0, 1) transparent !important;
-          }
-          
-          /* Log line wrapping styles */
-          .log-message {
-            padding-left: 0;
-          }
-          .log-message-wrapped {
-            padding-left: 105px; /* Aligns with text after timestamp */
-            text-indent: -105px;
-            margin-left: 105px;
           }
         `}</style>
       </Head>
@@ -1663,7 +1651,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
+                          height: '80px',
                           borderRadius: '8px 8px 0 0',
                           backgroundColor: HEADER_BLUE
                         }}
@@ -1674,7 +1662,7 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '20px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
@@ -1684,7 +1672,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         
                         <div className="text-white text-center">
-                          <h4 className="mb-0 fw-bold">API Setup</h4>
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
                         </div>
                       </div>
                       
@@ -1761,12 +1749,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="• 16:9 (Landscape - YouTube, TV, desktop)
-• 9:16 (Portrait - TikTok, Instagram Stories, mobile)
-• 1:1 (Square - Instagram posts, profile pics)
-• 4:3 (Standard - Classic TV, monitors)
-• 3:4 (Portrait Standard - Print, documents)
-• 21:9 (Cinematic - Ultrawide movies)"
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
                               ></i>
                             </label>
                             <select
@@ -1835,7 +1818,7 @@ export default function RunwayAutomationApp() {
                               style={{ cursor: 'help' }}
                               data-bs-toggle="tooltip" 
                               data-bs-placement="top" 
-                              title="All tiers can generate up to 20 videos at once, but your tier will be throttled past these limits."
+                              title="All tiers can generate up to 20 videos, but you will be throttled past your tier's limits."
                             ></i>
                           </label>
                           <div className="table-responsive">
@@ -1889,7 +1872,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
+                          height: '80px',
                           borderRadius: '8px 8px 0 0',
                           backgroundColor: HEADER_BLUE
                         }}
@@ -1900,7 +1883,7 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '20px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
@@ -1910,7 +1893,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         
                         <div className="text-white text-center">
-                          <h4 className="mb-0 fw-bold">Video Setup</h4>
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
                         </div>
                       </div>
                       
@@ -2065,9 +2048,9 @@ export default function RunwayAutomationApp() {
                           </div>
                           
                           {/* Generate Video Button */}
-                          <div className="mt-4" style={{ padding: '12px 0' }}>
+                          <div className="mt-4">
                             <button
-                              className="btn btn-success w-100 shadow"
+                              className="btn btn-success btn-lg w-100 shadow"
                               onClick={() => {
                                 setActiveTab('generation');
                                 // Small delay to ensure tab switch completes before starting generation
@@ -2084,8 +2067,7 @@ export default function RunwayAutomationApp() {
                                 backgroundColor: '#28a745',
                                 borderColor: '#28a745',
                                 opacity: '1',
-                                transition: 'opacity 0.1s ease-in-out',
-                                padding: '8px 16px'
+                                transition: 'opacity 0.1s ease-in-out'
                               }}
                               onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                               onMouseLeave={(e) => e.target.style.opacity = '1'}
@@ -2126,7 +2108,7 @@ export default function RunwayAutomationApp() {
                         width: '80px', 
                         height: '80px',
                         left: '20px',
-                        top: '20px',
+                        top: '40px',
                         zIndex: 10,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         backgroundColor: '#4dd0ff'
@@ -2136,23 +2118,24 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h4 className="mb-0 fw-bold">Video Generation</h4>
+                      <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
-                    <div style={{ marginRight: '30px', padding: '12px 0' }}>
+                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-success shadow"
+                          className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600', 
+                            marginTop: '5px', 
+                            marginBottom: '5px',
                             opacity: '1',
                             transition: 'opacity 0.1s ease-in-out',
                             backgroundColor: '#28a745',
-                            borderColor: '#28a745',
-                            padding: '8px 16px'
+                            borderColor: '#28a745'
                           }}
                           onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
@@ -2167,9 +2150,9 @@ export default function RunwayAutomationApp() {
                         </button>
                       ) : (
                         <button
-                          className="btn btn-danger shadow"
+                          className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '8px', fontWeight: '600', padding: '8px 16px' }}
+                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
@@ -2298,7 +2281,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
                         {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 log-message-wrapped ${
+                          <div key={index} className={`small mb-1 ${
                             log.type === 'error' ? 'text-danger' :
                             log.type === 'success' ? 'text-light' :
                             log.type === 'warning' ? 'text-warning' :
@@ -2327,7 +2310,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '60px',
+                      height: '80px',
                       borderRadius: '8px 8px 0 0',
                       backgroundColor: HEADER_BLUE
                     }}
@@ -2348,11 +2331,11 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h4 className="mb-0 fw-bold">Generated Videos</h4>
+                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px', padding: '12px 0' }} className="d-flex gap-2 flex-wrap">
+                      <div style={{ marginRight: '30px' }} className="d-flex gap-2 flex-wrap">
                         <button
                           className="btn btn-light shadow"
                           onClick={downloadAllVideos}
@@ -2361,8 +2344,7 @@ export default function RunwayAutomationApp() {
                             borderRadius: '8px', 
                             fontWeight: '600',
                             opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out',
-                            padding: '8px 16px'
+                            transition: 'opacity 0.1s ease-in-out'
                           }}
                           onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
@@ -2394,8 +2376,7 @@ export default function RunwayAutomationApp() {
                               borderRadius: '8px', 
                               fontWeight: '600',
                               opacity: '1',
-                              transition: 'opacity 0.1s ease-in-out',
-                              padding: '8px 16px'
+                              transition: 'opacity 0.1s ease-in-out'
                             }}
                             onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                             onMouseLeave={(e) => e.target.style.opacity = '1'}
@@ -2415,8 +2396,7 @@ export default function RunwayAutomationApp() {
                             borderRadius: '8px', 
                             fontWeight: '600',
                             opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out',
-                            padding: '8px 16px'
+                            transition: 'opacity 0.1s ease-in-out'
                           }}
                           title="Clear all generated videos from browser storage"
                           onMouseEnter={(e) => e.target.style.opacity = '0.9'}
@@ -2437,7 +2417,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     {results.length === 0 ? (
                       <div className="text-center py-5">
-                        <div className="mb-3">
+                        <div className="mb-4">
                           <Film size={80} className="text-muted" />
                         </div>
                         <h4 className="text-muted mb-3">No videos generated yet</h4>
@@ -2580,11 +2560,13 @@ export default function RunwayAutomationApp() {
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
-              <img 
-                src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
-                alt="Powered by Runway" 
-                style={{ height: '20px', opacity: 0.7 }} 
-              />
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
+                <svg width="100" height="24" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8.85714 0C13.7321 0 17.7143 4.02857 17.7143 9V24H8.85714C3.98214 24 0 19.9714 0 15C0 10.0286 3.98214 6 8.85714 6V0Z" fill="white" fillOpacity="0.7"/>
+                  <path d="M26.5714 24C21.6964 24 17.7143 19.9714 17.7143 15V0H26.5714C31.4464 0 35.4286 4.02857 35.4286 9C35.4286 13.9714 31.4464 18 26.5714 18V24Z" fill="white" fillOpacity="0.7"/>
+                  <text x="44" y="16" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                </svg>
+              </a>
             </div>
           </div>
         </div>
