@@ -81,8 +81,7 @@ export default function RunwayAutomationApp() {
           </div>
           
           <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-            <div className="mb-4">
-            </div>
+            <div className="mb-4"></div>
             {children}
             
             <div className="d-flex gap-3 justify-content-end mt-4">
@@ -129,37 +128,31 @@ export default function RunwayAutomationApp() {
       
       const savedPrompt = localStorage.getItem('runway-automation-prompt');
       if (savedPrompt && savedPrompt.trim()) {
-        console.log('Loading saved prompt from localStorage');
         setPrompt(savedPrompt);
       }
       
       const savedImageUrl = localStorage.getItem('runway-automation-image-url');
       if (savedImageUrl && savedImageUrl.trim()) {
-        console.log('Loading saved image URL from localStorage');
         setImageUrl(savedImageUrl);
       }
 
       const savedModel = localStorage.getItem('runway-automation-model');
       if (savedModel && savedModel.trim()) {
-        console.log('Loading saved model from localStorage');
         setModel(savedModel);
       }
 
       const savedAspectRatio = localStorage.getItem('runway-automation-aspect-ratio');
       if (savedAspectRatio && savedAspectRatio.trim()) {
-        console.log('Loading saved aspect ratio from localStorage');
         setAspectRatio(savedAspectRatio);
       }
 
       const savedDuration = localStorage.getItem('runway-automation-duration');
       if (savedDuration && savedDuration.trim()) {
-        console.log('Loading saved duration from localStorage');
         setDuration(parseInt(savedDuration));
       }
 
       const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
       if (savedConcurrency && savedConcurrency.trim()) {
-        console.log('Loading saved concurrency from localStorage');
         setConcurrency(parseInt(savedConcurrency));
       }
 
@@ -168,11 +161,9 @@ export default function RunwayAutomationApp() {
         try {
           const parsedResults = JSON.parse(savedResults);
           if (Array.isArray(parsedResults) && parsedResults.length > 0) {
-            console.log('Loading saved results from localStorage:', parsedResults.length, 'videos');
             setResults(parsedResults);
           }
         } catch (parseError) {
-          console.warn('Failed to parse saved results:', parseError);
           localStorage.removeItem('runway-automation-results');
         }
       }
@@ -190,14 +181,12 @@ export default function RunwayAutomationApp() {
             setFavoriteVideos(new Set(parsedFavorites));
           }
         } catch (parseError) {
-          console.warn('Failed to parse saved favorites:', parseError);
           localStorage.removeItem('runway-automation-favorites');
         }
       }
 
       const savedHasShownCostWarning = localStorage.getItem('runway-automation-cost-warning-shown');
       if (savedHasShownCostWarning === 'true') {
-        console.log('Loading cost warning status from localStorage');
         setHasShownCostWarning(true);
       }
     } catch (error) {
@@ -207,13 +196,10 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
-        console.log('Saving API key to localStorage');
         localStorage.setItem('runway-automation-api-key', runwayApiKey);
       } else if (runwayApiKey === '') {
-        console.log('Removing API key from localStorage');
         localStorage.removeItem('runway-automation-api-key');
       }
     } catch (error) {
@@ -223,7 +209,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (prompt && prompt.trim()) {
         localStorage.setItem('runway-automation-prompt', prompt);
@@ -237,7 +222,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (imageUrl && imageUrl.trim()) {
         localStorage.setItem('runway-automation-image-url', imageUrl);
@@ -251,7 +235,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (model && model.trim()) {
         localStorage.setItem('runway-automation-model', model);
@@ -263,7 +246,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (aspectRatio && aspectRatio.trim()) {
         localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
@@ -275,7 +257,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (duration) {
         localStorage.setItem('runway-automation-duration', duration.toString());
@@ -287,7 +268,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (concurrency) {
         localStorage.setItem('runway-automation-concurrency', concurrency.toString());
@@ -299,7 +279,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted || !Array.isArray(results)) return;
-    
     try {
       if (results.length > 0) {
         localStorage.setItem('runway-automation-results', JSON.stringify(results));
@@ -313,7 +292,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (generationCounter > 0) {
         localStorage.setItem('runway-automation-generation-counter', generationCounter.toString());
@@ -325,7 +303,6 @@ export default function RunwayAutomationApp() {
 
   useEffect(() => {
     if (!mounted) return;
-    
     try {
       if (favoriteVideos.size > 0) {
         localStorage.setItem('runway-automation-favorites', JSON.stringify([...favoriteVideos]));
@@ -588,11 +565,6 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
-  const checkCredits = async () => {
-    console.log('Credit check disabled for debugging');
-    return null;
-  };
-
   const convertAspectRatio = (ratio) => {
     const ratioMap = {
       '16:9': '1280:720',
@@ -649,8 +621,6 @@ export default function RunwayAutomationApp() {
         seed: Math.floor(Math.random() * 1000000)
       };
 
-      console.log('API payload:', JSON.stringify(payload, null, 2));
-
       let retryCount = 0;
       const maxRetries = 5;
       
@@ -673,20 +643,13 @@ export default function RunwayAutomationApp() {
 
           clearTimeout(timeoutId);
 
-          console.log('Generation response status:', response.status);
-          console.log('Generation response headers:', Object.fromEntries(response.headers.entries()));
-          
           const responseText = await response.text();
-          console.log('Generation response text length:', responseText.length);
-          console.log('Generation response first 200 chars:', responseText.substring(0, 200));
 
           if (!response.ok) {
             let errorData;
             try {
               errorData = JSON.parse(responseText);
             } catch (parseError) {
-              console.error('Failed to parse error response:', parseError);
-              console.log('Raw error response:', responseText.substring(0, 500));
               throw new Error(`API Error ${response.status}: Could not parse error response`);
             }
             
@@ -725,8 +688,6 @@ export default function RunwayAutomationApp() {
           try {
             task = JSON.parse(responseText);
           } catch (parseError) {
-            console.error('Failed to parse success response:', parseError);
-            console.log('Raw success response:', responseText.substring(0, 500));
             throw new Error('Could not parse successful API response');
           }
           
@@ -803,9 +764,6 @@ export default function RunwayAutomationApp() {
         try {
           task = JSON.parse(responseText);
         } catch (parseError) {
-          console.error('Failed to parse response as JSON:', parseError);
-          console.log('Raw response:', responseText.substring(0, 300));
-          
           if (consecutiveErrors < maxConsecutiveErrors) {
             consecutiveErrors++;
             const backoffDelay = 20000 + (consecutiveErrors * 10000) + (Math.random() * 5000);
@@ -1464,16 +1422,6 @@ export default function RunwayAutomationApp() {
                     onClick={() => setActiveTab('setup')}
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
-                    <Settings size={20} className="me-2" />
-                    Setup
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
-                    onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
-                  >
                     <Video size={20} className="me-2" />
                     Generation
                   </button>
@@ -1527,8 +1475,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4">
-                        </div>
+                        <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
                             <label className="form-label fw-bold mb-0">RunwayML API Key</label>
@@ -1777,8 +1724,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       
                       <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4">
-                        </div>
+                        <div className="mb-4"></div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
                           <div className="position-relative">
@@ -2036,8 +1982,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4">
-                    </div>
+                    <div className="mb-4"></div>
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
@@ -2280,8 +2225,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4">
-                    </div>
+                    <div className="mb-4"></div>
                     {results.length === 0 ? (
                       <div className="text-center py-5">
                         <div className="mb-3">
@@ -2440,4 +2384,14 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
+}600' }}
+                  >
+                    <Settings size={20} className="me-2" />
+                    Setup
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('generation')}
+                    style={{ borderRadius: '6px', fontWeight: '
