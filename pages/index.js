@@ -637,11 +637,45 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
-  // Check user's credit balance before generation (DISABLED for debugging)
+  // Check user's credit balance before generation
   const checkCredits = async () => {
-    // Temporarily disabled to avoid API errors
-    console.log('Credit check disabled for debugging');
-    return null;
+    if (!runwayApiKey.trim()) {
+      addLog('❌ API key required for credit check', 'error');
+      return null;
+    }
+
+    try {
+      addLog('💳 Checking credit balance...', 'info');
+      
+      const response = await fetch(API_BASE + '/runway-credits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        addLog('⚠️ Could not check credits: ' + (data.error || 'Unknown error'), 'warning');
+        return null;
+      }
+
+      if (data.credits && data.credits !== 'unknown') {
+        addLog('💰 Available credits: ' + data.credits, 'info');
+        return data.credits;
+      } else {
+        addLog('💳 Credit balance check not available - proceeding with generation', 'info');
+        return null;
+      }
+      
+    } catch (error) {
+      addLog('⚠️ Credit check failed: ' + error.message, 'warning');
+      return null;
+    }
   };
 
   // Convert aspect ratio to the new format expected by RunwayML API
@@ -1215,6 +1249,18 @@ export default function RunwayAutomationApp() {
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
     addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
 
+    // Check credits before starting generation
+    const availableCredits = await checkCredits();
+    if (availableCredits !== null && typeof availableCredits === 'number') {
+      const estimatedCreditsNeeded = totalJobs * 40; // Conservative estimate
+      if (availableCredits < estimatedCreditsNeeded) {
+        addLog(`⚠️ Warning: You have ${availableCredits} credits but may need ~${estimatedCreditsNeeded} credits for ${totalJobs} videos`, 'warning');
+        addLog('💡 Consider purchasing more credits at dev.runwayml.com if generation fails', 'info');
+      } else {
+        addLog(`✅ Credit check passed: ${availableCredits} credits available`, 'success');
+      }
+    }
+
     const batchResults = [];
     const errors = [];
 
@@ -1334,7 +1380,7 @@ export default function RunwayAutomationApp() {
     return 'video_' + taskId + '.mp4';
   };
 
-  // Simplified download functions that don't rely on JSZip (temporarily)
+  // Enhanced download functions with ZIP support
   const downloadAllVideos = async () => {
     const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
     
@@ -1343,17 +1389,81 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    addLog(`📥 Downloading ${videosWithUrls.length} videos individually...`, 'info');
+    setIsDownloadingAll(true);
+    addLog(`📥 Creating ZIP package with ${videosWithUrls.length} videos...`, 'info');
     
-    for (let i = 0; i < videosWithUrls.length; i++) {
-      const result = videosWithUrls[i];
-      const filename = generateFilename(result.jobId, result.id);
-      await downloadVideo(result.video_url, filename);
-      // Small delay between downloads
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Dynamically import JSZip
+      const JSZip = (await import('https://cdn.skypack.dev/jszip')).default;
+      const zip = new JSZip();
+      
+      // Create folder with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
+      const folderName = `Runway Videos - ${timestamp}`;
+      const folder = zip.folder(folderName);
+      
+      // Sort videos alphabetically by job ID
+      const sortedVideos = videosWithUrls.slice().sort((a, b) => {
+        const aJobId = a.jobId || `video_${a.id}`;
+        const bJobId = b.jobId || `video_${b.id}`;
+        return aJobId.localeCompare(bJobId);
+      });
+      
+      // Download each video and add to ZIP
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        addLog(`📥 Downloading ${i + 1}/${sortedVideos.length}: ${filename}...`, 'info');
+        
+        try {
+          const response = await fetch(result.video_url);
+          const blob = await response.blob();
+          folder.file(filename, blob);
+          
+          addLog(`✅ Added ${filename} to ZIP`, 'success');
+        } catch (error) {
+          addLog(`❌ Failed to download ${filename}: ${error.message}`, 'error');
+        }
+        
+        // Small delay between downloads to be respectful
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      addLog('📦 Generating ZIP file...', 'info');
+      
+      // Generate ZIP file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Download the ZIP
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded ZIP package: ${folderName}.zip`, 'success');
+      
+    } catch (error) {
+      addLog('❌ ZIP creation failed: ' + error.message, 'error');
+      addLog('📥 Falling back to individual downloads...', 'info');
+      
+      // Fallback to individual downloads
+      for (let i = 0; i < videosWithUrls.length; i++) {
+        const result = videosWithUrls[i];
+        const filename = generateFilename(result.jobId, result.id);
+        await downloadVideo(result.video_url, filename);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } finally {
+      setIsDownloadingAll(false);
     }
-    
-    addLog(`✅ All ${videosWithUrls.length} videos downloaded!`, 'success');
   };
 
   const downloadFavoritedVideos = async () => {
@@ -1368,17 +1478,81 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    addLog(`📥 Downloading ${favoritedVideos.length} favorited videos individually...`, 'info');
+    setIsDownloadingAll(true);
+    addLog(`📥 Creating ZIP package with ${favoritedVideos.length} favorited videos...`, 'info');
     
-    for (let i = 0; i < favoritedVideos.length; i++) {
-      const result = favoritedVideos[i];
-      const filename = generateFilename(result.jobId, result.id);
-      await downloadVideo(result.video_url, filename);
-      // Small delay between downloads
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Dynamically import JSZip
+      const JSZip = (await import('https://cdn.skypack.dev/jszip')).default;
+      const zip = new JSZip();
+      
+      // Create folder with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
+      const folderName = `Favorited Videos - ${timestamp}`;
+      const folder = zip.folder(folderName);
+      
+      // Sort videos alphabetically by job ID
+      const sortedVideos = favoritedVideos.slice().sort((a, b) => {
+        const aJobId = a.jobId || `video_${a.id}`;
+        const bJobId = b.jobId || `video_${b.id}`;
+        return aJobId.localeCompare(bJobId);
+      });
+      
+      // Download each video and add to ZIP
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        addLog(`📥 Downloading ${i + 1}/${sortedVideos.length}: ${filename}...`, 'info');
+        
+        try {
+          const response = await fetch(result.video_url);
+          const blob = await response.blob();
+          folder.file(filename, blob);
+          
+          addLog(`✅ Added ${filename} to ZIP`, 'success');
+        } catch (error) {
+          addLog(`❌ Failed to download ${filename}: ${error.message}`, 'error');
+        }
+        
+        // Small delay between downloads to be respectful
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      addLog('📦 Generating ZIP file...', 'info');
+      
+      // Generate ZIP file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Download the ZIP
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded ZIP package: ${folderName}.zip`, 'success');
+      
+    } catch (error) {
+      addLog('❌ ZIP creation failed: ' + error.message, 'error');
+      addLog('📥 Falling back to individual downloads...', 'info');
+      
+      // Fallback to individual downloads
+      for (let i = 0; i < favoritedVideos.length; i++) {
+        const result = favoritedVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        await downloadVideo(result.video_url, filename);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } finally {
+      setIsDownloadingAll(false);
     }
-    
-    addLog(`✅ All ${favoritedVideos.length} favorited videos downloaded!`, 'success');
   };
 
   const exportResults = () => {
