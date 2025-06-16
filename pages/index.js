@@ -572,25 +572,11 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
-  // Check user's credit balance before generation
+  // Check user's credit balance before generation (DISABLED for debugging)
   const checkCredits = async () => {
-    try {
-      const response = await fetch(API_BASE + '/runway-credits', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ apiKey: runwayApiKey })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.credits || 0;
-      }
-    } catch (error) {
-      console.log('Could not check credits:', error);
-    }
-    return null; // Return null if we can't check credits
+    // Temporarily disabled to avoid API errors
+    console.log('Credit check disabled for debugging');
+    return null;
   };
 
   // Convert aspect ratio to the new format expected by RunwayML API
@@ -678,8 +664,25 @@ export default function RunwayAutomationApp() {
 
           clearTimeout(timeoutId);
 
+          // Log response details for debugging
+          console.log('Generation response status:', response.status);
+          console.log('Generation response headers:', Object.fromEntries(response.headers.entries()));
+          
+          // Get response text first
+          const responseText = await response.text();
+          console.log('Generation response text length:', responseText.length);
+          console.log('Generation response first 200 chars:', responseText.substring(0, 200));
+
           if (!response.ok) {
-            const errorData = await response.json();
+            let errorData;
+            try {
+              errorData = JSON.parse(responseText);
+            } catch (parseError) {
+              console.error('Failed to parse error response:', parseError);
+              console.log('Raw error response:', responseText.substring(0, 500));
+              throw new Error(`API Error ${response.status}: Could not parse error response`);
+            }
+            
             let errorMessage = errorData.error || 'API Error: ' + response.status;
             
             // Handle retryable errors with exponential backoff
@@ -715,7 +718,15 @@ export default function RunwayAutomationApp() {
             throw new Error(errorMessage);
           }
 
-          const task = await response.json();
+          // Parse successful response
+          let task;
+          try {
+            task = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('Failed to parse success response:', parseError);
+            console.log('Raw success response:', responseText.substring(0, 500));
+            throw new Error('Could not parse successful API response');
+          }
           
           addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
           
