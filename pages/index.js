@@ -196,6 +196,38 @@ export default function RunwayAutomationApp() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" />
+        <style>{`
+          .layout-stable {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+          }
+          .header-fixed {
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+          }
+          .content-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+          }
+          .tab-content-wrapper {
+            flex: 1;
+            min-height: 500px;
+          }
+          .nav-pills .nav-link {
+            transition: all 0.15s ease-in-out;
+          }
+          .nav-pills .nav-link:not(.active) {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+          }
+          .nav-pills .nav-link:not(.active):hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+          }
+        `}</style>
       </Head>
 
       <Modal
@@ -210,26 +242,29 @@ export default function RunwayAutomationApp() {
         {modalConfig.content}
       </Modal>
 
-      <div className="min-vh-100" style={{ background: 'black', color: 'white' }}>
-        <div className="container-fluid py-4">
+      <div className="layout-stable" style={{ background: 'black', color: 'white' }}>
+        <div className="container-fluid py-4 content-container">
           
-          {/* Header */}
-          <div className="text-center mb-4">
-            <h1 className="text-white">
-              <Clapperboard size={36} className="me-3" />
+          {/* Header - Fixed Position */}
+          <div className="header-fixed text-center mb-4">
+            <h1 className="text-white mb-2" style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+              <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
               Runway Automation Pro
             </h1>
-            <p className="text-white-50">Batch generate AI videos with RunwayML</p>
+            <p className="text-white-50 mb-0" style={{ fontSize: '1.1rem' }}>
+              Batch generate AI videos with RunwayML
+            </p>
           </div>
 
-          {/* Navigation */}
-          <div className="row justify-content-center mb-3">
+          {/* Navigation - Stable */}
+          <div className="row justify-content-center mb-4">
             <div className="col-auto">
-              <ul className="nav nav-pills">
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link ${activeTab === 'setup' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('setup')}
+                    style={{ borderRadius: '8px', fontWeight: '600', minWidth: '120px' }}
                   >
                     <Settings size={20} className="me-2" />
                     Setup
@@ -237,8 +272,9 @@ export default function RunwayAutomationApp() {
                 </li>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link ${activeTab === 'generation' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('generation')}
+                    style={{ borderRadius: '8px', fontWeight: '600', minWidth: '120px' }}
                   >
                     <Video size={20} className="me-2" />
                     Generation
@@ -246,8 +282,9 @@ export default function RunwayAutomationApp() {
                 </li>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link ${activeTab === 'results' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('results')}
+                    style={{ borderRadius: '8px', fontWeight: '600', minWidth: '120px' }}
                   >
                     <Download size={20} className="me-2" />
                     Results
@@ -257,284 +294,339 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
 
-          {/* Setup Tab */}
-          {activeTab === 'setup' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-8">
-                <div className="card">
-                  <div className="card-header">
-                    <h5>Setup Configuration</h5>
-                  </div>
-                  <div className="card-body">
-                    
-                    {/* API Key */}
-                    <div className="mb-3">
-                      <label className="form-label">Runway API Key</label>
-                      <div className="input-group">
-                        <input
-                          type="password"
+          {/* Tab Content - Stable Container */}
+          <div className="tab-content-wrapper">
+            
+            {/* Setup Tab */}
+            {activeTab === 'setup' && (
+              <div className="row justify-content-center">
+                <div className="col-lg-8">
+                  <div className="card shadow-lg" style={{ borderRadius: '12px' }}>
+                    <div className="card-header bg-primary text-white" style={{ borderRadius: '12px 12px 0 0' }}>
+                      <h5 className="mb-0 d-flex align-items-center">
+                        <Settings size={24} className="me-2" />
+                        Setup Configuration
+                      </h5>
+                    </div>
+                    <div className="card-body p-4">
+                      
+                      {/* API Key */}
+                      <div className="mb-4">
+                        <label className="form-label fw-bold">Runway API Key</label>
+                        <div className="input-group">
+                          <input
+                            type="password"
+                            className="form-control form-control-lg"
+                            value={runwayApiKey}
+                            onChange={(e) => setRunwayApiKey(e.target.value)}
+                            placeholder="key_xxx..."
+                            style={{ borderRadius: '8px 0 0 8px' }}
+                          />
+                          {runwayApiKey && (
+                            <button className="btn btn-outline-danger" onClick={clearStoredApiKey}>
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                        <div className="form-text">
+                          <ExternalLink size={14} className="me-1" />
+                          Get your API key from <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer">dev.runwayml.com</a>
+                        </div>
+                      </div>
+
+                      {/* Prompt */}
+                      <div className="mb-4">
+                        <label className="form-label fw-bold">Video Prompt</label>
+                        <textarea
                           className="form-control"
-                          value={runwayApiKey}
-                          onChange={(e) => setRunwayApiKey(e.target.value)}
-                          placeholder="key_xxx..."
-                        />
-                        {runwayApiKey && (
-                          <button className="btn btn-outline-danger" onClick={clearStoredApiKey}>
-                            Clear
-                          </button>
-                        )}
-                      </div>
-                      <div className="form-text">
-                        Get your API key from <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer">dev.runwayml.com</a>
-                      </div>
-                    </div>
-
-                    {/* Prompt */}
-                    <div className="mb-3">
-                      <label className="form-label">Video Prompt</label>
-                      <textarea
-                        className="form-control"
-                        rows="3"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Describe your video..."
-                      />
-                    </div>
-
-                    {/* Image URL */}
-                    <div className="mb-3">
-                      <label className="form-label">Image URL</label>
-                      <input
-                        type="url"
-                        className="form-control"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                      />
-                    </div>
-
-                    {/* Settings */}
-                    <div className="row">
-                      <div className="col-md-3">
-                        <label className="form-label">Model</label>
-                        <select className="form-select" value={model} onChange={(e) => setModel(e.target.value)}>
-                          <option value="gen4_turbo">Gen-4 Turbo</option>
-                          <option value="gen3a_turbo">Gen-3 Alpha Turbo</option>
-                        </select>
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Aspect Ratio</label>
-                        <select className="form-select" value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)}>
-                          <option value="16:9">16:9 (Landscape)</option>
-                          <option value="9:16">9:16 (Portrait)</option>
-                          <option value="1:1">1:1 (Square)</option>
-                        </select>
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Duration</label>
-                        <select className="form-select" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))}>
-                          <option value={5}>5 seconds</option>
-                          <option value={10}>10 seconds</option>
-                        </select>
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label"># of Videos</label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="20"
-                          className="form-control"
-                          value={concurrency}
-                          onChange={(e) => setConcurrency(Math.min(Math.max(parseInt(e.target.value) || 1, 1), 20))}
+                          rows="3"
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                          placeholder="Describe your video scene..."
+                          style={{ borderRadius: '8px' }}
                         />
                       </div>
-                    </div>
 
-                    <div className="mt-4">
-                      <button
-                        className="btn btn-success w-100"
-                        onClick={generateVideos}
-                        disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || isRunning}
-                      >
-                        <Play size={20} className="me-2" />
-                        Generate Video{concurrency > 1 ? 's' : ''}
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Generation Tab */}
-          {activeTab === 'generation' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-8">
-                <div className="card">
-                  <div className="card-header d-flex justify-content-between align-items-center">
-                    <h5>Video Generation</h5>
-                    <button
-                      className={`btn ${isRunning ? 'btn-danger' : 'btn-success'}`}
-                      onClick={isRunning ? () => setIsRunning(false) : generateVideos}
-                      disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
-                    >
-                      {isRunning ? (
-                        <>
-                          <AlertCircle size={20} className="me-2" />
-                          Stop Generation
-                        </>
-                      ) : (
-                        <>
-                          <Play size={20} className="me-2" />
-                          Start Generation
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="card-body">
-                    
-                    {/* Status */}
-                    <div className="mb-3">
-                      <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                        <span>Status: {isRunning ? 'Running' : 'Idle'}</span>
-                        <span>Progress: {Object.keys(generationProgress).length} active jobs</span>
+                      {/* Image URL */}
+                      <div className="mb-4">
+                        <label className="form-label fw-bold">Image URL</label>
+                        <input
+                          type="url"
+                          className="form-control"
+                          value={imageUrl}
+                          onChange={(e) => setImageUrl(e.target.value)}
+                          placeholder="https://example.com/image.jpg"
+                          style={{ borderRadius: '8px' }}
+                        />
+                        <div className="form-text">
+                          Direct link to an image file (JPG, PNG, GIF, etc.)
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Progress Cards */}
-                    {Object.keys(generationProgress).length > 0 && (
-                      <div className="row g-3 mb-3">
-                        {Object.entries(generationProgress).map(([jobId, progress]) => (
-                          <div key={jobId} className="col-md-6">
-                            <div className="card">
-                              <div className="card-body">
-                                <h6>{jobId}</h6>
-                                <div className="progress mb-2">
-                                  <div 
-                                    className="progress-bar" 
-                                    style={{ width: `${progress.progress}%` }}
-                                  ></div>
-                                </div>
-                                <small>{progress.message}</small>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      {/* Settings Row */}
+                      <div className="row g-3 mb-4">
+                        <div className="col-md-3">
+                          <label className="form-label fw-bold">Model</label>
+                          <select className="form-select" value={model} onChange={(e) => setModel(e.target.value)} style={{ borderRadius: '8px' }}>
+                            <option value="gen4_turbo">Gen-4 Turbo</option>
+                            <option value="gen3a_turbo">Gen-3 Alpha Turbo</option>
+                          </select>
+                        </div>
+                        <div className="col-md-3">
+                          <label className="form-label fw-bold">Aspect Ratio</label>
+                          <select className="form-select" value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} style={{ borderRadius: '8px' }}>
+                            <option value="16:9">16:9 (Landscape)</option>
+                            <option value="9:16">9:16 (Portrait)</option>
+                            <option value="1:1">1:1 (Square)</option>
+                          </select>
+                        </div>
+                        <div className="col-md-3">
+                          <label className="form-label fw-bold">Duration</label>
+                          <select className="form-select" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} style={{ borderRadius: '8px' }}>
+                            <option value={5}>5 seconds</option>
+                            <option value={10}>10 seconds</option>
+                          </select>
+                        </div>
+                        <div className="col-md-3">
+                          <label className="form-label fw-bold"># of Videos</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            className="form-control"
+                            value={concurrency}
+                            onChange={(e) => setConcurrency(Math.min(Math.max(parseInt(e.target.value) || 1, 1), 20))}
+                            style={{ borderRadius: '8px' }}
+                          />
+                        </div>
                       </div>
-                    )}
 
-                    {/* Logs */}
-                    <div className="card bg-dark text-light">
-                      <div className="card-header">
-                        <h6 className="mb-0">Generation Log</h6>
-                      </div>
-                      <div className="card-body" style={{ maxHeight: '300px', overflowY: 'auto', fontFamily: 'monospace' }}>
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-success' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`}>
-                            [{log.timestamp}] {log.message}
-                          </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">Ready to start generation...</div>
-                        )}
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Results Tab */}
-          {activeTab === 'results' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="card">
-                  <div className="card-header d-flex justify-content-between align-items-center">
-                    <h5>Generated Videos</h5>
-                    {results.length > 0 && (
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => {
-                          setResults([]);
-                          addLog('All videos cleared', 'info');
-                        }}
-                      >
-                        <Trash2 size={16} className="me-2" />
-                        Clear All
-                      </button>
-                    )}
-                  </div>
-                  <div className="card-body">
-                    
-                    {results.length === 0 ? (
-                      <div className="text-center py-5">
-                        <Film size={48} className="text-muted mb-3" />
-                        <h5 className="text-muted">No videos generated yet</h5>
-                        <p className="text-muted">Start a generation to see your videos here</p>
-                        <button className="btn btn-primary" onClick={() => setActiveTab('setup')}>
-                          Get Started
+                      {/* Generate Button */}
+                      <div className="d-grid">
+                        <button
+                          className="btn btn-success btn-lg shadow"
+                          onClick={generateVideos}
+                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || isRunning}
+                          style={{ borderRadius: '8px', fontWeight: '600' }}
+                        >
+                          <Play size={24} className="me-2" />
+                          Generate Video{concurrency > 1 ? 's' : ''}
+                          {concurrency > 1 && (
+                            <span className="ms-2 badge bg-light text-dark">
+                              {concurrency}
+                            </span>
+                          )}
                         </button>
                       </div>
-                    ) : (
-                      <div className="row g-4">
-                        {results.map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-4">
-                            <div className="card h-100">
-                              <div className="card-body">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  <h6 className="card-title">{result.jobId}</h6>
-                                  <button
-                                    className="btn btn-sm p-1"
-                                    onClick={() => toggleFavorite(result.id)}
-                                    style={{
-                                      border: 'none',
-                                      background: 'none',
-                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6'
-                                    }}
-                                  >
-                                    <Heart size={16} fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'} />
-                                  </button>
-                                </div>
-                                <p className="card-text small">{result.prompt}</p>
-                                <div className="btn-group w-100">
-                                  <button
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
-                                  >
-                                    <Download size={14} className="me-1" />
-                                    Download
-                                  </button>
-                                  <button
-                                    className="btn btn-outline-primary btn-sm"
-                                    onClick={() => window.open(result.video_url, '_blank')}
-                                  >
-                                    <ExternalLink size={14} className="me-1" />
-                                    View
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
 
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Footer */}
-          <div className="text-center mt-5">
+            {/* Generation Tab */}
+            {activeTab === 'generation' && (
+              <div className="row justify-content-center">
+                <div className="col-lg-8">
+                  <div className="card shadow-lg" style={{ borderRadius: '12px' }}>
+                    <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center" style={{ borderRadius: '12px 12px 0 0' }}>
+                      <h5 className="mb-0 d-flex align-items-center">
+                        <Video size={24} className="me-2" />
+                        Video Generation
+                      </h5>
+                      <button
+                        className={`btn ${isRunning ? 'btn-danger' : 'btn-light'} btn-sm`}
+                        onClick={isRunning ? () => setIsRunning(false) : generateVideos}
+                        disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim()}
+                        style={{ borderRadius: '6px' }}
+                      >
+                        {isRunning ? (
+                          <>
+                            <AlertCircle size={16} className="me-1" />
+                            Stop
+                          </>
+                        ) : (
+                          <>
+                            <Play size={16} className="me-1" />
+                            Start
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="card-body p-4">
+                      
+                      {/* Status Panel */}
+                      <div className="alert alert-light border-0 mb-4" style={{ borderRadius: '8px' }}>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div className="d-flex align-items-center">
+                            <div className={`me-3 rounded-circle ${isRunning ? 'bg-success' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}></div>
+                            <span className="fw-bold">Status: {isRunning ? 'Running' : 'Idle'}</span>
+                          </div>
+                          <span className="badge bg-primary">
+                            {Object.keys(generationProgress).length} active jobs
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress Cards */}
+                      {Object.keys(generationProgress).length > 0 && (
+                        <div className="row g-3 mb-4">
+                          {Object.entries(generationProgress).map(([jobId, progress]) => (
+                            <div key={jobId} className="col-md-6">
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                <div className="card-body p-3">
+                                  <h6 className="card-title mb-2">{jobId}</h6>
+                                  <div className="progress mb-2" style={{ height: '6px' }}>
+                                    <div 
+                                      className="progress-bar bg-primary" 
+                                      style={{ width: `${progress.progress}%` }}
+                                    ></div>
+                                  </div>
+                                  <small className="text-muted">{progress.message}</small>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Logs Panel */}
+                      <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
+                        <div className="card-header bg-dark border-0">
+                          <h6 className="mb-0 text-light">Generation Log</h6>
+                        </div>
+                        <div className="card-body bg-dark" style={{ maxHeight: '300px', overflowY: 'auto', fontFamily: 'Consolas, monospace', fontSize: '0.85rem' }}>
+                          {logs.map((log, index) => (
+                            <div key={index} className={`mb-1 ${
+                              log.type === 'error' ? 'text-danger' :
+                              log.type === 'success' ? 'text-success' :
+                              log.type === 'warning' ? 'text-warning' :
+                              'text-light'
+                            }`}>
+                              <span className="text-info">[{log.timestamp}]</span> {log.message}
+                            </div>
+                          ))}
+                          {logs.length === 0 && (
+                            <div className="text-muted">Ready to start generation...</div>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Results Tab */}
+            {activeTab === 'results' && (
+              <div className="row justify-content-center">
+                <div className="col-lg-10">
+                  <div className="card shadow-lg" style={{ borderRadius: '12px' }}>
+                    <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center" style={{ borderRadius: '12px 12px 0 0' }}>
+                      <h5 className="mb-0 d-flex align-items-center">
+                        <Download size={24} className="me-2" />
+                        Generated Videos
+                        <span className="ms-3 badge bg-light text-dark">
+                          {results.length}
+                        </span>
+                      </h5>
+                      {results.length > 0 && (
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => {
+                            setResults([]);
+                            addLog('All videos cleared', 'info');
+                          }}
+                          style={{ borderRadius: '6px' }}
+                        >
+                          <Trash2 size={16} className="me-1" />
+                          Clear All
+                        </button>
+                      )}
+                    </div>
+                    <div className="card-body p-4" style={{ minHeight: '400px' }}>
+                      
+                      {results.length === 0 ? (
+                        <div className="text-center py-5">
+                          <div className="mb-4">
+                            <Film size={64} className="text-muted" />
+                          </div>
+                          <h4 className="text-muted mb-3">No videos generated yet</h4>
+                          <p className="text-muted mb-4">Start a generation to see your AI-generated videos here</p>
+                          <button 
+                            className="btn btn-primary btn-lg" 
+                            onClick={() => setActiveTab('setup')}
+                            style={{ borderRadius: '8px' }}
+                          >
+                            <Settings size={20} className="me-2" />
+                            Get Started
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="row g-4">
+                          {results.map((result, index) => (
+                            <div key={index} className="col-md-6 col-lg-4">
+                              <div className="card h-100 border-0 shadow" style={{ borderRadius: '12px' }}>
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-start mb-3">
+                                    <h6 className="card-title text-primary mb-0" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                      {result.jobId}
+                                    </h6>
+                                    <button
+                                      className="btn btn-sm p-1 border-0"
+                                      onClick={() => toggleFavorite(result.id)}
+                                      style={{
+                                        background: 'none',
+                                        color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
+                                        transition: 'color 0.2s ease'
+                                      }}
+                                      title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                    >
+                                      <Heart size={18} fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'} />
+                                    </button>
+                                  </div>
+                                  
+                                  <p className="card-text text-muted mb-3" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                                    {result.prompt}
+                                  </p>
+                                  
+                                  <div className="btn-group w-100" role="group">
+                                    <button
+                                      className="btn btn-primary btn-sm"
+                                      onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                      style={{ borderRadius: '6px 0 0 6px' }}
+                                    >
+                                      <Download size={14} className="me-1" />
+                                      Download
+                                    </button>
+                                    <button
+                                      className="btn btn-outline-primary btn-sm"
+                                      onClick={() => window.open(result.video_url, '_blank')}
+                                      style={{ borderRadius: '0 6px 6px 0' }}
+                                    >
+                                      <ExternalLink size={14} className="me-1" />
+                                      View
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* Footer - Fixed */}
+          <div className="text-center mt-5 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             <small className="text-white-50">
               Runway Automation Pro - AI Video Generation Tool
             </small>
