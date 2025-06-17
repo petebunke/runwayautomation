@@ -1580,10 +1580,10 @@ export default function RunwayAutomationApp() {
               <button 
                 onClick={() => setActiveTab('setup')}
                 className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
+                style={{ fontSize: '1.9rem', fontWeight: 'bold' }}
               >
                 <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
-                Runway Automation Pro
+                Runway Automation
               </button>
             </div>
             <div className="text-end">
