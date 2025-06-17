@@ -1765,7 +1765,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="• 16:9 (Landscape - YouTube, TV, desktop)\n• 9:16 (Portrait - TikTok, Instagram Stories, mobile)\n• 1:1 (Square - Instagram posts, profile pics)\n• 4:3 (Standard - Classic TV, monitors)\n• 3:4 (Portrait Standard - Print, documents)\n• 21:9 (Cinematic - Ultrawide movies)"
+                                title="<ul><li>16:9 (Landscape - YouTube, TV, desktop)</li><li>9:16 (Portrait - TikTok, Instagram Stories, mobile)</li><li>1:1 (Square - Instagram posts, profile pics)</li><li>4:3 (Standard - Classic TV, monitors)</li>3:4 (Portrait Standard - Print, documents)</li><li>21:9 (Cinematic - Ultrawide movies)</li></ul>"
                               ></i>
                             </label>
                             <select
