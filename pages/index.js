@@ -2461,14 +2461,14 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-4">
-                        <div className="mb-2">
-                          <Film size={60} className="text-muted" />
+                      <div className="text-center py-5">
+                        <div className="mb-3">
+                          <Film size={70} className="text-muted" />
                         </div>
-                        <h5 className="text-muted mb-2">No videos generated yet</h5>
-                        <p className="text-muted mb-3 small">Start a generation process to see your AI-generated videos here</p>
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
                         <button
-                          className="btn btn-primary shadow"
+                          className="btn btn-primary btn-lg shadow"
                           onClick={() => setActiveTab('setup')}
                           style={{ borderRadius: '6px' }}
                         >
