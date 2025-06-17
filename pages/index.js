@@ -1358,127 +1358,6 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  const downloadFavoritedVideos = async () => {
-    const favoritedVideos = results.filter(result => 
-      result.video_url && 
-      result.status === 'completed' && 
-      favoriteVideos.has(result.id)
-    );
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
-
-    try {
-      // Dynamic import of JSZip to avoid SSR issues
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      // Create timestamp for unique folder naming
-      const timestamp = new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'America/Los_Angeles'
-      }).replace(/[/:]/g, '-').replace(', ', '_');
-
-      const folderName = `Favorited Videos (${timestamp})`;
-      const folder = zip.folder(folderName);
-      const videosFolder = folder.folder('Videos');
-      const jsonFolder = folder.folder('JSON');
-
-      // Sort videos by generation and video number for organized download
-      const sortedVideos = favoritedVideos
-        .map(result => ({
-          ...result,
-          filename: generateFilename(result.jobId, result.id)
-        }))
-        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
-
-      // Add each video to the zip with progress tracking
-      for (let i = 0; i < sortedVideos.length; i++) {
-        const result = sortedVideos[i];
-        try {
-          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Verify blob size before adding to zip
-          if (blob.size === 0) {
-            throw new Error('Empty video file received');
-          }
-          
-          // Add video to Videos folder
-          videosFolder.file(result.filename, blob);
-          
-          // Add metadata file to JSON folder
-          const metadata = {
-            id: result.id,
-            prompt: result.prompt,
-            jobId: result.jobId,
-            created_at: result.created_at,
-            image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown',
-            favorited: true
-          };
-          
-          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
-          
-        } catch (error) {
-          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
-        }
-      }
-
-      addLog('🔄 Generating zip file...', 'info');
-      
-      // Generate zip with no compression for faster processing
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'STORE',
-        compressionOptions: { level: 0 }
-      });
-
-      // Calculate final zip size
-      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
-      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
-
-      // Create download link and trigger download
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${folderName}.zip`;
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
-      console.error('Zip creation error:', error);
-    } finally {
-      setIsDownloadingAll(false);
-    }
-  };
-
   const exportResults = () => {
     const exportData = {
       generated_at: new Date().toISOString(),
@@ -1656,42 +1535,6 @@ export default function RunwayAutomationApp() {
                         backgroundColor: '#4dd0ff'
                       }}
                     >
-                      <Key className="text-white" size={32} />
-                    </div>
-                    
-                    <div className="text-white flex-grow-1">
-                      <h4 className="mb-0 fw-bold">API Setup</h4>
-                    </div>
-                  </div>
-                  
-                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-          {activeTab === 'setup' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                  <div 
-                    className="position-relative d-flex align-items-center justify-content-between" 
-                    style={{ 
-                      height: '60px',
-                      borderRadius: '8px 8px 0 0',
-                      backgroundColor: HEADER_BLUE,
-                      paddingLeft: '105px',
-                      paddingRight: '30px'
-                    }}
-                  >
-                    <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '80px', 
-                        height: '80px',
-                        left: '20px',
-                        top: '20px',
-                        zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        backgroundColor: '#4dd0ff'
-                      }}
-                    >
                       <Settings className="text-white" size={32} />
                     </div>
                     
@@ -1711,193 +1554,7 @@ export default function RunwayAutomationApp() {
                               <h5 className="mb-0 fw-bold">API Setup</h5>
                             </div>
                           </div>
-                            <div className="mb-4">
-                              <label className="form-label fw-bold">Video Prompt</label>
-                              <div className="position-relative">
-                                <textarea
-                                  className="form-control"
-                                  rows="3"
-                                  value={prompt}
-                                  onChange={(e) => setPrompt(e.target.value)}
-                                  placeholder=""
-                                  style={{ borderRadius: '8px' }}
-                                />
-                                {!prompt && (
-                                  <div 
-                                    className="position-absolute" 
-                                    style={{ 
-                                      left: '16px', 
-                                      top: '12px', 
-                                      pointerEvents: 'none',
-                                      color: '#6c757d',
-                                      fontSize: '16px'
-                                    }}
-                                  >
-                                    Add an image then describe your shot.{' '}
-                                    <a 
-                                      href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      className="text-decoration-underline"
-                                      style={{ 
-                                        color: '#6c757d',
-                                        pointerEvents: 'auto'
-                                      }}
-                                    >
-                                      View guide
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="mb-4">
-                              <label className="form-label fw-bold">
-                                Image
-                                <i 
-                                  className="bi bi-info-circle ms-1 text-primary" 
-                                  style={{ cursor: 'help' }}
-                                  data-bs-toggle="tooltip" 
-                                  data-bs-placement="top" 
-                                  title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
-                                ></i>
-                              </label>
-                              
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                style={{ display: 'none' }}
-                              />
-                              
-                              {!imageUrl ? (
-                                <div 
-                                  className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
-                                  style={{ 
-                                    borderColor: '#dee2e6', 
-                                    backgroundColor: '#f8f9fa',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    minHeight: '120px'
-                                  }}
-                                  onClick={triggerImageUpload}
-                                  onMouseEnter={(e) => {
-                                    e.target.style.borderColor = '#0d6efd';
-                                    e.target.style.backgroundColor = '#e7f3ff';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.target.style.borderColor = '#dee2e6';
-                                    e.target.style.backgroundColor = '#f8f9fa';
-                                  }}
-                                >
-                                  <div>
-                                    {isUploadingImage ? (
-                                      <>
-                                        <div className="spinner-border text-primary mb-2" role="status">
-                                          <span className="visually-hidden">Uploading...</span>
-                                        </div>
-                                        <div className="text-muted">Uploading image...</div>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <FolderOpen size={48} className="text-primary mb-2" />
-                                        <div className="text-primary fw-bold mb-1">Click to upload image</div>
-                                        <div className="text-muted small">or paste image URL below</div>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="position-relative">
-                                  <img 
-                                    src={imageUrl} 
-                                    alt="Uploaded image preview"
-                                    className="img-fluid rounded border w-100"
-                                    style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
-                                    onLoad={handleImageLoad}
-                                    onError={handleImageError}
-                                  />
-                                  <button
-                                    className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
-                                    onClick={() => {
-                                      setImageUrl('');
-                                      setImageError(false);
-                                      if (fileInputRef.current) {
-                                        fileInputRef.current.value = '';
-                                      }
-                                    }}
-                                    style={{ 
-                                      borderRadius: '50%', 
-                                      width: '32px', 
-                                      height: '32px',
-                                      fontSize: '20px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      lineHeight: '1',
-                                      padding: '0'
-                                    }}
-                                  >
-                                    <span style={{ transform: 'translateY(-1px)' }}>×</span>
-                                  </button>
-                                </div>
-                              )}
-                              
-                              <div className="mt-3">
-                                <input
-                                  type="url"
-                                  className="form-control"
-                                  value={imageUrl}
-                                  onChange={(e) => setImageUrl(e.target.value)}
-                                  placeholder="Or paste image URL here..."
-                                  style={{ borderRadius: '8px' }}
-                                />
-                              </div>
-                              
-                              <div className="mt-4">
-                                <button
-                                  className="btn btn-success w-100 shadow"
-                                  onClick={() => {
-                                    setActiveTab('generation');
-                                    setTimeout(() => {
-                                      if (!isRunning) {
-                                        generateVideos();
-                                      }
-                                    }, 100);
-                                  }}
-                                  disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
-                                  style={{ 
-                                    borderRadius: '8px', 
-                                    fontWeight: '600',
-                                    backgroundColor: '#28a745',
-                                    borderColor: '#28a745',
-                                    opacity: '1',
-                                    transition: 'opacity 0.1s ease-in-out',
-                                    padding: '8px 16px'
-                                  }}
-                                  onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                                  onMouseLeave={(e) => e.target.style.opacity = '1'}
-                                >
-                                  <Play size={20} className="me-2" />
-                                  Generate Video{concurrency > 1 ? 's' : ''}
-                                  {concurrency > 1 && (
-                                    <span className="ms-2 badge bg-light text-dark">
-                                      {concurrency}
-                                    </span>
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                          <div className="card-body">
                             <div className="mb-4">
                               <div className="d-flex justify-content-between align-items-center mb-2">
                                 <label className="form-label fw-bold mb-0">Runway API Key</label>
@@ -2124,182 +1781,184 @@ export default function RunwayAutomationApp() {
                             </div>
                           </div>
                           <div className="card-body">
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt</label>
-                          <div className="position-relative">
-                            <textarea
-                              className="form-control"
-                              rows="3"
-                              value={prompt}
-                              onChange={(e) => setPrompt(e.target.value)}
-                              placeholder=""
-                              style={{ borderRadius: '8px' }}
-                            />
-                            {!prompt && (
-                              <div 
-                                className="position-absolute" 
-                                style={{ 
-                                  left: '16px', 
-                                  top: '12px', 
-                                  pointerEvents: 'none',
-                                  color: '#6c757d',
-                                  fontSize: '16px'
-                                }}
-                              >
-                                Add an image then describe your shot.{' '}
-                                <a 
-                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-decoration-underline"
-                                  style={{ 
-                                    color: '#6c757d',
-                                    pointerEvents: 'auto'
-                                  }}
-                                >
-                                  View guide
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">
-                            Image
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
-                            ></i>
-                          </label>
-                          
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            style={{ display: 'none' }}
-                          />
-                          
-                          {!imageUrl ? (
-                            <div 
-                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
-                              style={{ 
-                                borderColor: '#dee2e6', 
-                                backgroundColor: '#f8f9fa',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                minHeight: '120px'
-                              }}
-                              onClick={triggerImageUpload}
-                              onMouseEnter={(e) => {
-                                e.target.style.borderColor = '#0d6efd';
-                                e.target.style.backgroundColor = '#e7f3ff';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.borderColor = '#dee2e6';
-                                e.target.style.backgroundColor = '#f8f9fa';
-                              }}
-                            >
-                              <div>
-                                {isUploadingImage ? (
-                                  <>
-                                    <div className="spinner-border text-primary mb-2" role="status">
-                                      <span className="visually-hidden">Uploading...</span>
-                                    </div>
-                                    <div className="text-muted">Uploading image...</div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <FolderOpen size={48} className="text-primary mb-2" />
-                                    <div className="text-primary fw-bold mb-1">Click to upload image</div>
-                                    <div className="text-muted small">or paste image URL below</div>
-                                  </>
+                            <div className="mb-4">
+                              <label className="form-label fw-bold">Video Prompt</label>
+                              <div className="position-relative">
+                                <textarea
+                                  className="form-control"
+                                  rows="3"
+                                  value={prompt}
+                                  onChange={(e) => setPrompt(e.target.value)}
+                                  placeholder=""
+                                  style={{ borderRadius: '8px' }}
+                                />
+                                {!prompt && (
+                                  <div 
+                                    className="position-absolute" 
+                                    style={{ 
+                                      left: '16px', 
+                                      top: '12px', 
+                                      pointerEvents: 'none',
+                                      color: '#6c757d',
+                                      fontSize: '16px'
+                                    }}
+                                  >
+                                    Add an image then describe your shot.{' '}
+                                    <a 
+                                      href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-decoration-underline"
+                                      style={{ 
+                                        color: '#6c757d',
+                                        pointerEvents: 'auto'
+                                      }}
+                                    >
+                                      View guide
+                                    </a>
+                                  </div>
                                 )}
                               </div>
                             </div>
-                          ) : (
-                            <div className="position-relative">
-                              <img 
-                                src={imageUrl} 
-                                alt="Uploaded image preview"
-                                className="img-fluid rounded border w-100"
-                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
-                                onLoad={handleImageLoad}
-                                onError={handleImageError}
+
+                            <div className="mb-4">
+                              <label className="form-label fw-bold">
+                                Image
+                                <i 
+                                  className="bi bi-info-circle ms-1 text-primary" 
+                                  style={{ cursor: 'help' }}
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="top" 
+                                  title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
+                                ></i>
+                              </label>
+                              
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                style={{ display: 'none' }}
                               />
-                              <button
-                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
-                                onClick={() => {
-                                  setImageUrl('');
-                                  setImageError(false);
-                                  if (fileInputRef.current) {
-                                    fileInputRef.current.value = '';
-                                  }
-                                }}
-                                style={{ 
-                                  borderRadius: '50%', 
-                                  width: '32px', 
-                                  height: '32px',
-                                  fontSize: '20px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  lineHeight: '1',
-                                  padding: '0'
-                                }}
-                              >
-                                <span style={{ transform: 'translateY(-1px)' }}>×</span>
-                              </button>
-                            </div>
-                          )}
-                          
-                          <div className="mt-3">
-                            <input
-                              type="url"
-                              className="form-control"
-                              value={imageUrl}
-                              onChange={(e) => setImageUrl(e.target.value)}
-                              placeholder="Or paste image URL here..."
-                              style={{ borderRadius: '8px' }}
-                            />
-                          </div>
-                          
-                          <div className="mt-4">
-                            <button
-                              className="btn btn-success w-100 shadow"
-                              onClick={() => {
-                                setActiveTab('generation');
-                                setTimeout(() => {
-                                  if (!isRunning) {
-                                    generateVideos();
-                                  }
-                                }, 100);
-                              }}
-                              disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
-                              style={{ 
-                                borderRadius: '8px', 
-                                fontWeight: '600',
-                                backgroundColor: '#28a745',
-                                borderColor: '#28a745',
-                                opacity: '1',
-                                transition: 'opacity 0.1s ease-in-out',
-                                padding: '8px 16px'
-                              }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
-                            >
-                              <Play size={20} className="me-2" />
-                              Generate Video{concurrency > 1 ? 's' : ''}
-                              {concurrency > 1 && (
-                                <span className="ms-2 badge bg-light text-dark">
-                                  {concurrency}
-                                </span>
+                              
+                              {!imageUrl ? (
+                                <div 
+                                  className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
+                                  style={{ 
+                                    borderColor: '#dee2e6', 
+                                    backgroundColor: '#f8f9fa',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    minHeight: '120px'
+                                  }}
+                                  onClick={triggerImageUpload}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.borderColor = '#0d6efd';
+                                    e.target.style.backgroundColor = '#e7f3ff';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.borderColor = '#dee2e6';
+                                    e.target.style.backgroundColor = '#f8f9fa';
+                                  }}
+                                >
+                                  <div>
+                                    {isUploadingImage ? (
+                                      <>
+                                        <div className="spinner-border text-primary mb-2" role="status">
+                                          <span className="visually-hidden">Uploading...</span>
+                                        </div>
+                                        <div className="text-muted">Uploading image...</div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FolderOpen size={48} className="text-primary mb-2" />
+                                        <div className="text-primary fw-bold mb-1">Click to upload image</div>
+                                        <div className="text-muted small">or paste image URL below</div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="position-relative">
+                                  <img 
+                                    src={imageUrl} 
+                                    alt="Uploaded image preview"
+                                    className="img-fluid rounded border w-100"
+                                    style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
+                                    onLoad={handleImageLoad}
+                                    onError={handleImageError}
+                                  />
+                                  <button
+                                    className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                    onClick={() => {
+                                      setImageUrl('');
+                                      setImageError(false);
+                                      if (fileInputRef.current) {
+                                        fileInputRef.current.value = '';
+                                      }
+                                    }}
+                                    style={{ 
+                                      borderRadius: '50%', 
+                                      width: '32px', 
+                                      height: '32px',
+                                      fontSize: '20px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      lineHeight: '1',
+                                      padding: '0'
+                                    }}
+                                  >
+                                    <span style={{ transform: 'translateY(-1px)' }}>×</span>
+                                  </button>
+                                </div>
                               )}
-                            </button>
+                              
+                              <div className="mt-3">
+                                <input
+                                  type="url"
+                                  className="form-control"
+                                  value={imageUrl}
+                                  onChange={(e) => setImageUrl(e.target.value)}
+                                  placeholder="Or paste image URL here..."
+                                  style={{ borderRadius: '8px' }}
+                                />
+                              </div>
+                              
+                              <div className="mt-4">
+                                <button
+                                  className="btn btn-success w-100 shadow"
+                                  onClick={() => {
+                                    setActiveTab('generation');
+                                    setTimeout(() => {
+                                      if (!isRunning) {
+                                        generateVideos();
+                                      }
+                                    }, 100);
+                                  }}
+                                  disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
+                                  style={{ 
+                                    borderRadius: '8px', 
+                                    fontWeight: '600',
+                                    backgroundColor: '#28a745',
+                                    borderColor: '#28a745',
+                                    opacity: '1',
+                                    transition: 'opacity 0.1s ease-in-out',
+                                    padding: '8px 16px'
+                                  }}
+                                  onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                                  onMouseLeave={(e) => e.target.style.opacity = '1'}
+                                >
+                                  <Play size={20} className="me-2" />
+                                  Generate Video{concurrency > 1 ? 's' : ''}
+                                  {concurrency > 1 && (
+                                    <span className="ms-2 badge bg-light text-dark">
+                                      {concurrency}
+                                    </span>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2827,4 +2486,125 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
+}zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const downloadFavoritedVideos = async () => {
+    const favoritedVideos = results.filter(result => 
+      result.video_url && 
+      result.status === 'completed' && 
+      favoriteVideos.has(result.id)
+    );
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      // Dynamic import of JSZip to avoid SSR issues
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      // Create timestamp for unique folder naming
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Favorited Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      // Sort videos by generation and video number for organized download
+      const sortedVideos = favoritedVideos
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      // Add each video to the zip with progress tracking
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Verify blob size before adding to zip
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          // Add video to Videos folder
+          videosFolder.file(result.filename, blob);
+          
+          // Add metadata file to JSON folder
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown',
+            favorited: true
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      // Generate zip with no compression for faster processing
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      // Calculate final zip size
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      // Create download link and trigger download
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${
