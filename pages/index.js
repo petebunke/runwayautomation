@@ -1532,7 +1532,7 @@ export default function RunwayAutomationApp() {
     <>
       <Head>
         <title>Runway Automation Pro - AI Video Generation</title>
-        <meta name="description" content="Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file." />
+        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
@@ -1588,7 +1588,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file.
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file.
               </p>
             </div>
           </div>
