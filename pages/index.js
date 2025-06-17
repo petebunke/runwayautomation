@@ -2283,7 +2283,7 @@ export default function RunwayAutomationApp() {
                           <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
                         </button>
                       </div>
-                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', lineHeight: '1.4' }}>
+                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', lineHeight: '.4' }}>
                         {logs.map((log, index) => {
                           // Check if message contains actual line breaks
                           const hasLineBreaks = log.message.includes('\n');
