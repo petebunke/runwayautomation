@@ -2599,8 +2599,15 @@ export default function RunwayAutomationApp() {
           <div className="text-center mt-4">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+           <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
+                  alt="Powered by Runway" 
+                  style={{ height: '20px', width: 'auto' }}
+                />
+              </a>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3" style={{ marginLeft: '10px' }}>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3" style={{ marginLeft: '10px' marginTop:'10px' }}>
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
                 <img 
                   src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
