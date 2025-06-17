@@ -742,9 +742,9 @@ export default function RunwayAutomationApp() {
 
     while (pollCount < maxPolls) {
       try {
-        const timeoutMs = consecutiveErrors > 0 ? 60000 : 
-                          isThrottled ? 90000 : 
-                          lastKnownStatus === 'RUNNING' ? 45000 : 30000;
+        const timeoutMs = consecutiveErrors > 0 ? 30000 : 
+                          isThrottled ? 45000 : 
+                          lastKnownStatus === 'RUNNING' ? 20000 : 15000;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -822,7 +822,7 @@ export default function RunwayAutomationApp() {
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
-          await new Promise(resolve => setTimeout(resolve, 15000));
+          await new Promise(resolve => setTimeout(resolve, 4000));
           pollCount++;
           continue;
         }
@@ -845,9 +845,9 @@ export default function RunwayAutomationApp() {
           
           if (stuckInPendingCount >= maxStuckInPending) {
             addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING for ${stuckInPendingCount} cycles, using longer polling interval...`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 25000));
+            await new Promise(resolve => setTimeout(resolve, 12000));
           } else {
-            await new Promise(resolve => setTimeout(resolve, 10000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
           }
         } else if (task.status === 'RUNNING') {
           if (!processingStartTime) processingStartTime = Date.now();
@@ -937,11 +937,11 @@ export default function RunwayAutomationApp() {
         }
 
         const pollInterval = 
-          task.status === 'PENDING' && stuckInPendingCount > 8 ? 25000 :
-          task.status === 'RUNNING' ? 8000 :
-          task.status === 'THROTTLED' ? 20000 :
-          isThrottled ? 25000 :
-          10000;
+          task.status === 'PENDING' && stuckInPendingCount > 8 ? 12000 :
+          task.status === 'RUNNING' ? 4000 :
+          task.status === 'THROTTLED' ? 10000 :
+          isThrottled ? 12000 :
+          5000;
         
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         pollCount++;
@@ -2130,7 +2130,7 @@ export default function RunwayAutomationApp() {
                       <Video className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white text-center flex-grow-1">
+                    <div className="text-white flex-grow-1">
                       <h4 className="mb-0 fw-bold">Video Generation</h4>
                     </div>
                     
@@ -2376,7 +2376,7 @@ export default function RunwayAutomationApp() {
                       <Download className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white text-center flex-grow-1">
+                    <div className="text-white flex-grow-1">
                       <h4 className="mb-0 fw-bold">Generated Videos</h4>
                     </div>
                     
@@ -2461,7 +2461,7 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-5">
+                      <div className="text-center py-5" style={{ minHeight: '400px' }}>
                         <div className="mb-3">
                           <Film size={80} className="text-muted" />
                         </div>
@@ -2604,7 +2604,7 @@ export default function RunwayAutomationApp() {
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2">
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-1">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
                 <img 
                   src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
