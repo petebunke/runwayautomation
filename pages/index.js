@@ -11,8 +11,6 @@ export default function RunwayAutomationApp() {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
   const [concurrency, setConcurrency] = useState(1);
-  const [minWait, setMinWait] = useState(8);
-  const [maxWait, setMaxWait] = useState(15);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -1358,51 +1356,6 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  const exportResults = () => {
-    const exportData = {
-      generated_at: new Date().toISOString(),
-      total_videos: results.length,
-      completed_videos: results.filter(r => r.status === 'completed').length,
-      favorited_videos: results.filter(r => favoriteVideos.has(r.id)).length,
-      configuration: {
-        model,
-        aspect_ratio: aspectRatio,
-        duration,
-        concurrency
-      },
-      statistics: {
-        generation_counter: generationCounter,
-        video_counter: videoCounter,
-        average_processing_time: results.length > 0 ? 
-          Math.round(results.reduce((sum, r) => sum + (r.processingTime || 0), 0) / results.length) + 's' : 
-          'N/A'
-      },
-      videos: results.map(result => ({
-        id: result.id,
-        prompt: result.prompt,
-        video_url: result.video_url,
-        thumbnail_url: result.thumbnail_url,
-        image_url: result.image_url,
-        status: result.status,
-        created_at: result.created_at,
-        jobId: result.jobId,
-        processingTime: result.processingTime,
-        favorited: favoriteVideos.has(result.id),
-        filename: generateFilename(result.jobId, result.id)
-      }))
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `runway_generation_export_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    addLog('📊 Results exported to JSON with enhanced metadata', 'success');
-  };
-
   if (!mounted) {
     return null;
   }
@@ -2486,10 +2439,7 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}zipSizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+} 'error');
       console.error('Zip creation error:', error);
     } finally {
       setIsDownloadingAll(false);
@@ -2607,4 +2557,7 @@ export default function RunwayAutomationApp() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message,
