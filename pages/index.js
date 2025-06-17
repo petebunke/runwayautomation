@@ -1532,7 +1532,7 @@ export default function RunwayAutomationApp() {
     <>
       <Head>
         <title>Runway Automation Pro - AI Video Generation</title>
-        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta name="description" content="Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
@@ -1588,7 +1588,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                Batch generate up to 20 videos at once from a single prompt. Download all videos as MP4 and JSON.
+                Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON.
               </p>
             </div>
           </div>
@@ -1668,7 +1668,7 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
+                            <label className="form-label fw-bold mb-0">Runway API Key</label>
                             {runwayApiKey && (
                               <button
                                 type="button"
@@ -1692,7 +1692,7 @@ export default function RunwayAutomationApp() {
                           <div className="form-text">
                             <ExternalLink size={14} className="me-1" />
                             <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from RunwayML Developer Portal
+                              Get your API key from Runway Developer Portal
                             </a>
                           </div>
                           
@@ -1731,7 +1731,7 @@ export default function RunwayAutomationApp() {
                             <CreditCard size={20} className="text-warning me-2" />
                             <strong>Credits Required</strong>
                           </div>
-                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
+                          <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
                           <ul className="small mb-0 ps-3">
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
@@ -1765,7 +1765,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="<ul><li>16:9 (Landscape - YouTube, TV, desktop)</li><li>9:16 (Portrait - TikTok, Instagram Stories, mobile)</li><li>1:1 (Square - Instagram posts, profile pics)</li><li>4:3 (Standard - Classic TV, monitors)</li>3:4 (Portrait Standard - Print, documents)</li><li>21:9 (Cinematic - Ultrawide movies)</li></ul>"
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)\n• 9:16 (Portrait - TikTok, Instagram Stories, mobile)\n• 1:1 (Square - Instagram posts, profile pics)\n• 4:3 (Standard - Classic TV, monitors)\n• 3:4 (Portrait Standard - Print, documents)\n• 21:9 (Cinematic - Ultrawide movies)"
                               ></i>
                             </label>
                             <select
