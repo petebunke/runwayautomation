@@ -2461,7 +2461,7 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-5">
+                      <div className="text-center py-4">
                         <div className="mb-3">
                           <Film size={70} className="text-muted" />
                         </div>
