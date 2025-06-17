@@ -1654,6 +1654,7 @@ export default function RunwayAutomationApp() {
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
+                            padding-bottom:'3px'
                           }}
                         >
                           <Key className="text-white" size={32} />
@@ -1903,6 +1904,7 @@ export default function RunwayAutomationApp() {
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             backgroundColor: '#4dd0ff'
+                            padding-bottom:'3px'
                           }}
                         >
                           <Film className="text-white" size={32} />
@@ -2113,6 +2115,7 @@ export default function RunwayAutomationApp() {
                       backgroundColor: HEADER_BLUE,
                       paddingLeft: '105px',
                       paddingRight: '30px'
+                      paddingBottom: '3px'
                     }}
                   >
                     <div 
@@ -2359,6 +2362,7 @@ export default function RunwayAutomationApp() {
                       backgroundColor: HEADER_BLUE,
                       paddingLeft: '105px',
                       paddingRight: '30px'
+                      paddingBottom: '3px'
                     }}
                   >
                     <div 
