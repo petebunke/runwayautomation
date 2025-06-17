@@ -1653,7 +1653,7 @@ export default function RunwayAutomationApp() {
                             top: '20px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
+                            backgroundColor: '#4dd0ff',
                             paddingBottom:'3px'
                           }}
                         >
@@ -1903,7 +1903,7 @@ export default function RunwayAutomationApp() {
                             top: '20px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
+                            backgroundColor: '#4dd0ff',
                             paddingBottom:'3px'
                           }}
                         >
@@ -2114,7 +2114,7 @@ export default function RunwayAutomationApp() {
                       borderRadius: '8px 8px 0 0',
                       backgroundColor: HEADER_BLUE,
                       paddingLeft: '105px',
-                      paddingRight: '30px'
+                      paddingRight: '30px',
                       paddingBottom: '3px'
                     }}
                   >
@@ -2361,7 +2361,7 @@ export default function RunwayAutomationApp() {
                       borderRadius: '8px 8px 0 0',
                       backgroundColor: HEADER_BLUE,
                       paddingLeft: '105px',
-                      paddingRight: '30px'
+                      paddingRight: '30px',
                       paddingBottom: '3px'
                     }}
                   >
