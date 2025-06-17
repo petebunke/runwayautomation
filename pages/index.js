@@ -119,44 +119,33 @@ export default function RunwayAutomationApp() {
   // Initialize tooltips function
   const initializeTooltips = () => {
     if (typeof window !== 'undefined' && window.bootstrap) {
-      // Dispose of existing tooltips first
-      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      existingTooltips.forEach(function (tooltipEl) {
-        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
-        if (existingTooltip) {
-          existingTooltip.dispose();
-        }
-      });
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        // Dispose of existing tooltips first
+        const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        existingTooltips.forEach(function (tooltipEl) {
+          const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
+          if (existingTooltip) {
+            existingTooltip.dispose();
+          }
+        });
 
-      // Initialize new tooltips
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new window.bootstrap.Tooltip(tooltipTriggerEl);
-      });
+        // Initialize new tooltips
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+          new window.bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true
+          });
+        });
+      }, 100);
     }
   };
 
   // Initialize tooltips on mount and when activeTab changes
   useEffect(() => {
     if (!mounted) return;
-    
-    // Use setTimeout to ensure DOM is fully rendered
-    setTimeout(() => {
-      initializeTooltips();
-    }, 100);
-  }, [mounted, activeTab]);
-
-  // Also initialize tooltips when component renders
-  useEffect(() => {
-    if (!mounted) return;
-    
-    // Additional initialization after any state changes that might affect tooltips
-    const timeoutId = setTimeout(() => {
-      initializeTooltips();
-    }, 50);
-
-    return () => clearTimeout(timeoutId);
-  }, [mounted, model]); // Re-initialize when model changes (affects aspect ratio options)
+    initializeTooltips();
+  }, [mounted, activeTab, model]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -1428,6 +1417,8 @@ export default function RunwayAutomationApp() {
     return null;
   }
 
+  const aspectRatioTooltipText = "- 16:9 (YouTube, TV, desktop)<br/>- 9:16 (TikTok, FB Reels, IG Stories)<br/>- 1:1 (Instagram posts, profile pics)<br/>- 4:3 (Classic TV, monitors)<br/>- 3:4 (Print, documents)<br/>- 21:9 (Ultrawide movies)";
+
   return (
     <>
       <Head>
@@ -1665,7 +1656,8 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="- 16:9 (YouTube, TV, desktop)&#10;- 9:16 (TikTok, FB Reels, IG Stories)&#10;- 1:1 (Instagram posts, profile pics)&#10;- 4:3 (Classic TV, monitors)&#10;- 3:4 (Print, documents)&#10;- 21:9 (Ultrawide movies)"
+                                data-bs-html="true"
+                                title={aspectRatioTooltipText}
                               ></i>
                             </label>
                             <select
