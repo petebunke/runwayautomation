@@ -1633,288 +1633,497 @@ export default function RunwayAutomationApp() {
           {activeTab === 'setup' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="row g-4">
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                      <div 
-                        className="position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '60px',
-                          borderRadius: '8px 8px 0 0',
-                          backgroundColor: HEADER_BLUE
-                        }}
-                      >
-                        <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '80px', 
-                            height: '80px',
-                            left: '20px',
-                            top: '20px',
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
-                          }}
-                        >
-                          <Key className="text-white" size={32} />
-                        </div>
-                        
-                        <div className="text-white text-center">
-                          <h4 className="mb-0 fw-bold">API Setup</h4>
-                        </div>
-                      </div>
-                      
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4"></div>
-                        <div className="mb-4">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">Runway API Key</label>
-                            {runwayApiKey && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={clearStoredApiKey}
-                                title="Clear stored API key"
-                                style={{ fontSize: '12px' }}
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
-                          <input
-                            type="password"
-                            className="form-control form-control-lg"
-                            value={runwayApiKey}
-                            onChange={(e) => setRunwayApiKey(e.target.value)}
-                            placeholder="key_xxx..."
-                            style={{ borderRadius: '8px' }}
-                          />
-                          <div className="form-text">
-                            <ExternalLink size={14} className="me-1" />
-                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from Runway Developer Portal
-                            </a>
-                          </div>
-                          
-                          {runwayApiKey && (
-                            <div className="mt-2">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-info"
-                                onClick={async () => {
-                                  addLog('🔍 Testing API connectivity...', 'info');
-                                  try {
-                                    const response = await fetch('/api/runway-debug', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ apiKey: runwayApiKey })
-                                    });
-                                    const data = await response.json();
-                                    addLog('✅ Debug test completed - check browser console for details', 'success');
-                                    console.log('=== RUNWAY API DEBUG RESULTS ===');
-                                    console.log(JSON.stringify(data, null, 2));
-                                  } catch (error) {
-                                    addLog('❌ Debug test failed: ' + error.message, 'error');
-                                    console.error('Debug test error:', error);
-                                  }
-                                }}
-                                style={{ fontSize: '12px' }}
-                              >
-                                🔍 Test API
-                              </button>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '60px',
+                      borderRadius: '8px 8px 0 0',
+                      backgroundColor: HEADER_BLUE,
+                      paddingLeft: '105px',
+                      paddingRight: '30px'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '20px',
+                        zIndex: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        backgroundColor: '#4dd0ff'
+                      }}
+                    >
+                      <Key className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white flex-grow-1">
+                      <h4 className="mb-0 fw-bold">API Setup</h4>
+                    </div>
+                  </div>
+                  
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
+          {activeTab === 'setup' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-10">
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '60px',
+                      borderRadius: '8px 8px 0 0',
+                      backgroundColor: HEADER_BLUE,
+                      paddingLeft: '105px',
+                      paddingRight: '30px'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '20px',
+                        zIndex: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        backgroundColor: '#4dd0ff'
+                      }}
+                    >
+                      <Settings className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white flex-grow-1">
+                      <h4 className="mb-0 fw-bold">Setup</h4>
+                    </div>
+                  </div>
+                  
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
+                    <div className="row g-4">
+                      <div className="col-lg-6">
+                        <div className="card border" style={{ borderRadius: '8px' }}>
+                          <div className="card-header bg-light">
+                            <div className="d-flex align-items-center">
+                              <Key size={20} className="text-primary me-2" />
+                              <h5 className="mb-0 fw-bold">API Setup</h5>
                             </div>
-                          )}
-                        </div>
-
-                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                          <div className="d-flex align-items-center mb-2">
-                            <CreditCard size={20} className="text-warning me-2" />
-                            <strong>Credits Required</strong>
                           </div>
-                          <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
-                          <ul className="small mb-0 ps-3">
-                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
-                            <li>Minimum $10 (1000 credits)</li>
-                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>Credits are separate from web app credits</li>
-                          </ul>
-                        </div>
+                            <div className="mb-4">
+                              <label className="form-label fw-bold">Video Prompt</label>
+                              <div className="position-relative">
+                                <textarea
+                                  className="form-control"
+                                  rows="3"
+                                  value={prompt}
+                                  onChange={(e) => setPrompt(e.target.value)}
+                                  placeholder=""
+                                  style={{ borderRadius: '8px' }}
+                                />
+                                {!prompt && (
+                                  <div 
+                                    className="position-absolute" 
+                                    style={{ 
+                                      left: '16px', 
+                                      top: '12px', 
+                                      pointerEvents: 'none',
+                                      color: '#6c757d',
+                                      fontSize: '16px'
+                                    }}
+                                  >
+                                    Add an image then describe your shot.{' '}
+                                    <a 
+                                      href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-decoration-underline"
+                                      style={{ 
+                                        color: '#6c757d',
+                                        pointerEvents: 'auto'
+                                      }}
+                                    >
+                                      View guide
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
 
-                        <div className="row g-3">
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Model</label>
-                            <select
-                              className="form-select"
-                              value={model}
-                              onChange={(e) => setModel(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {modelOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="mb-4">
+                              <label className="form-label fw-bold">
+                                Image
+                                <i 
+                                  className="bi bi-info-circle ms-1 text-primary" 
+                                  style={{ cursor: 'help' }}
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="top" 
+                                  title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
+                                ></i>
+                              </label>
+                              
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                style={{ display: 'none' }}
+                              />
+                              
+                              {!imageUrl ? (
+                                <div 
+                                  className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
+                                  style={{ 
+                                    borderColor: '#dee2e6', 
+                                    backgroundColor: '#f8f9fa',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    minHeight: '120px'
+                                  }}
+                                  onClick={triggerImageUpload}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.borderColor = '#0d6efd';
+                                    e.target.style.backgroundColor = '#e7f3ff';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.borderColor = '#dee2e6';
+                                    e.target.style.backgroundColor = '#f8f9fa';
+                                  }}
+                                >
+                                  <div>
+                                    {isUploadingImage ? (
+                                      <>
+                                        <div className="spinner-border text-primary mb-2" role="status">
+                                          <span className="visually-hidden">Uploading...</span>
+                                        </div>
+                                        <div className="text-muted">Uploading image...</div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FolderOpen size={48} className="text-primary mb-2" />
+                                        <div className="text-primary fw-bold mb-1">Click to upload image</div>
+                                        <div className="text-muted small">or paste image URL below</div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="position-relative">
+                                  <img 
+                                    src={imageUrl} 
+                                    alt="Uploaded image preview"
+                                    className="img-fluid rounded border w-100"
+                                    style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
+                                    onLoad={handleImageLoad}
+                                    onError={handleImageError}
+                                  />
+                                  <button
+                                    className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                    onClick={() => {
+                                      setImageUrl('');
+                                      setImageError(false);
+                                      if (fileInputRef.current) {
+                                        fileInputRef.current.value = '';
+                                      }
+                                    }}
+                                    style={{ 
+                                      borderRadius: '50%', 
+                                      width: '32px', 
+                                      height: '32px',
+                                      fontSize: '20px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      lineHeight: '1',
+                                      padding: '0'
+                                    }}
+                                  >
+                                    <span style={{ transform: 'translateY(-1px)' }}>×</span>
+                                  </button>
+                                </div>
+                              )}
+                              
+                              <div className="mt-3">
+                                <input
+                                  type="url"
+                                  className="form-control"
+                                  value={imageUrl}
+                                  onChange={(e) => setImageUrl(e.target.value)}
+                                  placeholder="Or paste image URL here..."
+                                  style={{ borderRadius: '8px' }}
+                                />
+                              </div>
+                              
+                              <div className="mt-4">
+                                <button
+                                  className="btn btn-success w-100 shadow"
+                                  onClick={() => {
+                                    setActiveTab('generation');
+                                    setTimeout(() => {
+                                      if (!isRunning) {
+                                        generateVideos();
+                                      }
+                                    }, 100);
+                                  }}
+                                  disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
+                                  style={{ 
+                                    borderRadius: '8px', 
+                                    fontWeight: '600',
+                                    backgroundColor: '#28a745',
+                                    borderColor: '#28a745',
+                                    opacity: '1',
+                                    transition: 'opacity 0.1s ease-in-out',
+                                    padding: '8px 16px'
+                                  }}
+                                  onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                                  onMouseLeave={(e) => e.target.style.opacity = '1'}
+                                >
+                                  <Play size={20} className="me-2" />
+                                  Generate Video{concurrency > 1 ? 's' : ''}
+                                  {concurrency > 1 && (
+                                    <span className="ms-2 badge bg-light text-dark">
+                                      {concurrency}
+                                    </span>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
                           </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              Aspect Ratio
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="16:9 for YouTube, TV, and desktop. 9:16 for TikTok, FB Reels, and IG Stories. 1:1 for IG posts and profile pics. 4:3 for classic TV and monitors. 3:4 for print and documents. 21:9 for ultrawide movies."
-                              ></i>
-                            </label>
-                            <select
-                              className="form-select"
-                              value={aspectRatio}
-                              onChange={(e) => setAspectRatio(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {aspectRatioOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Duration (seconds)</label>
-                            <select
-                              className="form-select"
-                              value={duration}
-                              onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              <option value={5}>5 seconds</option>
-                              <option value={10}>10 seconds</option>
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              # of Videos Generated
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
-                              ></i>
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="20"
-                              className="form-control"
-                              value={concurrency}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value) || 1;
-                                const safeValue = Math.min(Math.max(value, 1), 20);
-                                setConcurrency(safeValue);
-                                
-                                if (value > 20) {
-                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
-                                }
-                              }}
-                              style={{ borderRadius: '8px' }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">
-                            Video Generation Limits by Tier
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="All tiers can generate up to 20 videos at once, but you will be throttled past your tier's limits."
-                            ></i>
-                          </label>
-                          <div className="table-responsive">
-                            <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead>
-                                <tr style={{ backgroundColor: HEADER_BLUE }}>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Tier</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Criteria</th>
-                                </tr>
-                              </thead>
-                              <tbody className="small">
-                                <tr>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">Default (new accounts)</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">2</td>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">1 day after $50 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">7 days after $100 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">4</td>
-                                  <td className="border-dark">10</td>
-                                  <td className="border-dark">14 days after $1,000 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">20</td>
-                                  <td className="border-dark">7 days after $5,000 purchased</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                          <p className="small text-muted mt-2 mb-0">
-                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
-                          </p>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+                            <div className="mb-4">
+                              <div className="d-flex justify-content-between align-items-center mb-2">
+                                <label className="form-label fw-bold mb-0">Runway API Key</label>
+                                {runwayApiKey && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger"
+                                    onClick={clearStoredApiKey}
+                                    title="Clear stored API key"
+                                    style={{ fontSize: '12px' }}
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+                              <input
+                                type="password"
+                                className="form-control form-control-lg"
+                                value={runwayApiKey}
+                                onChange={(e) => setRunwayApiKey(e.target.value)}
+                                placeholder="key_xxx..."
+                                style={{ borderRadius: '8px' }}
+                              />
+                              <div className="form-text">
+                                <ExternalLink size={14} className="me-1" />
+                                <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                  Get your API key from Runway Developer Portal
+                                </a>
+                              </div>
+                              
+                              {runwayApiKey && (
+                                <div className="mt-2">
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-info"
+                                    onClick={async () => {
+                                      addLog('🔍 Testing API connectivity...', 'info');
+                                      try {
+                                        const response = await fetch('/api/runway-debug', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ apiKey: runwayApiKey })
+                                        });
+                                        const data = await response.json();
+                                        addLog('✅ Debug test completed - check browser console for details', 'success');
+                                        console.log('=== RUNWAY API DEBUG RESULTS ===');
+                                        console.log(JSON.stringify(data, null, 2));
+                                      } catch (error) {
+                                        addLog('❌ Debug test failed: ' + error.message, 'error');
+                                        console.error('Debug test error:', error);
+                                      }
+                                    }}
+                                    style={{ fontSize: '12px' }}
+                                  >
+                                    🔍 Test API
+                                  </button>
+                                </div>
+                              )}
+                            </div>
 
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                      <div 
-                        className="position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '60px',
-                          borderRadius: '8px 8px 0 0',
-                          backgroundColor: HEADER_BLUE
-                        }}
-                      >
-                        <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '80px', 
-                            height: '80px',
-                            left: '20px',
-                            top: '20px',
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
-                          }}
-                        >
-                          <Film className="text-white" size={32} />
-                        </div>
-                        
-                        <div className="text-white text-center">
-                          <h4 className="mb-0 fw-bold">Video Setup</h4>
+                            <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                              <div className="d-flex align-items-center mb-2">
+                                <CreditCard size={20} className="text-warning me-2" />
+                                <strong>Credits Required</strong>
+                              </div>
+                              <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
+                              <ul className="small mb-0 ps-3">
+                                <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                                <li>Minimum $10 (1000 credits)</li>
+                                <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                                <li>Credits are separate from web app credits</li>
+                              </ul>
+                            </div>
+
+                            <div className="row g-3">
+                              <div className="col-6">
+                                <label className="form-label fw-bold">Model</label>
+                                <select
+                                  className="form-select"
+                                  value={model}
+                                  onChange={(e) => setModel(e.target.value)}
+                                  style={{ borderRadius: '8px' }}
+                                >
+                                  {modelOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="col-6">
+                                <label className="form-label fw-bold">
+                                  Aspect Ratio
+                                  <i 
+                                    className="bi bi-info-circle ms-1 text-primary" 
+                                    style={{ cursor: 'help' }}
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-placement="top" 
+                                    title="16:9 for YouTube, TV, and desktop. 9:16 for TikTok, FB Reels, and IG Stories. 1:1 for IG posts and profile pics. 4:3 for classic TV and monitors. 3:4 for print and documents. 21:9 for ultrawide movies."
+                                  ></i>
+                                </label>
+                                <select
+                                  className="form-select"
+                                  value={aspectRatio}
+                                  onChange={(e) => setAspectRatio(e.target.value)}
+                                  style={{ borderRadius: '8px' }}
+                                >
+                                  {aspectRatioOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="col-6">
+                                <label className="form-label fw-bold">Duration (seconds)</label>
+                                <select
+                                  className="form-select"
+                                  value={duration}
+                                  onChange={(e) => setDuration(parseInt(e.target.value))}
+                                  style={{ borderRadius: '8px' }}
+                                >
+                                  <option value={5}>5 seconds</option>
+                                  <option value={10}>10 seconds</option>
+                                </select>
+                              </div>
+
+                              <div className="col-6">
+                                <label className="form-label fw-bold">
+                                  # of Videos Generated
+                                  <i 
+                                    className="bi bi-info-circle ms-1 text-primary" 
+                                    style={{ cursor: 'help' }}
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-placement="top" 
+                                    title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
+                                  ></i>
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="20"
+                                  className="form-control"
+                                  value={concurrency}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value) || 1;
+                                    const safeValue = Math.min(Math.max(value, 1), 20);
+                                    setConcurrency(safeValue);
+                                    
+                                    if (value > 20) {
+                                      addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
+                                    }
+                                  }}
+                                  style={{ borderRadius: '8px' }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mt-4 p-3 bg-light rounded border">
+                              <label className="form-label fw-bold mb-2">
+                                Video Generation Limits by Tier
+                                <i 
+                                  className="bi bi-info-circle ms-1 text-primary" 
+                                  style={{ cursor: 'help' }}
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="top" 
+                                  title="All tiers can generate up to 20 videos at once, but you will be throttled past your tier's limits."
+                                ></i>
+                              </label>
+                              <div className="table-responsive">
+                                <table className="table table-sm table-bordered border-dark mb-0">
+                                  <thead>
+                                    <tr style={{ backgroundColor: HEADER_BLUE }}>
+                                      <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Tier</th>
+                                      <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Videos Generated</th>
+                                      <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Criteria</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="small">
+                                    <tr>
+                                      <td className="border-dark">1</td>
+                                      <td className="border-dark">1</td>
+                                      <td className="border-dark">Default (new accounts)</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="border-dark">2</td>
+                                      <td className="border-dark">3</td>
+                                      <td className="border-dark">1 day after $50 purchased</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="border-dark">3</td>
+                                      <td className="border-dark">5</td>
+                                      <td className="border-dark">7 days after $100 purchased</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="border-dark">4</td>
+                                      <td className="border-dark">10</td>
+                                      <td className="border-dark">14 days after $1,000 purchased</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="border-dark">5</td>
+                                      <td className="border-dark">20</td>
+                                      <td className="border-dark">7 days after $5,000 purchased</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                              <p className="small text-muted mt-2 mb-0">
+                                Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4"></div>
+
+                      <div className="col-lg-6">
+                        <div className="card border" style={{ borderRadius: '8px' }}>
+                          <div className="card-header bg-light">
+                            <div className="d-flex align-items-center">
+                              <Film size={20} className="text-primary me-2" />
+                              <h5 className="mb-0 fw-bold">Video Setup</h5>
+                            </div>
+                          </div>
+                          <div className="card-body">
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
                           <div className="position-relative">
@@ -2461,12 +2670,12 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-5">
+                      <div className="text-center py-4" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <div className="mb-3">
-                          <Film size={70} className="text-muted" />
+                          <Film size={65} className="text-muted" />
                         </div>
                         <h4 className="text-muted mb-3">No videos generated yet</h4>
-                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <p className="text-muted mb-3">Start a generation process to see your AI-generated videos here</p>
                         <button
                           className="btn btn-primary btn-lg shadow"
                           onClick={() => setActiveTab('setup')}
