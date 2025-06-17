@@ -116,27 +116,26 @@ export default function RunwayAutomationApp() {
     setShowModal(true);
   };
 
-  // Initialize tooltips function
+  // Initialize tooltips function - simplified for deployment
   const initializeTooltips = () => {
     if (typeof window !== 'undefined' && window.bootstrap) {
-      // Small delay to ensure DOM is ready
       setTimeout(() => {
-        // Dispose of existing tooltips first
-        const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        existingTooltips.forEach(function (tooltipEl) {
-          const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
-          if (existingTooltip) {
-            existingTooltip.dispose();
-          }
-        });
-
-        // Initialize new tooltips
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-          new window.bootstrap.Tooltip(tooltipTriggerEl, {
-            html: true
+        try {
+          const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+          existingTooltips.forEach(function (tooltipEl) {
+            const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
+            if (existingTooltip) {
+              existingTooltip.dispose();
+            }
           });
-        });
+
+          const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+          tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new window.bootstrap.Tooltip(tooltipTriggerEl);
+          });
+        } catch (error) {
+          console.warn('Tooltip initialization failed:', error);
+        }
       }, 100);
     }
   };
@@ -1417,8 +1416,6 @@ export default function RunwayAutomationApp() {
     return null;
   }
 
-  const aspectRatioTooltipText = "- 16:9 (YouTube, TV, desktop)<br/>- 9:16 (TikTok, FB Reels, IG Stories)<br/>- 1:1 (Instagram posts, profile pics)<br/>- 4:3 (Classic TV, monitors)<br/>- 3:4 (Print, documents)<br/>- 21:9 (Ultrawide movies)";
-
   return (
     <>
       <Head>
@@ -1656,8 +1653,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                data-bs-html="true"
-                                title={aspectRatioTooltipText}
+                                title="- 16:9 (YouTube, TV, desktop) - 9:16 (TikTok, FB Reels, IG Stories) - 1:1 (Instagram posts, profile pics) - 4:3 (Classic TV, monitors) - 3:4 (Print, documents) - 21:9 (Ultrawide movies)"
                               ></i>
                             </label>
                             <select
@@ -2506,9 +2502,7 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}display = 'none';
-      a.href = url;
-      a.download = `${folderName}.zip`;
+}
       
       document.body.appendChild(a);
       a.click();
@@ -2627,4 +2621,6 @@ export default function RunwayAutomationApp() {
       // Create download link and trigger download
       const url = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
-      a.style.
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
