@@ -1630,9 +1630,9 @@ export default function RunwayAutomationApp() {
       </Modal>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4">
+        <div className="container-fluid py-4" style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div className="row justify-content-center mb-3">
-            <div className="col-lg-10" style={{ maxWidth: '1140px' }}>
+            <div className="col-12">
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                   <button 
