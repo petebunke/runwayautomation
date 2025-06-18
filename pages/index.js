@@ -86,7 +86,7 @@ export default function RunwayAutomationApp() {
             
             <div className="d-flex gap-2 justify-content-end mt-4">
               <button
-                className="btn btn-secondary"
+                className="btn btn-secondary hover-opacity"
                 onClick={onClose}
                 style={{ borderRadius: '8px', fontWeight: '600', width: '48%' }}
               >
@@ -94,7 +94,7 @@ export default function RunwayAutomationApp() {
               </button>
               {onConfirm && (
                 <button
-                  className={`btn ${type === 'warning' ? 'btn-danger' : 'btn-primary'} shadow`}
+                  className={`btn ${type === 'warning' ? 'btn-danger' : 'btn-primary'} shadow hover-opacity`}
                   onClick={() => {
                     onConfirm();
                     onClose();
@@ -188,6 +188,19 @@ export default function RunwayAutomationApp() {
       const savedHasShownCostWarning = localStorage.getItem('runway-automation-cost-warning-shown');
       if (savedHasShownCostWarning === 'true') {
         setHasShownCostWarning(true);
+      }
+
+      // Load persisted logs
+      const savedLogs = localStorage.getItem('runway-automation-logs');
+      if (savedLogs && savedLogs.trim()) {
+        try {
+          const parsedLogs = JSON.parse(savedLogs);
+          if (Array.isArray(parsedLogs) && parsedLogs.length > 0) {
+            setLogs(parsedLogs);
+          }
+        } catch (parseError) {
+          localStorage.removeItem('runway-automation-logs');
+        }
       }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
@@ -314,6 +327,22 @@ export default function RunwayAutomationApp() {
     }
   }, [favoriteVideos, mounted]);
 
+  // Persist logs to localStorage
+  useEffect(() => {
+    if (!mounted || !Array.isArray(logs)) return;
+    try {
+      if (logs.length > 0) {
+        // Keep only the last 100 logs to prevent storage bloat
+        const logsToSave = logs.slice(-100);
+        localStorage.setItem('runway-automation-logs', JSON.stringify(logsToSave));
+      } else {
+        localStorage.removeItem('runway-automation-logs');
+      }
+    } catch (error) {
+      console.warn('Failed to save logs to localStorage:', error);
+    }
+  }, [logs, mounted]);
+
   const clearStoredApiKey = () => {
     try {
       localStorage.removeItem('runway-automation-api-key');
@@ -367,6 +396,43 @@ export default function RunwayAutomationApp() {
     });
   };
 
+  const clearLogs = () => {
+    const logCount = logs.length;
+    if (logCount === 0) {
+      addLog('ℹ️ No logs to clear', 'info');
+      return;
+    }
+
+    showModalDialog({
+      title: "Clear Generation Logs",
+      type: "warning",
+      confirmText: "Clear Logs",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        try {
+          localStorage.removeItem('runway-automation-logs');
+          setLogs([]);
+          console.log(`Cleared ${logCount} log entries from browser storage`);
+        } catch (error) {
+          console.warn('Failed to clear logs:', error);
+        }
+      },
+      content: (
+        <div>
+          <p className="mb-3">
+            <strong>This will permanently remove {logCount} log entr{logCount !== 1 ? 'ies' : 'y'} from your browser.</strong>
+          </p>
+          <p className="mb-3">
+            This action cannot be undone. The logs help track your generation history and troubleshoot issues.
+          </p>
+          <p className="mb-0 text-muted">
+            Are you sure you want to continue?
+          </p>
+        </div>
+      )
+    });
+  };
+
   const toggleFavorite = (videoId) => {
     setFavoriteVideos(prev => {
       const newFavorites = new Set(prev);
@@ -377,6 +443,10 @@ export default function RunwayAutomationApp() {
       }
       return newFavorites;
     });
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const isValidImageUrl = (url) => {
@@ -1167,6 +1237,7 @@ export default function RunwayAutomationApp() {
     // Auto-advance to Results tab when generation completes successfully
     if (successCount > 0) {
       setActiveTab('results');
+      scrollToTop();
     }
   };
 
@@ -1277,126 +1348,6 @@ export default function RunwayAutomationApp() {
 
       // Sort videos by generation and video number for organized download
       const sortedVideos = videosWithUrls
-        .map(result => ({
-          ...result,
-          filename: generateFilename(result.jobId, result.id)
-        }))
-        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
-
-      // Add each video to the zip with progress tracking
-      for (let i = 0; i < sortedVideos.length; i++) {
-        const result = sortedVideos[i];
-        try {
-          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Verify blob size before adding to zip
-          if (blob.size === 0) {
-            throw new Error('Empty video file received');
-          }
-          
-          // Add video to Videos folder
-          videosFolder.file(result.filename, blob);
-          
-          // Add metadata file to JSON folder
-          const metadata = {
-            id: result.id,
-            prompt: result.prompt,
-            jobId: result.jobId,
-            created_at: result.created_at,
-            image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown'
-          };
-          
-          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
-          
-        } catch (error) {
-          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
-        }
-      }
-
-      addLog('🔄 Generating zip file...', 'info');
-      
-      // Generate zip with no compression for faster processing
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'STORE',
-        compressionOptions: { level: 0 }
-      });
-
-      // Calculate final zip size
-      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
-      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
-
-      // Create download link and trigger download
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${folderName}.zip`;
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
-      console.error('Zip creation error:', error);
-    } finally {
-      setIsDownloadingAll(false);
-    }
-  };
-
-  const downloadFavoritedVideos = async () => {
-    const favoritedVideos = results.filter(result => 
-      result.video_url && 
-      result.status === 'completed' && 
-      favoriteVideos.has(result.id)
-    );
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
-
-    try {
-      // Dynamic import of JSZip to avoid SSR issues
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      // Create timestamp for unique folder naming
-      const timestamp = new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'America/Los_Angeles'
-      }).replace(/[/:]/g, '-').replace(', ', '_');
-
-      const folderName = `Favorited Videos (${timestamp})`;
-      const folder = zip.folder(folderName);
-      const videosFolder = folder.folder('Videos');
-      const jsonFolder = folder.folder('JSON');
-
-      // Sort videos by generation and video number for organized download
-      const sortedVideos = favoritedVideos
         .map(result => ({
           ...result,
           filename: generateFilename(result.jobId, result.id)
@@ -1558,6 +1509,12 @@ export default function RunwayAutomationApp() {
           .tooltip.bs-tooltip-end .tooltip-arrow::before {
             border-color: rgba(0, 0, 0, 1) transparent !important;
           }
+          .hover-opacity {
+            transition: opacity 0.2s ease-in-out;
+          }
+          .hover-opacity:hover {
+            opacity: 0.85 !important;
+          }
         `}</style>
       </Head>
 
@@ -1579,7 +1536,7 @@ export default function RunwayAutomationApp() {
             <div className="d-flex align-items-center">
               <button 
                 onClick={() => setActiveTab('setup')}
-                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
+                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center hover-opacity"
                 style={{ fontSize: '1.9rem', fontWeight: 'bold' }}
               >
                 <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
@@ -1598,7 +1555,7 @@ export default function RunwayAutomationApp() {
               <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center hover-opacity ${activeTab === 'setup' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('setup')}
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
@@ -1608,7 +1565,7 @@ export default function RunwayAutomationApp() {
                 </li>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center hover-opacity ${activeTab === 'generation' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('generation')}
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
@@ -1618,7 +1575,7 @@ export default function RunwayAutomationApp() {
                 </li>
                 <li className="nav-item">
                   <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
+                    className={`nav-link d-flex align-items-center hover-opacity ${activeTab === 'results' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('results')}
                     style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
@@ -1673,7 +1630,7 @@ export default function RunwayAutomationApp() {
                             {runwayApiKey && (
                               <button
                                 type="button"
-                                className="btn btn-sm btn-outline-danger"
+                                className="btn btn-sm btn-outline-danger hover-opacity"
                                 onClick={clearStoredApiKey}
                                 title="Clear stored API key"
                                 style={{ fontSize: '12px' }}
@@ -1692,7 +1649,7 @@ export default function RunwayAutomationApp() {
                           />
                           <div className="form-text">
                             <ExternalLink size={14} className="me-1" />
-                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none hover-opacity">
                               Get your API key from Runway Developer Portal
                             </a>
                           </div>
@@ -1701,7 +1658,7 @@ export default function RunwayAutomationApp() {
                             <div className="mt-2">
                               <button
                                 type="button"
-                                className="btn btn-sm btn-outline-info"
+                                className="btn btn-sm btn-outline-info hover-opacity"
                                 onClick={async () => {
                                   addLog('🔍 Testing API connectivity...', 'info');
                                   try {
@@ -1734,7 +1691,7 @@ export default function RunwayAutomationApp() {
                           </div>
                           <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
                           <ul className="small mb-0 ps-3">
-                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold hover-opacity">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
                             <li>Credits are separate from web app credits</li>
@@ -1877,7 +1834,7 @@ export default function RunwayAutomationApp() {
                             </table>
                           </div>
                           <p className="small text-muted mt-2 mb-0">
-                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
+                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none hover-opacity">dev.runwayml.com</a> &gt; Usage.
                           </p>
                         </div>
                       </div>
@@ -1944,7 +1901,7 @@ export default function RunwayAutomationApp() {
                                   href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
                                   target="_blank" 
                                   rel="noopener noreferrer" 
-                                  className="text-decoration-underline"
+                                  className="text-decoration-underline hover-opacity"
                                   style={{ 
                                     color: '#6c757d',
                                     pointerEvents: 'auto'
@@ -1979,7 +1936,7 @@ export default function RunwayAutomationApp() {
                           
                           {!imageUrl ? (
                             <div 
-                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
+                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center hover-opacity"
                               style={{ 
                                 borderColor: '#dee2e6', 
                                 backgroundColor: '#f8f9fa',
@@ -2025,7 +1982,7 @@ export default function RunwayAutomationApp() {
                                 onError={handleImageError}
                               />
                               <button
-                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 hover-opacity"
                                 onClick={() => {
                                   setImageUrl('');
                                   setImageError(false);
@@ -2063,9 +2020,10 @@ export default function RunwayAutomationApp() {
                           
                           <div className="mt-4">
                             <button
-                              className="btn btn-success w-100 shadow"
+                              className="btn btn-success w-100 shadow hover-opacity"
                               onClick={() => {
                                 setActiveTab('generation');
+                                scrollToTop();
                                 setTimeout(() => {
                                   if (!isRunning) {
                                     generateVideos();
@@ -2078,12 +2036,8 @@ export default function RunwayAutomationApp() {
                                 fontWeight: '600',
                                 backgroundColor: '#28a745',
                                 borderColor: '#28a745',
-                                opacity: '1',
-                                transition: 'opacity 0.1s ease-in-out',
                                 padding: '8px 16px'
                               }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
                             >
                               <Play size={20} className="me-2" />
                               Generate Video{concurrency > 1 ? 's' : ''}
@@ -2140,20 +2094,16 @@ export default function RunwayAutomationApp() {
                     <div className="flex-shrink-0">
                       {!isRunning ? (
                         <button
-                          className="btn btn-success shadow"
+                          className="btn btn-success shadow hover-opacity"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600', 
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out',
                             backgroundColor: '#28a745',
                             borderColor: '#28a745',
                             padding: '8px 16px'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
                           Start Generation
@@ -2165,7 +2115,7 @@ export default function RunwayAutomationApp() {
                         </button>
                       ) : (
                         <button
-                          className="btn btn-danger shadow"
+                          className="btn btn-danger shadow hover-opacity"
                           onClick={stopGeneration}
                           style={{ borderRadius: '8px', fontWeight: '600', padding: '8px 16px' }}
                         >
@@ -2277,14 +2227,24 @@ export default function RunwayAutomationApp() {
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
-                        <button 
-                          className="btn btn-sm btn-outline-light" 
-                          onClick={copyLogsToClipboard}
-                          title="Copy all logs to clipboard"
-                          style={{ borderRadius: '6px' }}
-                        >
-                          <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                        </button>
+                        <div className="d-flex gap-2">
+                          <button 
+                            className="btn btn-sm btn-outline-warning hover-opacity" 
+                            onClick={clearLogs}
+                            title="Clear all logs"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-outline-light hover-opacity" 
+                            onClick={copyLogsToClipboard}
+                            title="Copy all logs to clipboard"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                          </button>
+                        </div>
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', lineHeight: logs.length > 0 ? '1.4' : '0.4' }}>
                         {logs.map((log, index) => {
@@ -2387,17 +2347,13 @@ export default function RunwayAutomationApp() {
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
                       <div className="d-flex gap-2 flex-wrap flex-shrink-0">
                         <button
-                          className="btn btn-light shadow"
+                          className="btn btn-light shadow hover-opacity"
                           onClick={downloadAllVideos}
                           disabled={isDownloadingAll}
                           style={{ 
                             borderRadius: '8px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out'
+                            fontWeight: '600'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           {isDownloadingAll ? (
                             <>
@@ -2419,17 +2375,13 @@ export default function RunwayAutomationApp() {
                         
                         {favoriteVideos.size > 0 && (
                           <button
-                            className="btn btn-light shadow"
+                            className="btn btn-light shadow hover-opacity"
                             onClick={downloadFavoritedVideos}
                             disabled={isDownloadingAll}
                             style={{ 
                               borderRadius: '8px', 
-                              fontWeight: '600',
-                              opacity: '1',
-                              transition: 'opacity 0.1s ease-in-out'
+                              fontWeight: '600'
                             }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
                           >
                             <Download size={16} className="me-2" />
                             Favorited Videos
@@ -2440,17 +2392,13 @@ export default function RunwayAutomationApp() {
                         )}
                         
                         <button
-                          className="btn btn-danger shadow"
+                          className="btn btn-danger shadow hover-opacity"
                           onClick={clearGeneratedVideos}
                           style={{ 
                             borderRadius: '8px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out'
+                            fontWeight: '600'
                           }}
                           title="Clear all generated videos from browser storage"
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Trash2 size={16} className="me-2" />
                           Clear Videos
@@ -2472,7 +2420,7 @@ export default function RunwayAutomationApp() {
                         <h4 className="text-muted mb-3">No videos generated yet</h4>
                         <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
                         <button
-                          className="btn btn-primary btn-lg shadow"
+                          className="btn btn-primary btn-lg shadow hover-opacity"
                           onClick={() => setActiveTab('setup')}
                           style={{ borderRadius: '6px' }}
                         >
@@ -2548,7 +2496,7 @@ export default function RunwayAutomationApp() {
                                 <div className="d-flex justify-content-between align-items-start mb-3">
                                   <div className="fw-bold text-primary flex-grow-1">{result.jobId}</div>
                                   <button
-                                    className="btn btn-sm p-1 ms-2"
+                                    className="btn btn-sm p-1 ms-2 hover-opacity"
                                     onClick={() => toggleFavorite(result.id)}
                                     style={{
                                       border: 'none',
@@ -2574,7 +2522,7 @@ export default function RunwayAutomationApp() {
                                   {result.video_url && (
                                     <div className="btn-group w-100" role="group">
                                       <button
-                                        className="btn btn-primary btn-sm"
+                                        className="btn btn-primary btn-sm hover-opacity"
                                         style={{ width: '50%' }}
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
                                       >
@@ -2582,7 +2530,7 @@ export default function RunwayAutomationApp() {
                                         Download
                                       </button>
                                       <button
-                                        className="btn btn-outline-primary btn-sm"
+                                        className="btn btn-outline-primary btn-sm hover-opacity"
                                         style={{ width: '50%' }}
                                         onClick={() => window.open(result.video_url, '_blank')}
                                       >
@@ -2606,10 +2554,10 @@ export default function RunwayAutomationApp() {
 
           <div className="text-center mt-4">
             <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none hover-opacity">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none hover-opacity">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none hover-opacity">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none hover-opacity"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-1" style={{ marginLeft: '12px' }}>
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="hover-opacity">
                 <img 
                   src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
                   alt="Powered by Runway" 
@@ -2623,3 +2571,124 @@ export default function RunwayAutomationApp() {
     </>
   );
 }
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Verify blob size before adding to zip
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          // Add video to Videos folder
+          videosFolder.file(result.filename, blob);
+          
+          // Add metadata file to JSON folder
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown'
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      // Generate zip with no compression for faster processing
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      // Calculate final zip size
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      // Create download link and trigger download
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const downloadFavoritedVideos = async () => {
+    const favoritedVideos = results.filter(result => 
+      result.video_url && 
+      result.status === 'completed' && 
+      favoriteVideos.has(result.id)
+    );
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      // Dynamic import of JSZip to avoid SSR issues
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      // Create timestamp for unique folder naming
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Favorited Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      // Sort videos by generation and video number for organized download
+      const sortedVideos = favoritedVideos
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      // Add each video to the zip with progress tracking
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        
