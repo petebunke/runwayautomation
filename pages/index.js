@@ -190,7 +190,7 @@ export default function RunwayAutomationApp() {
         setHasShownCostWarning(true);
       }
 
-      // Load persisted logs
+      // SAFE UPDATE: Load persisted logs
       const savedLogs = localStorage.getItem('runway-automation-logs');
       if (savedLogs && savedLogs.trim()) {
         try {
@@ -327,7 +327,7 @@ export default function RunwayAutomationApp() {
     }
   }, [favoriteVideos, mounted]);
 
-  // Persist logs to localStorage
+  // SAFE UPDATE: Persist logs to localStorage
   useEffect(() => {
     if (!mounted || !Array.isArray(logs)) return;
     try {
@@ -396,6 +396,7 @@ export default function RunwayAutomationApp() {
     });
   };
 
+  // SAFE UPDATE: Clear logs function with simple confirm
   const clearLogs = () => {
     const logCount = logs.length;
     if (logCount === 0) {
@@ -403,34 +404,15 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    showModalDialog({
-      title: "Clear Generation Logs",
-      type: "warning",
-      confirmText: "Clear Logs",
-      cancelText: "Cancel",
-      onConfirm: () => {
-        try {
-          localStorage.removeItem('runway-automation-logs');
-          setLogs([]);
-          console.log(`Cleared ${logCount} log entries from browser storage`);
-        } catch (error) {
-          console.warn('Failed to clear logs:', error);
-        }
-      },
-      content: (
-        <div>
-          <p className="mb-3">
-            <strong>This will permanently remove {logCount} log entr{logCount !== 1 ? 'ies' : 'y'} from your browser.</strong>
-          </p>
-          <p className="mb-3">
-            This action cannot be undone. The logs help track your generation history and troubleshoot issues.
-          </p>
-          <p className="mb-0 text-muted">
-            Are you sure you want to continue?
-          </p>
-        </div>
-      )
-    });
+    if (window.confirm(`Clear ${logCount} log entr${logCount !== 1 ? 'ies' : 'y'}? This cannot be undone.`)) {
+      try {
+        localStorage.removeItem('runway-automation-logs');
+        setLogs([]);
+        console.log(`Cleared ${logCount} log entries from browser storage`);
+      } catch (error) {
+        console.warn('Failed to clear logs:', error);
+      }
+    }
   };
 
   const toggleFavorite = (videoId) => {
@@ -443,10 +425,6 @@ export default function RunwayAutomationApp() {
       }
       return newFavorites;
     });
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const isValidImageUrl = (url) => {
@@ -1237,7 +1215,6 @@ export default function RunwayAutomationApp() {
     // Auto-advance to Results tab when generation completes successfully
     if (successCount > 0) {
       setActiveTab('results');
-      scrollToTop();
     }
   };
 
@@ -2023,7 +2000,6 @@ export default function RunwayAutomationApp() {
                               className="btn btn-success w-100 shadow hover-opacity"
                               onClick={() => {
                                 setActiveTab('generation');
-                                scrollToTop();
                                 setTimeout(() => {
                                   if (!isRunning) {
                                     generateVideos();
@@ -2570,31 +2546,7 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
-        try {
-          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Verify blob size before adding to zip
-          if (blob.size === 0) {
-            throw new Error('Empty video file received');
-          }
-          
-          // Add video to Videos folder
-          videosFolder.file(result.filename, blob);
-          
-          // Add metadata file to JSON folder
-          const metadata = {
-            id: result.id,
-            prompt: result.prompt,
-            jobId: result.jobId,
-            created_at: result.created_at,
+}.created_at,
             image_url: result.image_url,
             processingTime: result.processingTime || 'unknown'
           };
@@ -2691,4 +2643,27 @@ export default function RunwayAutomationApp() {
       // Add each video to the zip with progress tracking
       for (let i = 0; i < sortedVideos.length; i++) {
         const result = sortedVideos[i];
-        
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Verify blob size before adding to zip
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          // Add video to Videos folder
+          videosFolder.file(result.filename, blob);
+          
+          // Add metadata file to JSON folder
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result
