@@ -189,18 +189,6 @@ export default function RunwayAutomationApp() {
       if (savedHasShownCostWarning === 'true') {
         setHasShownCostWarning(true);
       }
-
-      const savedLogs = localStorage.getItem('runway-automation-logs');
-      if (savedLogs && savedLogs.trim()) {
-        try {
-          const parsedLogs = JSON.parse(savedLogs);
-          if (Array.isArray(parsedLogs)) {
-            setLogs(parsedLogs);
-          }
-        } catch (parseError) {
-          localStorage.removeItem('runway-automation-logs');
-        }
-      }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
     }
@@ -325,19 +313,6 @@ export default function RunwayAutomationApp() {
       console.warn('Failed to save favorites to localStorage:', error);
     }
   }, [favoriteVideos, mounted]);
-
-  useEffect(() => {
-    if (!mounted || !Array.isArray(logs)) return;
-    try {
-      if (logs.length > 0) {
-        localStorage.setItem('runway-automation-logs', JSON.stringify(logs));
-      } else {
-        localStorage.removeItem('runway-automation-logs');
-      }
-    } catch (error) {
-      console.warn('Failed to save logs to localStorage:', error);
-    }
-  }, [logs, mounted]);
 
   const clearStoredApiKey = () => {
     try {
@@ -585,34 +560,6 @@ export default function RunwayAutomationApp() {
       addLog('📋 Logs copied to clipboard', 'info');
     }).catch(() => {
       addLog('❌ Failed to copy logs to clipboard', 'error');
-    });
-  };
-
-  const clearLogs = () => {
-    showModalDialog({
-      title: "Clear Logs",
-      type: "warning",
-      confirmText: "Clear Logs",
-      cancelText: "Cancel",
-      onConfirm: () => {
-        try {
-          localStorage.removeItem('runway-automation-logs');
-          setLogs([]);
-          addLog('🗑️ Log history cleared', 'info');
-        } catch (error) {
-          console.warn('Failed to clear logs:', error);
-        }
-      },
-      content: (
-        <div>
-          <p className="mb-3">
-            <strong>This will permanently clear all log entries from your browser.</strong>
-          </p>
-          <p className="mb-0 text-muted">
-            Are you sure you want to continue?
-          </p>
-        </div>
-      )
     });
   };
 
@@ -1220,9 +1167,6 @@ export default function RunwayAutomationApp() {
     // Auto-advance to Results tab when generation completes successfully
     if (successCount > 0) {
       setActiveTab('results');
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
     }
   };
 
@@ -1630,26 +1574,22 @@ export default function RunwayAutomationApp() {
       </Modal>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div className="row justify-content-center mb-3">
-            <div className="col-12">
-              <div className="d-flex align-items-center justify-content-between">
-                <div className="d-flex align-items-center">
-                  <button 
-                    onClick={() => setActiveTab('setup')}
-                    className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                    style={{ fontSize: '1.9rem', fontWeight: 'bold' }}
-                  >
-                    <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
-                    Runway Automation
-                  </button>
-                </div>
-                <div className="text-end">
-                  <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                    A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file.
-                  </p>
-                </div>
-              </div>
+        <div className="container-fluid py-4">
+          <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
+            <div className="d-flex align-items-center">
+              <button 
+                onClick={() => setActiveTab('setup')}
+                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
+                style={{ fontSize: '1.9rem', fontWeight: 'bold' }}
+              >
+                <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
+                Runway Automation
+              </button>
+            </div>
+            <div className="text-end">
+              <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file.
+              </p>
             </div>
           </div>
 
@@ -1692,7 +1632,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'setup' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10" style={{ maxWidth: '1140px' }}>
+              <div className="col-lg-10">
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
@@ -1942,7 +1882,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     </div>
-                                    </div>
+                  </div>
 
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
@@ -2127,7 +2067,6 @@ export default function RunwayAutomationApp() {
                               onClick={() => {
                                 setActiveTab('generation');
                                 setTimeout(() => {
-                                  window.scrollTo({ top: 0, behavior: 'smooth' });
                                   if (!isRunning) {
                                     generateVideos();
                                   }
@@ -2139,10 +2078,11 @@ export default function RunwayAutomationApp() {
                                 fontWeight: '600',
                                 backgroundColor: '#28a745',
                                 borderColor: '#28a745',
-                                transition: 'opacity 0.2s ease-in-out',
+                                opacity: '1',
+                                transition: 'opacity 0.1s ease-in-out',
                                 padding: '8px 16px'
                               }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                               onMouseLeave={(e) => e.target.style.opacity = '1'}
                             >
                               <Play size={20} className="me-2" />
@@ -2157,7 +2097,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     </div>
-                                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2165,7 +2105,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10" style={{ maxWidth: '1140px' }}>
+              <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="position-relative d-flex align-items-center justify-content-between" 
@@ -2206,12 +2146,13 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600', 
-                            transition: 'opacity 0.2s ease-in-out',
+                            opacity: '1',
+                            transition: 'opacity 0.1s ease-in-out',
                             backgroundColor: '#28a745',
                             borderColor: '#28a745',
                             padding: '8px 16px'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
@@ -2336,34 +2277,14 @@ export default function RunwayAutomationApp() {
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
-                        <div className="d-flex gap-2">
-                          <button 
-                            className="btn btn-sm btn-outline-danger" 
-                            onClick={clearLogs}
-                            title="Clear all logs"
-                            style={{ 
-                              borderRadius: '6px',
-                              transition: 'opacity 0.2s ease-in-out'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.85'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
-                          >
-                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-outline-light" 
-                            onClick={copyLogsToClipboard}
-                            title="Copy all logs to clipboard"
-                            style={{ 
-                              borderRadius: '6px',
-                              transition: 'opacity 0.2s ease-in-out'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.85'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
-                          >
-                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                          </button>
-                        </div>
+                        <button 
+                          className="btn btn-sm btn-outline-light" 
+                          onClick={copyLogsToClipboard}
+                          title="Copy all logs to clipboard"
+                          style={{ borderRadius: '6px' }}
+                        >
+                          <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                        </button>
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', lineHeight: logs.length > 0 ? '1.4' : '0.4' }}>
                         {logs.map((log, index) => {
@@ -2431,7 +2352,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'results' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10" style={{ maxWidth: '1140px' }}>
+              <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="position-relative d-flex align-items-center justify-content-between" 
@@ -2472,9 +2393,10 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600',
-                            transition: 'opacity 0.2s ease-in-out'
+                            opacity: '1',
+                            transition: 'opacity 0.1s ease-in-out'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           {isDownloadingAll ? (
@@ -2523,10 +2445,11 @@ export default function RunwayAutomationApp() {
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600',
-                            transition: 'opacity 0.2s ease-in-out'
+                            opacity: '1',
+                            transition: 'opacity 0.1s ease-in-out'
                           }}
                           title="Clear all generated videos from browser storage"
-                          onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Trash2 size={16} className="me-2" />
