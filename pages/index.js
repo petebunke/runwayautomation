@@ -1,4 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+  const upscaleVideo = async (videoId, videoTitle, videoUrl) => {
+    try {
+      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
+      
+      if (!runimport React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
 import Head from 'next/head';
 
@@ -1586,6 +1590,63 @@ export default function RunwayAutomationApp() {
     addLog('📊 Results exported to JSON with enhanced metadata', 'success');
   };
 
+  const upscaleVideo = async (videoId, videoTitle, videoUrl) => {
+    try {
+      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
+      
+      if (!runwayApiKey.trim()) {
+        addLog('❌ RunwayML API key is required for upscaling!', 'error');
+        return;
+      }
+
+      // Call the upscale API endpoint
+      const response = await fetch(API_BASE + '/runway-upscale', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          payload: {
+            promptVideo: videoUrl
+          }
+        })
+      });
+
+      const responseText = await response.text();
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error(`Upscale API Error ${response.status}: Could not parse error response`);
+        }
+        
+        let errorMessage = errorData.error || 'Upscale API Error: ' + response.status;
+        
+        if (response.status === 400 && errorMessage.includes('not have enough credits')) {
+          throw new Error('Insufficient credits for upscaling: ' + errorMessage);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      let upscaleTask;
+      try {
+        upscaleTask = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error('Could not parse upscale API response');
+      }
+      
+      addLog('✓ 4K upscale started for ' + videoTitle + ' (Task ID: ' + upscaleTask.id + ')', 'success');
+      addLog('⏳ Upscaling may take several minutes to complete. Check your RunwayML dashboard for progress.', 'info');
+      
+    } catch (error) {
+      addLog('❌ 4K upscale failed for ' + videoTitle + ': ' + error.message, 'error');
+    }
+  };
+
   if (!mounted) {
     return null;
   }
@@ -2548,20 +2609,36 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
-                                    <div className="btn-group" role="group">
+                                    <div className="d-flex flex-column gap-2">
+                                      <div className="btn-group" role="group">
+                                        <button
+                                          className="btn btn-primary btn-sm"
+                                          onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                        >
+                                          <Download size={16} className="me-1" />
+                                          Download
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-primary btn-sm"
+                                          onClick={() => window.open(result.video_url, '_blank')}
+                                        >
+                                          <ExternalLink size={16} className="me-1" />
+                                          View
+                                        </button>
+                                      </div>
                                       <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                        className="btn btn-outline-secondary btn-sm w-100"
+                                        onClick={() => upscaleVideo(result.id, result.jobId, result.video_url)}
+                                        title="Upscale video to 4K resolution using RunwayML Gen-4 Upscale. Requires additional credits."
                                       >
-                                        <Download size={16} className="me-1" />
-                                        Download
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm"
-                                        onClick={() => window.open(result.video_url, '_blank')}
-                                      >
-                                        <ExternalLink size={16} className="me-1" />
-                                        View
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1">
+                                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                          <polyline points="7.5 4.21,12 6.81,16.5 4.21"/>
+                                          <polyline points="7.5 19.79,7.5 14.6,3 12"/>
+                                          <polyline points="21 12,16.5 14.6,16.5 19.79"/>
+                                          <polyline points="12 22.81,12 17"/>
+                                        </svg>
+                                        4K Upscale
                                       </button>
                                     </div>
                                   )}
