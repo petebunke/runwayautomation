@@ -1,3 +1,887 @@
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
+        addLog(`✅ Downloaded ${filename} (${sizeMB}MB)`, 'success');
+        return true;
+        
+      } catch (error) {
+        addLog(`⚠️ Download attempt ${attempt} failed: ${error.message}`, 'warning');
+        
+        if (attempt === maxRetries) {
+          addLog(`❌ Failed to download ${filename} after ${maxRetries} attempts`, 'error');
+          return false;
+        }
+        
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    return false;
+  };
+
+  const downloadVideo = async (videoUrl, filename) => {
+    return await downloadVideoWithRetry(videoUrl, filename);
+  };
+
+  const generateFilename = (jobId, taskId, isUpscale = false) => {
+    if (!jobId) return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
+    
+    const genMatch = jobId.match(/Generation (\d+)/);
+    const vidMatch = jobId.match(/Video (\d+)/);
+    
+    if (genMatch && vidMatch) {
+      const generation = genMatch[1];
+      const video = vidMatch[1];
+      return `gen-${generation}-video-${video}${isUpscale ? '_4K' : ''}.mp4`;
+    }
+    
+    return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
+  };
+
+  const downloadAllVideos = async () => {
+    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
+    
+    if (videosWithUrls.length === 0) {
+      addLog('❌ No completed videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${videosWithUrls.length} videos...`, 'info');
+
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Runway Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      const sortedVideos = videosWithUrls
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          videosFolder.file(result.filename, blob);
+          
+          if (result.upscale_url) {
+            try {
+              const upscaleFilename = generateFilename(result.jobId, result.id, true);
+              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
+              
+              const upscaleResponse = await fetch(result.upscale_url);
+              if (upscaleResponse.ok) {
+                const upscaleBlob = await upscaleResponse.blob();
+                if (upscaleBlob.size > 0) {
+                  videosFolder.file(upscaleFilename, upscaleBlob);
+                }
+              }
+            } catch (upscaleError) {
+              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
+            }
+          }
+          
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown',
+            upscaled: result.upscaled || false,
+            upscale_task_id: result.upscale_task_id || null
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const downloadFavoritedVideos = async () => {
+    const favoritedVideos = results.filter(result => 
+      result.video_url && 
+      result.status === 'completed' && 
+      favoriteVideos.has(result.id)
+    );
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Favorited Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      const sortedVideos = favoritedVideos
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          videosFolder.file(result.filename, blob);
+          
+          if (result.upscale_url) {
+            try {
+              const upscaleFilename = generateFilename(result.jobId, result.id, true);
+              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
+              
+              const upscaleResponse = await fetch(result.upscale_url);
+              if (upscaleResponse.ok) {
+                const upscaleBlob = await upscaleResponse.blob();
+                if (upscaleBlob.size > 0) {
+                  videosFolder.file(upscaleFilename, upscaleBlob);
+                }
+              }
+            } catch (upscaleError) {
+              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
+            }
+          }
+          
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown',
+            favorited: true,
+            upscaled: result.upscaled || false,
+            upscale_task_id: result.upscale_task_id || null
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const exportResults = () => {
+    const exportData = {
+      generated_at: new Date().toISOString(),
+      total_videos: results.length,
+      completed_videos: results.filter(r => r.status === 'completed').length,
+      favorited_videos: results.filter(r => favoriteVideos.has(r.id)).length,
+      upscaled_videos: results.filter(r => r.upscaled).length,
+      configuration: {
+        model,
+        aspect_ratio: aspectRatio,
+        duration,
+        concurrency
+      },
+      statistics: {
+        generation_counter: generationCounter,
+        video_counter: videoCounter,
+        average_processing_time: results.length > 0 ? 
+          Math.round(results.reduce((sum, r) => sum + (r.processingTime || 0), 0) / results.length) + 's' : 
+          'N/A'
+      },
+      videos: results.map(result => ({
+        id: result.id,
+        prompt: result.prompt,
+        video_url: result.video_url,
+        thumbnail_url: result.thumbnail_url,
+        image_url: result.image_url,
+        status: result.status,
+        created_at: result.created_at,
+        jobId: result.jobId,
+        processingTime: result.processingTime,
+        favorited: favoriteVideos.has(result.id),
+        filename: generateFilename(result.jobId, result.id),
+        upscaled: result.upscaled || false,
+        upscale_url: result.upscale_url || null,
+        upscale_task_id: result.upscale_task_id || null
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `runway_generation_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    addLog('📊 Results exported to JSON with enhanced metadata', 'success');
+  };
+
+  if (!mounted) {
+    return null;
+  }
+
+  return (
+    <>
+      <Head>
+        <title>Runway Automation Pro - AI Video Generation</title>
+        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
+        
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://runway-automation.vercel.app/" />
+        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="og:image" content="/og-image.png" />
+
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
+        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="twitter:image" content="/og-image.png" />
+
+        <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
+        <meta name="author" content="Runway Automation Pro" />
+        <meta name="robots" content="index, follow" />
+        
+        <meta name="theme-color" content="#667eea" />
+        <meta name="msapplication-navbutton-color" content="#667eea" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        
+        <link 
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+          rel="stylesheet" 
+        />
+        <link 
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" 
+          rel="stylesheet" 
+        />
+        <script 
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+        />
+        <style>{`
+          .tooltip .tooltip-inner {
+            background-color: rgba(0, 0, 0, 1) !important;
+            color: white !important;
+          }
+          .tooltip.bs-tooltip-top .tooltip-arrow::before,
+          .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+          .tooltip.bs-tooltip-start .tooltip-arrow::before,
+          .tooltip.bs-tooltip-end .tooltip-arrow::before {
+            border-color: rgba(0, 0, 0, 1) transparent !important;
+          }
+        `}</style>
+      </Head>
+
+      <Modal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        title={modalConfig.title}
+        type={modalConfig.type}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm}
+      >
+        {modalConfig.content}
+      </Modal>
+
+      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
+        <div className="container-fluid py-4">
+          <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
+            <div className="d-flex align-items-center">
+              <button 
+                onClick={() => setActiveTab('setup')}
+                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
+                style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
+              >
+                <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
+                Runway Automation Pro
+              </button>
+            </div>
+            <div className="text-end">
+              <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
+                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
+              </p>
+            </div>
+          </div>
+
+          <div className="row justify-content-center mb-3">
+            <div className="col-auto">
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px' }}>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('setup')}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                  >
+                    <Settings size={20} className="me-2" />
+                    Setup
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('generation')}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                  >
+                    <Video size={20} className="me-2" />
+                    Generation
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
+                    onClick={() => setActiveTab('results')}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
+                  >
+                    <Download size={20} className="me-2" />
+                    Results
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {activeTab === 'setup' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-10">
+                <div className="row g-4">
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Key className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
+                        <div className="mb-4">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
+                            {runwayApiKey && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={clearStoredApiKey}
+                                title="Clear stored API key"
+                                style={{ fontSize: '12px' }}
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="password"
+                            className="form-control form-control-lg"
+                            value={runwayApiKey}
+                            onChange={(e) => setRunwayApiKey(e.target.value)}
+                            placeholder="key_xxx..."
+                            style={{ borderRadius: '8px' }}
+                          />
+                          <div className="form-text">
+                            <ExternalLink size={14} className="me-1" />
+                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                              Get your API key from RunwayML Developer Portal
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                          <div className="d-flex align-items-center mb-2">
+                            <CreditCard size={20} className="text-warning me-2" />
+                            <strong>Credits Required</strong>
+                          </div>
+                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
+                          <ul className="small mb-0 ps-3">
+                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Minimum $10 (1000 credits)</li>
+                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li><strong>~500 credits for 4K upscale (~$5.00)</strong></li>
+                            <li>Credits are separate from web app credits</li>
+                          </ul>
+                        </div>
+
+                        <div className="row g-3">
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Model</label>
+                            <select
+                              className="form-select"
+                              value={model}
+                              onChange={(e) => setModel(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {modelOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              Aspect Ratio
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
+                              ></i>
+                            </label>
+                            <select
+                              className="form-select"
+                              value={aspectRatio}
+                              onChange={(e) => setAspectRatio(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {aspectRatioOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Duration (seconds)</label>
+                            <select
+                              className="form-select"
+                              value={duration}
+                              onChange={(e) => setDuration(parseInt(e.target.value))}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              <option value={5}>5 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              # of Videos Generated
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
+                              ></i>
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              className="form-control"
+                              value={concurrency}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                const safeValue = Math.min(Math.max(value, 1), 20);
+                                setConcurrency(safeValue);
+                                
+                                if (value > 20) {
+                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
+                                }
+                              }}
+                              style={{ borderRadius: '8px' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-light rounded border">
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
+                          <div className="table-responsive">
+                            <table className="table table-sm table-bordered border-dark mb-0">
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark">Tier</th>
+                                  <th className="fw-bold border-dark">Videos Generated</th>
+                                  <th className="fw-bold border-dark">Criteria</th>
+                                </tr>
+                              </thead>
+                              <tbody className="small">
+                                <tr>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">Default (new accounts)</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">2</td>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">1 day after $50 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">7 days after $100 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">4</td>
+                                  <td className="border-dark">10</td>
+                                  <td className="border-dark">14 days after $1,000 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">20</td>
+                                  <td className="border-dark">7 days after $5,000 purchased</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="small text-muted mt-2 mb-0">
+                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Film className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Video Prompt</label>
+                          <div className="position-relative">
+                            <textarea
+                              className="form-control"
+                              rows="3"
+                              value={prompt}
+                              onChange={(e) => setPrompt(e.target.value)}
+                              placeholder=""
+                              style={{ borderRadius: '8px' }}
+                            />
+                            {!prompt && (
+                              <div 
+                                className="position-absolute" 
+                                style={{ 
+                                  left: '16px', 
+                                  top: '12px', 
+                                  pointerEvents: 'none',
+                                  color: '#6c757d',
+                                  fontSize: '16px'
+                                }}
+                              >
+                                Add an image then describe your shot.{' '}
+                                <a 
+                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-decoration-underline"
+                                  style={{ 
+                                    color: '#6c757d',
+                                    pointerEvents: 'auto'
+                                  }}
+                                >
+                                  View guide
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">
+                            Image
+                            <i 
+                              className="bi bi-info-circle ms-1 text-primary" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
+                            ></i>
+                          </label>
+                          
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            style={{ display: 'none' }}
+                          />
+                          
+                          {!imageUrl ? (
+                            <div 
+                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
+                              style={{ 
+                                borderColor: '#dee2e6', 
+                                backgroundColor: '#f8f9fa',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                minHeight: '120px'
+                              }}
+                              onClick={triggerImageUpload}
+                              onMouseEnter={(e) => {
+                                e.target.style.borderColor = '#0d6efd';
+                                e.target.style.backgroundColor = '#e7f3ff';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#dee2e6';
+                                e.target.style.backgroundColor = '#f8f9fa';
+                              }}
+                            >
+                              <div>
+                                {isUploadingImage ? (
+                                  <>
+                                    <div className="spinner-border text-primary mb-2" role="status">
+                                      <span className="visually-hidden">Uploading...</span>
+                                    </div>
+                                    <div className="text-muted">Uploading image...</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <FolderOpen size={48} className="text-primary mb-2" />
+                                    <div className="text-primary fw-bold mb-1">Click to upload image</div>
+                                    <div className="text-muted small">or paste image URL below</div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="position-relative">
+                              <img 
+                                src={imageUrl} 
+                                alt="Uploaded image preview"
+                                className="img-fluid rounded border w-100"
+                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                              <button
+                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                onClick={() => {
+                                  setImageUrl('');
+                                  setImageError(false);
+                                  if (fileInputRef.current) {
+                                    fileInputRef.current.value = '';
+                                  }
+                                }}
+                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          
+                          <div className="mt-3">
+                            <input
+                              type="url"
+                              className="form-control"
+                              value={imageUrl}
+                              onChange={(e) => setImageUrl(e.target.value)}
+                              placeholder="Or paste image URL here..."
+                              style={{ borderRadius: '8px' }}
+                            />
+                          </div>
+                          
+                          <div className="mt-4">
+                            <button
+                              className="btn btn-success btn-lg w-100 shadow"
+                              onClick={() => {
+                                setActiveTab('generation');
+                                setTimeout(() => {
+                                  if (!isRunning) {
+                                    generateVideos();
+                                  }
+                                }, 100);
+                              }}
+                              disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
+                              style={{ 
+                                borderRadius: '8px', 
+                                fontWeight: '600',
+                                backgroundColor: '#28a745',
+                                borderColor: '#28a745'
+                              }}
+                            >
+                              <Play size={20} className="me-2" />
+                              Generate Video{concurrency > 1 ? 's' : ''}
+                              {concurrency > 1 && (
+                                <span className="ms-2 badge bg-light text-dark">
+                                  {concurrency}
+                                </span>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === 'generation' && (
@@ -41,13 +925,9 @@
                             fontWeight: '600', 
                             marginTop: '5px', 
                             marginBottom: '5px',
-                            opacity: '1',
-                            transition: 'opacity 0.2s ease-in-out',
                             backgroundColor: '#28a745',
                             borderColor: '#28a745'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
                           Start Generation
@@ -93,19 +973,15 @@
                       </div>
                     </div>
 
-                    {/* Always show generation status */}
                     <div className="mb-3" style={{ minHeight: '100px' }}>
                       <div className="text-center py-3">
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
-                              // During generation
                               return `Generation ${generationCounter || 1} in progress`;
                             } else if (completedGeneration) {
-                              // After completion
                               return `Generation ${completedGeneration} completed`;
                             } else {
-                              // Initial state
                               return `Generation ${generationCounter || 1}`;
                             }
                           })()}
@@ -113,15 +989,12 @@
                         <p className="text-muted mb-0">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
-                              // During generation - show active job count
                               const count = Object.keys(generationProgress).length;
                               return `${count} video${count !== 1 ? 's' : ''} generating`;
                             } else if (completedGeneration) {
-                              // After completion - show completed count from that generation
                               const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
                               return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
                             } else {
-                              // Initial state
                               return '0 videos generated';
                             }
                           })()}
@@ -378,7 +1251,6 @@
                                   </div>
                                 )}
                                 
-                                {/* Show upscale status badge */}
                                 {upscaleProgress[result.id] && (
                                   <div className="position-absolute top-0 start-0 m-3">
                                     <span className="badge bg-info shadow-sm">
@@ -387,7 +1259,6 @@
                                   </div>
                                 )}
                                 
-                                {/* Show 4K badge if upscaled */}
                                 {result.upscaled && (
                                   <div className="position-absolute bottom-0 start-0 m-3">
                                     <span className="badge bg-success shadow-sm">
@@ -396,7 +1267,6 @@
                                   </div>
                                 )}
                                 
-                                {/* Add favorite button overlay */}
                                 <button
                                   className="btn btn-sm position-absolute top-0 end-0 m-2"
                                   onClick={() => toggleFavorite(result.id)}
@@ -471,7 +1341,6 @@
                                     </div>
                                   )}
                                   
-                                  {/* Show 4K download button if upscaled */}
                                   {result.upscaled && result.upscale_url && (
                                     <button
                                       className="btn btn-success btn-sm mt-1"
@@ -515,7 +1384,7 @@
       </div>
     </>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-noneimport React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, Zap } from 'lucide-react';
 import Head from 'next/head';
 
@@ -631,13 +1500,13 @@ export default function RunwayAutomationApp() {
     setShowModal(true);
   };
 
+  // LocalStorage management with error handling
   useEffect(() => {
     if (!mounted) return;
     
     try {
       const savedApiKey = localStorage.getItem('runway-automation-api-key');
       if (savedApiKey && savedApiKey.trim()) {
-        console.log('Loading saved API key from localStorage');
         setRunwayApiKey(savedApiKey);
       }
       
@@ -705,7 +1574,6 @@ export default function RunwayAutomationApp() {
         setHasShownCostWarning(true);
       }
 
-      // Load saved logs
       const savedLogs = localStorage.getItem('runway-automation-logs');
       if (savedLogs && savedLogs.trim()) {
         try {
@@ -722,6 +1590,7 @@ export default function RunwayAutomationApp() {
     }
   }, [mounted]);
 
+  // Save state to localStorage
   useEffect(() => {
     if (!mounted) return;
     try {
@@ -842,7 +1711,6 @@ export default function RunwayAutomationApp() {
     }
   }, [favoriteVideos, mounted]);
 
-  // Save logs to localStorage whenever logs change
   useEffect(() => {
     if (!mounted || !Array.isArray(logs)) return;
     try {
@@ -1157,9 +2025,8 @@ export default function RunwayAutomationApp() {
     return ratioMap[ratio] || '1280:720';
   };
 
+  // 4K UPSCALE FUNCTIONS
   const upscaleVideo = async (videoResult) => {
-    const upscaleId = `upscale_${videoResult.id}`;
-    
     try {
       if (!runwayApiKey.trim()) {
         addLog('❌ API key required for upscaling', 'error');
@@ -1376,6 +2243,7 @@ export default function RunwayAutomationApp() {
     throw new Error('4K upscale timeout after 30 minutes');
   };
 
+  // VIDEO GENERATION FUNCTIONS (unchanged from original)
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
@@ -1880,7 +2748,6 @@ export default function RunwayAutomationApp() {
 
   const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
     setIsRunning(true);
-    // Don't clear logs here anymore - let them persist
     
     const currentGeneration = generationCounter + 1;
     setGenerationCounter(currentGeneration);
@@ -1964,7 +2831,6 @@ export default function RunwayAutomationApp() {
     setCompletedGeneration(currentGeneration);
     setIsRunning(false);
     
-    // Auto-advance to Results tab when generation completes successfully
     if (successCount > 0) {
       setActiveTab('results');
     }
@@ -2000,922 +2866,4 @@ export default function RunwayAutomationApp() {
         document.body.appendChild(a);
         a.click();
         
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
-        addLog(`✅ Downloaded ${filename} (${sizeMB}MB)`, 'success');
-        return true;
-        
-      } catch (error) {
-        addLog(`⚠️ Download attempt ${attempt} failed: ${error.message}`, 'warning');
-        
-        if (attempt === maxRetries) {
-          addLog(`❌ Failed to download ${filename} after ${maxRetries} attempts`, 'error');
-          return false;
-        }
-        
-        // Wait before retry with exponential backoff
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-    return false;
-  };
-
-  const downloadVideo = async (videoUrl, filename) => {
-    return await downloadVideoWithRetry(videoUrl, filename);
-  };
-
-  const generateFilename = (jobId, taskId, isUpscale = false) => {
-    if (!jobId) return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
-    
-    const genMatch = jobId.match(/Generation (\d+)/);
-    const vidMatch = jobId.match(/Video (\d+)/);
-    
-    if (genMatch && vidMatch) {
-      const generation = genMatch[1];
-      const video = vidMatch[1];
-      return `gen-${generation}-video-${video}${isUpscale ? '_4K' : ''}.mp4`;
-    }
-    
-    return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
-  };
-
-  const downloadAllVideos = async () => {
-    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
-    
-    if (videosWithUrls.length === 0) {
-      addLog('❌ No completed videos available for download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating zip archive with ${videosWithUrls.length} videos...`, 'info');
-
-    try {
-      // Dynamic import of JSZip to avoid SSR issues
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      // Create timestamp for unique folder naming
-      const timestamp = new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'America/Los_Angeles'
-      }).replace(/[/:]/g, '-').replace(', ', '_');
-
-      const folderName = `Runway Videos (${timestamp})`;
-      const folder = zip.folder(folderName);
-      const videosFolder = folder.folder('Videos');
-      const jsonFolder = folder.folder('JSON');
-
-      // Sort videos by generation and video number for organized download
-      const sortedVideos = videosWithUrls
-        .map(result => ({
-          ...result,
-          filename: generateFilename(result.jobId, result.id)
-        }))
-        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
-
-      // Add each video to the zip with progress tracking
-      for (let i = 0; i < sortedVideos.length; i++) {
-        const result = sortedVideos[i];
-        try {
-          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Verify blob size before adding to zip
-          if (blob.size === 0) {
-            throw new Error('Empty video file received');
-          }
-          
-          // Add video to Videos folder
-          videosFolder.file(result.filename, blob);
-          
-          // Add 4K version if available
-          if (result.upscale_url) {
-            try {
-              const upscaleFilename = generateFilename(result.jobId, result.id, true);
-              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
-              
-              const upscaleResponse = await fetch(result.upscale_url);
-              if (upscaleResponse.ok) {
-                const upscaleBlob = await upscaleResponse.blob();
-                if (upscaleBlob.size > 0) {
-                  videosFolder.file(upscaleFilename, upscaleBlob);
-                }
-              }
-            } catch (upscaleError) {
-              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
-            }
-          }
-          
-          // Add metadata file to JSON folder
-          const metadata = {
-            id: result.id,
-            prompt: result.prompt,
-            jobId: result.jobId,
-            created_at: result.created_at,
-            image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown',
-            upscaled: result.upscaled || false,
-            upscale_task_id: result.upscale_task_id || null
-          };
-          
-          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
-          
-        } catch (error) {
-          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
-        }
-      }
-
-      addLog('🔄 Generating zip file...', 'info');
-      
-      // Generate zip with no compression for faster processing
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'STORE',
-        compressionOptions: { level: 0 }
-      });
-
-      // Calculate final zip size
-      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
-      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
-
-      // Create download link and trigger download
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${folderName}.zip`;
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
-      console.error('Zip creation error:', error);
-    } finally {
-      setIsDownloadingAll(false);
-    }
-  };
-
-  const downloadFavoritedVideos = async () => {
-    const favoritedVideos = results.filter(result => 
-      result.video_url && 
-      result.status === 'completed' && 
-      favoriteVideos.has(result.id)
-    );
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
-
-    try {
-      // Dynamic import of JSZip to avoid SSR issues
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      // Create timestamp for unique folder naming
-      const timestamp = new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'America/Los_Angeles'
-      }).replace(/[/:]/g, '-').replace(', ', '_');
-
-      const folderName = `Favorited Videos (${timestamp})`;
-      const folder = zip.folder(folderName);
-      const videosFolder = folder.folder('Videos');
-      const jsonFolder = folder.folder('JSON');
-
-      // Sort videos by generation and video number for organized download
-      const sortedVideos = favoritedVideos
-        .map(result => ({
-          ...result,
-          filename: generateFilename(result.jobId, result.id)
-        }))
-        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
-
-      // Add each video to the zip with progress tracking
-      for (let i = 0; i < sortedVideos.length; i++) {
-        const result = sortedVideos[i];
-        try {
-          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Verify blob size before adding to zip
-          if (blob.size === 0) {
-            throw new Error('Empty video file received');
-          }
-          
-          // Add video to Videos folder
-          videosFolder.file(result.filename, blob);
-          
-          // Add 4K version if available
-          if (result.upscale_url) {
-            try {
-              const upscaleFilename = generateFilename(result.jobId, result.id, true);
-              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
-              
-              const upscaleResponse = await fetch(result.upscale_url);
-              if (upscaleResponse.ok) {
-                const upscaleBlob = await upscaleResponse.blob();
-                if (upscaleBlob.size > 0) {
-                  videosFolder.file(upscaleFilename, upscaleBlob);
-                }
-              }
-            } catch (upscaleError) {
-              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
-            }
-          }
-          
-          // Add metadata file to JSON folder
-          const metadata = {
-            id: result.id,
-            prompt: result.prompt,
-            jobId: result.jobId,
-            created_at: result.created_at,
-            image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown',
-            favorited: true,
-            upscaled: result.upscaled || false,
-            upscale_task_id: result.upscale_task_id || null
-          };
-          
-          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
-          
-        } catch (error) {
-          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
-        }
-      }
-
-      addLog('🔄 Generating zip file...', 'info');
-      
-      // Generate zip with no compression for faster processing
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'STORE',
-        compressionOptions: { level: 0 }
-      });
-
-      // Calculate final zip size
-      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
-      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
-
-      // Create download link and trigger download
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${folderName}.zip`;
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
-      console.error('Zip creation error:', error);
-    } finally {
-      setIsDownloadingAll(false);
-    }
-  };
-
-  const exportResults = () => {
-    const exportData = {
-      generated_at: new Date().toISOString(),
-      total_videos: results.length,
-      completed_videos: results.filter(r => r.status === 'completed').length,
-      favorited_videos: results.filter(r => favoriteVideos.has(r.id)).length,
-      upscaled_videos: results.filter(r => r.upscaled).length,
-      configuration: {
-        model,
-        aspect_ratio: aspectRatio,
-        duration,
-        concurrency
-      },
-      statistics: {
-        generation_counter: generationCounter,
-        video_counter: videoCounter,
-        average_processing_time: results.length > 0 ? 
-          Math.round(results.reduce((sum, r) => sum + (r.processingTime || 0), 0) / results.length) + 's' : 
-          'N/A'
-      },
-      videos: results.map(result => ({
-        id: result.id,
-        prompt: result.prompt,
-        video_url: result.video_url,
-        thumbnail_url: result.thumbnail_url,
-        image_url: result.image_url,
-        status: result.status,
-        created_at: result.created_at,
-        jobId: result.jobId,
-        processingTime: result.processingTime,
-        favorited: favoriteVideos.has(result.id),
-        filename: generateFilename(result.jobId, result.id),
-        upscaled: result.upscaled || false,
-        upscale_url: result.upscale_url || null,
-        upscale_task_id: result.upscale_task_id || null
-      }))
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `runway_generation_export_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    addLog('📊 Results exported to JSON with enhanced metadata', 'success');
-  };
-
-  if (!mounted) {
-    return null;
-  }
-
-  return (
-    <>
-      <Head>
-        <title>Runway Automation Pro - AI Video Generation</title>
-        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://runway-automation.vercel.app/" />
-        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
-        <meta property="og:image" content="/og-image.png" />
-
-        {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
-        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
-        <meta property="twitter:image" content="/og-image.png" />
-
-        {/* Additional SEO tags */}
-        <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
-        <meta name="author" content="Runway Automation Pro" />
-        <meta name="robots" content="index, follow" />
-        
-        {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#667eea" />
-        <meta name="msapplication-navbutton-color" content="#667eea" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        
-        <link 
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-          rel="stylesheet" 
-        />
-        <link 
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" 
-          rel="stylesheet" 
-        />
-        <script 
-          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-        />
-        <style>{`
-          .tooltip .tooltip-inner {
-            background-color: rgba(0, 0, 0, 1) !important;
-            color: white !important;
-          }
-          .tooltip.bs-tooltip-top .tooltip-arrow::before,
-          .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
-          .tooltip.bs-tooltip-start .tooltip-arrow::before,
-          .tooltip.bs-tooltip-end .tooltip-arrow::before {
-            border-color: rgba(0, 0, 0, 1) transparent !important;
-          }
-        `}</style>
-      </Head>
-
-      <Modal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        title={modalConfig.title}
-        type={modalConfig.type}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-        onConfirm={modalConfig.onConfirm}
-      >
-        {modalConfig.content}
-      </Modal>
-
-      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4">
-          <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
-            <div className="d-flex align-items-center">
-              <button 
-                onClick={() => setActiveTab('setup')}
-                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
-              >
-                <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
-                Runway Automation Pro
-              </button>
-            </div>
-            <div className="text-end">
-              <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
-              </p>
-            </div>
-          </div>
-
-          <div className="row justify-content-center mb-3">
-            <div className="col-auto">
-              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px' }}>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
-                    onClick={() => setActiveTab('setup')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
-                  >
-                    <Settings size={20} className="me-2" />
-                    Setup
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
-                    onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
-                  >
-                    <Video size={20} className="me-2" />
-                    Generation
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
-                    onClick={() => setActiveTab('results')}
-                    style={{ borderRadius: '6px', fontWeight: '600' }}
-                  >
-                    <Download size={20} className="me-2" />
-                    Results
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {activeTab === 'setup' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="row g-4">
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                      <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '80px',
-                          borderRadius: '8px 8px 0 0'
-                        }}
-                      >
-                        <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '80px', 
-                            height: '80px',
-                            left: '20px',
-                            top: '40px',
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
-                          }}
-                        >
-                          <Key className="text-white" size={32} />
-                        </div>
-                        
-                        <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">API Setup</h3>
-                        </div>
-                      </div>
-                      
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4"></div>
-                        <div className="mb-4">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
-                            {runwayApiKey && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={clearStoredApiKey}
-                                title="Clear stored API key"
-                                style={{ fontSize: '12px' }}
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
-                          <input
-                            type="password"
-                            className="form-control form-control-lg"
-                            value={runwayApiKey}
-                            onChange={(e) => setRunwayApiKey(e.target.value)}
-                            placeholder="key_xxx..."
-                            style={{ borderRadius: '8px' }}
-                          />
-                          <div className="form-text">
-                            <ExternalLink size={14} className="me-1" />
-                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from RunwayML Developer Portal
-                            </a>
-                          </div>
-                        </div>
-
-                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                          <div className="d-flex align-items-center mb-2">
-                            <CreditCard size={20} className="text-warning me-2" />
-                            <strong>Credits Required</strong>
-                          </div>
-                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
-                          <ul className="small mb-0 ps-3">
-                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
-                            <li>Minimum $10 (1000 credits)</li>
-                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li><strong>~500 credits for 4K upscale (~$5.00)</strong></li>
-                            <li>Credits are separate from web app credits</li>
-                          </ul>
-                        </div>
-
-                        <div className="row g-3">
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Model</label>
-                            <select
-                              className="form-select"
-                              value={model}
-                              onChange={(e) => setModel(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {modelOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              Aspect Ratio
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
-                              ></i>
-                            </label>
-                            <select
-                              className="form-select"
-                              value={aspectRatio}
-                              onChange={(e) => setAspectRatio(e.target.value)}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              {aspectRatioOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">Duration (seconds)</label>
-                            <select
-                              className="form-select"
-                              value={duration}
-                              onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '8px' }}
-                            >
-                              <option value={5}>5 seconds</option>
-                              <option value={10}>10 seconds</option>
-                            </select>
-                          </div>
-
-                          <div className="col-6">
-                            <label className="form-label fw-bold">
-                              # of Videos Generated
-                              <i 
-                                className="bi bi-info-circle ms-1 text-primary" 
-                                style={{ cursor: 'help' }}
-                                data-bs-toggle="tooltip" 
-                                data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
-                              ></i>
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="20"
-                              className="form-control"
-                              value={concurrency}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value) || 1;
-                                const safeValue = Math.min(Math.max(value, 1), 20);
-                                setConcurrency(safeValue);
-                                
-                                if (value > 20) {
-                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
-                                }
-                              }}
-                              style={{ borderRadius: '8px' }}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
-                          <div className="table-responsive">
-                            <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead className="table-secondary">
-                                <tr>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
-                                </tr>
-                              </thead>
-                              <tbody className="small">
-                                <tr>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">Default (new accounts)</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">2</td>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">1 day after $50 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">7 days after $100 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">4</td>
-                                  <td className="border-dark">10</td>
-                                  <td className="border-dark">14 days after $1,000 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">20</td>
-                                  <td className="border-dark">7 days after $5,000 purchased</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                          <p className="small text-muted mt-2 mb-0">
-                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                      <div 
-                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                        style={{ 
-                          height: '80px',
-                          borderRadius: '8px 8px 0 0'
-                        }}
-                      >
-                        <div 
-                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ 
-                            width: '80px', 
-                            height: '80px',
-                            left: '20px',
-                            top: '40px',
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff'
-                          }}
-                        >
-                          <Film className="text-white" size={32} />
-                        </div>
-                        
-                        <div className="text-white text-center">
-                          <h3 className="mb-0 fw-bold">Video Setup</h3>
-                        </div>
-                      </div>
-                      
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                        <div className="mb-4"></div>
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt</label>
-                          <div className="position-relative">
-                            <textarea
-                              className="form-control"
-                              rows="3"
-                              value={prompt}
-                              onChange={(e) => setPrompt(e.target.value)}
-                              placeholder=""
-                              style={{ borderRadius: '8px' }}
-                            />
-                            {!prompt && (
-                              <div 
-                                className="position-absolute" 
-                                style={{ 
-                                  left: '16px', 
-                                  top: '12px', 
-                                  pointerEvents: 'none',
-                                  color: '#6c757d',
-                                  fontSize: '16px'
-                                }}
-                              >
-                                Add an image then describe your shot.{' '}
-                                <a 
-                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-decoration-underline"
-                                  style={{ 
-                                    color: '#6c757d',
-                                    pointerEvents: 'auto'
-                                  }}
-                                >
-                                  View guide
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mb-4">
-                          <label className="form-label fw-bold">
-                            Image
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
-                            ></i>
-                          </label>
-                          
-                          {/* Hidden file input */}
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            style={{ display: 'none' }}
-                          />
-                          
-                          {/* Upload button or URL input */}
-                          {!imageUrl ? (
-                            <div 
-                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
-                              style={{ 
-                                borderColor: '#dee2e6', 
-                                backgroundColor: '#f8f9fa',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                minHeight: '120px'
-                              }}
-                              onClick={triggerImageUpload}
-                              onMouseEnter={(e) => {
-                                e.target.style.borderColor = '#0d6efd';
-                                e.target.style.backgroundColor = '#e7f3ff';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.borderColor = '#dee2e6';
-                                e.target.style.backgroundColor = '#f8f9fa';
-                              }}
-                            >
-                              <div>
-                                {isUploadingImage ? (
-                                  <>
-                                    <div className="spinner-border text-primary mb-2" role="status">
-                                      <span className="visually-hidden">Uploading...</span>
-                                    </div>
-                                    <div className="text-muted">Uploading image...</div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <FolderOpen size={48} className="text-primary mb-2" />
-                                    <div className="text-primary fw-bold mb-1">Click to upload image</div>
-                                    <div className="text-muted small">or paste image URL below</div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="position-relative">
-                              <img 
-                                src={imageUrl} 
-                                alt="Uploaded image preview"
-                                className="img-fluid rounded border w-100"
-                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
-                                onLoad={handleImageLoad}
-                                onError={handleImageError}
-                              />
-                              <button
-                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
-                                onClick={() => {
-                                  setImageUrl('');
-                                  setImageError(false);
-                                  if (fileInputRef.current) {
-                                    fileInputRef.current.value = '';
-                                  }
-                                }}
-                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          )}
-                          
-                          {/* URL input as alternative */}
-                          <div className="mt-3">
-                            <input
-                              type="url"
-                              className="form-control"
-                              value={imageUrl}
-                              onChange={(e) => setImageUrl(e.target.value)}
-                              placeholder="Or paste image URL here..."
-                              style={{ borderRadius: '8px' }}
-                            />
-                          </div>
-                          
-                          {/* Generate Video Button */}
-                          <div className="mt-4">
-                            <button
-                              className="btn btn-success btn-lg w-100 shadow"
-                              onClick={() => {
-                                setActiveTab('generation');
-                                // Small delay to ensure tab switch completes before starting generation
-                                setTimeout(() => {
-                                  if (!isRunning) {
-                                    generateVideos();
-                                  }
-                                }, 100);
-                              }}
-                              disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
-                              style={{ 
-                                borderRadius: '8px', 
-                                fontWeight: '600',
-                                backgroundColor: '#28a745',
-                                borderColor: '#28a745'
-                              }}
-                            >
-                              <Play size={20} className="me-2" />
-                              Generate Video{concurrency > 1 ? 's' : ''}
-                              {concurrency > 1 && (
-                                <span className="ms-2 badge bg-light text-dark">
-                                  {concurrency}
-                                </span>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        window.URL.revokeObjectURL
