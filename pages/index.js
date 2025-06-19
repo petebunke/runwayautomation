@@ -348,6 +348,198 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  const pollUpscaleCompletion = async (upscaleTaskId, originalVideo) => {
+    const maxPolls = Math.floor(1800 / 15); // 30 minutes max
+    let pollCount = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 5;
+    const startTime = Date.now();
+
+    addLog(`⏳ Monitoring 4K upscale progress... (Task ID: ${upscaleTaskId})`, 'info');
+
+    while (pollCount < maxPolls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + upscaleTaskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          if (consecutiveErrors < maxConsecutiveErrors) {
+            consecutiveErrors++;
+            const backoffDelay = 20000 + (consecutiveErrors * 10000);
+            addLog(`⚠️ Upscale polling parse error, retrying in ${Math.round(backoffDelay/1000)}s...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          throw new Error('Invalid response from upscale status API');
+        }
+
+        if (!response.ok) {
+          if (response.status === 429 || response.status >= 500) {
+            consecutiveErrors++;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
+            }
+            const backoffDelay = 30000 + (consecutiveErrors * 15000);
+            addLog(`⚠️ Upscale status error (${response.status}), retrying in ${Math.round(backoffDelay/1000)}s...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          
+          if (response.status === 404) {
+            throw new Error('Upscale task not found. The task may have expired or been cancelled.');
+          }
+          
+          throw new Error(task.error || 'Upscale status polling failed: ' + response.status);
+        }
+        
+        consecutiveErrors = 0;
+        
+        // Calculate progress based on status and elapsed time
+        const elapsedMinutes = Math.floor((Date.now() - startTime) / 60000);
+        let progress = 10;
+        let statusMessage = '';
+        
+        if (task.status === 'PENDING') {
+          progress = Math.min(20 + (elapsedMinutes * 2), 30);
+          statusMessage = `Queued (${elapsedMinutes}m)`;
+        } else if (task.status === 'RUNNING') {
+          // Upscaling typically takes 10-20 minutes
+          const runningProgress = Math.min((elapsedMinutes / 15) * 60, 80);
+          progress = Math.min(30 + runningProgress, 95);
+          statusMessage = `Upscaling (${elapsedMinutes}m)`;
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+          statusMessage = 'Completed';
+        } else if (task.status === 'FAILED') {
+          statusMessage = 'Failed';
+        } else {
+          statusMessage = task.status.toLowerCase();
+        }
+        
+        setUpscaleProgress(prev => ({
+          ...prev,
+          [originalVideo.id]: { 
+            status: task.status.toLowerCase(), 
+            progress: Math.round(progress),
+            message: statusMessage
+          }
+        }));
+
+        if (task.status === 'SUCCEEDED') {
+          const totalTime = Math.floor((Date.now() - startTime) / 60000);
+          addLog(`✓ 4K upscale completed for ${originalVideo.jobId || 'video'} in ${totalTime} minute${totalTime !== 1 ? 's' : ''}`, 'success');
+          
+          // Validate output URLs
+          const upscale_url = task.output && task.output[0] ? task.output[0] : null;
+          const upscale_thumbnail = task.output && task.output[1] ? task.output[1] : null;
+          
+          if (!upscale_url) {
+            addLog(`⚠️ Warning: 4K upscale completed but no video URL returned`, 'warning');
+          }
+          
+          // Update the original video result with upscale info
+          setResults(prev => prev.map(result => {
+            if (result.id === originalVideo.id) {
+              return {
+                ...result,
+                upscale_url: upscale_url,
+                upscale_thumbnail: upscale_thumbnail,
+                upscaled: true,
+                upscale_task_id: upscaleTaskId,
+                upscale_completed_at: new Date().toISOString()
+              };
+            }
+            return result;
+          }));
+          
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+
+          return task;
+        }
+
+        if (task.status === 'FAILED') {
+          const failureReason = task.failure_reason || task.failureCode || task.error || 'Upscale failed - no specific reason provided';
+          addLog(`✗ 4K upscale failed for ${originalVideo.jobId || 'video'}: ${failureReason}`, 'error');
+          
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+          
+          throw new Error(failureReason);
+        }
+
+        // Log progress periodically
+        if (pollCount > 0 && pollCount % 4 === 0) {
+          addLog(`⏳ 4K upscale in progress: ${statusMessage} (${progress}%)`, 'info');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 15000)); // Poll every 15 seconds for upscale
+        pollCount++;
+        
+      } catch (error) {
+        consecutiveErrors++;
+        
+        // Handle permanent failures
+        if (error.message.includes('Insufficient credits') || 
+            error.message.includes('not eligible') ||
+            error.message.includes('not found') ||
+            (error.message.includes('failed') && 
+             !error.message.includes('timeout') && 
+             !error.message.includes('network') &&
+             !error.message.includes('server error'))) {
+          addLog(`✗ 4K upscale permanently failed: ${error.message}`, 'error');
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+          throw error;
+        }
+        
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          const finalError = `Upscale failed after ${maxConsecutiveErrors} consecutive errors: ${error.message}`;
+          addLog(`✗ ${finalError}`, 'error');
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+          throw new Error(finalError);
+        }
+        
+        const backoffDelay = 20000 + (consecutiveErrors * 10000);
+        addLog(`⏳ Upscale polling error, waiting ${Math.round(backoffDelay/1000)}s before retry... (${consecutiveErrors}/${maxConsecutiveErrors})`, 'info');
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        pollCount++;
+      }
+    }
+
+    const totalTime = Math.floor((Date.now() - startTime) / 60000);
+    throw new Error(`4K upscale timeout after ${totalTime} minutes (maximum 30 minutes allowed)`);
+  };
+
   const clearGeneratedVideos = () => {
     const videoCount = results.length;
     if (videoCount === 0) {
@@ -639,7 +831,7 @@ export default function RunwayAutomationApp() {
     return ratioMap[ratio] || '1280:720';
   };
 
-  // 4K UPSCALE FUNCTIONS - Corrected implementation per API guide
+  // 4K UPSCALE FUNCTIONS - Official RunwayML API Implementation
   const upscaleVideo = async (videoResult) => {
     try {
       if (!runwayApiKey.trim()) {
@@ -695,8 +887,12 @@ export default function RunwayAutomationApp() {
             throw new Error('Insufficient credits for 4K upscale. Approximately 500 credits (~$5.00) required.');
           }
           if (errorMessage.includes('not eligible') || errorMessage.includes('cannot be upscaled')) {
-            throw new Error('This video is not eligible for 4K upscaling. Only completed Gen-4 videos can be upscaled.');
+            throw new Error('This video is not eligible for 4K upscaling. Only completed videos can be upscaled.');
           }
+        }
+        
+        if (response.status === 404) {
+          throw new Error('4K upscale feature may not be available for your account tier or this video.');
         }
         
         throw new Error(errorMessage);
@@ -1708,6 +1904,120 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  const download4KVideos = async () => {
+    const upscaledVideos = results.filter(result => 
+      result.upscale_url && 
+      result.status === 'completed' && 
+      result.upscaled
+    );
+    
+    if (upscaledVideos.length === 0) {
+      addLog('❌ No 4K videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${upscaledVideos.length} 4K videos...`, 'info');
+
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `4K Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      const sortedVideos = upscaledVideos
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id, true)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding 4K ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.upscale_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch 4K video`);
+          }
+          
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error('Empty 4K video file received');
+          }
+          
+          videosFolder.file(result.filename, blob);
+          
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown',
+            upscaled: true,
+            upscale_task_id: result.upscale_task_id || null,
+            upscale_completed_at: result.upscale_completed_at || null,
+            original_video_url: result.video_url,
+            upscale_video_url: result.upscale_url
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_4K_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add 4K ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating 4K zip file...', 'info');
+      
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 4K zip file created: ${zipSizeMB}MB`, 'info');
+
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded 4K zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create 4K zip archive: ' + error.message, 'error');
+      console.error('4K zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
   const downloadFavoritedVideos = async () => {
     const favoritedVideos = results.filter(result => 
       result.video_url && 
@@ -2646,7 +2956,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
+                            <span className="text-primary">[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2711,7 +3021,7 @@ export default function RunwayAutomationApp() {
                             ) : (
                               <>
                                 <Download size={20} className="me-2" />
-                                Download All as ZIP
+                                All Videos
                                 <span className="ms-2 badge bg-primary">
                                   {results.filter(result => result.video_url && result.status === 'completed').length}
                                 </span>
@@ -2727,21 +3037,27 @@ export default function RunwayAutomationApp() {
                               style={{ borderRadius: '8px', fontWeight: '600' }}
                             >
                               <Heart size={16} className="me-2" />
-                              Favorites
+                              Favorited Videos
                               <span className="ms-2 badge bg-light text-dark">
                                 {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
                               </span>
                             </button>
                           )}
                           
-                          <button
-                            className="btn btn-outline-light shadow"
-                            onClick={exportResults}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            <i className="bi bi-download me-2"></i>
-                            Export JSON
-                          </button>
+                          {results.filter(result => result.upscaled && result.upscale_url).length > 0 && (
+                            <button
+                              className="btn btn-success shadow"
+                              onClick={download4KVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Zap size={16} className="me-2" />
+                              4K Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.upscaled && result.upscale_url).length}
+                              </span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -2892,7 +3208,7 @@ export default function RunwayAutomationApp() {
                                         View
                                       </button>
                                       <button
-                                        className="btn btn-warning btn-sm"
+                                        className="btn btn-secondary btn-sm"
                                         onClick={() => upscaleVideo(result)}
                                         disabled={!!upscaleProgress[result.id] || result.upscaled}
                                         title={
