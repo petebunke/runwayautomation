@@ -186,6 +186,19 @@ export default function RunwayAutomationApp() {
       if (savedHasShownCostWarning === 'true') {
         setHasShownCostWarning(true);
       }
+
+      // Load saved logs
+      const savedLogs = localStorage.getItem('runway-automation-logs');
+      if (savedLogs && savedLogs.trim()) {
+        try {
+          const parsedLogs = JSON.parse(savedLogs);
+          if (Array.isArray(parsedLogs) && parsedLogs.length > 0) {
+            setLogs(parsedLogs);
+          }
+        } catch (parseError) {
+          localStorage.removeItem('runway-automation-logs');
+        }
+      }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
     }
@@ -310,6 +323,20 @@ export default function RunwayAutomationApp() {
       console.warn('Failed to save favorites to localStorage:', error);
     }
   }, [favoriteVideos, mounted]);
+
+  // Save logs to localStorage whenever logs change
+  useEffect(() => {
+    if (!mounted || !Array.isArray(logs)) return;
+    try {
+      if (logs.length > 0) {
+        localStorage.setItem('runway-automation-logs', JSON.stringify(logs));
+      } else {
+        localStorage.removeItem('runway-automation-logs');
+      }
+    } catch (error) {
+      console.warn('Failed to save logs to localStorage:', error);
+    }
+  }, [logs, mounted]);
 
   const clearStoredApiKey = () => {
     try {
@@ -558,6 +585,43 @@ export default function RunwayAutomationApp() {
       addLog('📋 Logs copied to clipboard', 'info');
     }).catch(() => {
       addLog('❌ Failed to copy logs to clipboard', 'error');
+    });
+  };
+
+  const clearLogs = () => {
+    const logCount = logs.length;
+    if (logCount === 0) {
+      addLog('ℹ️ No logs to clear', 'info');
+      return;
+    }
+
+    showModalDialog({
+      title: "Clear Generation Log",
+      type: "warning",
+      confirmText: "Clear Log",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        try {
+          localStorage.removeItem('runway-automation-logs');
+          setLogs([]);
+          console.log(`Cleared ${logCount} log entries from browser storage`);
+        } catch (error) {
+          console.warn('Failed to clear logs:', error);
+        }
+      },
+      content: (
+        <div>
+          <p className="mb-3">
+            <strong>This will permanently remove {logCount} log entr{logCount !== 1 ? 'ies' : 'y'} from your browser.</strong>
+          </p>
+          <p className="mb-3">
+            This action cannot be undone, but new logs will continue to be generated during video creation.
+          </p>
+          <p className="mb-0 text-muted">
+            Are you sure you want to continue?
+          </p>
+        </div>
+      )
     });
   };
 
@@ -1078,7 +1142,7 @@ export default function RunwayAutomationApp() {
 
   const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
     setIsRunning(true);
-    setLogs([]);
+    // Don't clear logs here anymore - let them persist
     
     const currentGeneration = generationCounter + 1;
     setGenerationCounter(currentGeneration);
@@ -2251,14 +2315,24 @@ export default function RunwayAutomationApp() {
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
-                        <button 
-                          className="btn btn-sm btn-outline-light" 
-                          onClick={copyLogsToClipboard}
-                          title="Copy all logs to clipboard"
-                          style={{ borderRadius: '6px' }}
-                        >
-                          <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                        </button>
+                        <div className="d-flex gap-2">
+                          <button 
+                            className="btn btn-sm btn-outline-danger" 
+                            onClick={clearLogs}
+                            title="Clear all logs"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-outline-light" 
+                            onClick={copyLogsToClipboard}
+                            title="Copy all logs to clipboard"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                          </button>
+                        </div>
                       </div>
                       <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
                         {logs.map((log, index) => (
@@ -2273,7 +2347,7 @@ export default function RunwayAutomationApp() {
                         ))}
                         {logs.length === 0 && (
                           <div className="text-muted small">
-                            Ready to start generation... Configure your settings and click "Start Generation"
+                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
                           </div>
                         )}
                       </div>
