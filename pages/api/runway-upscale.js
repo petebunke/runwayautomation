@@ -23,8 +23,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Video URL (promptVideo) is required for upscaling' });
     }
 
-    console.log('Starting 4K upscale for video:', payload.promptVideo);
-
     const requestBody = {
       promptVideo: payload.promptVideo
     };
@@ -45,15 +43,12 @@ export default async function handler(req, res) {
       });
 
       clearTimeout(timeoutId);
-
       const responseText = await response.text();
-      console.log('RunwayML Gen-4 upscale API response status:', response.status);
 
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error('Failed to parse upscale response as JSON:', parseError);
         return res.status(502).json({
           error: 'Invalid response from RunwayML Gen-4 upscale API',
           message: 'The API returned an unexpected response format'
@@ -61,8 +56,6 @@ export default async function handler(req, res) {
       }
 
       if (!response.ok) {
-        console.error('RunwayML Gen-4 upscale API error:', response.status, data);
-        
         if (response.status === 401) {
           return res.status(401).json({
             error: 'Invalid API key',
@@ -99,8 +92,6 @@ export default async function handler(req, res) {
         });
       }
 
-      console.log('4K upscale request successful - Task ID:', data.id);
-      
       res.status(200).json({
         id: data.id,
         status: data.status || 'PENDING',
@@ -133,8 +124,6 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('Upscale proxy error:', error);
-    
     return res.status(500).json({ 
       error: 'Internal server error',
       message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred during upscaling',
