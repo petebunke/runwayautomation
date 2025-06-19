@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -23,345 +23,84 @@ export default function RunwayAutomationApp() {
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [completedGeneration, setCompletedGeneration] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [favoriteVideos, setFavoriteVideos] = useState(new Set());
-  const [showModal, setShowModal] = useState(false);
-  const [modalConfig, setModalConfig] = useState({});
-  const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
   const fileInputRef = useRef(null);
-
-  // Blue color to match tab buttons
-  const HEADER_BLUE = '#0d6efd'; // Match Bootstrap primary blue
-
-  // Handle client-side mounting to avoid hydration issues
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Modal component
-  const Modal = ({ show, onClose, title, children, onConfirm, confirmText = "Confirm", cancelText = "Cancel", type = "confirm" }) => {
-    if (!show) return null;
-
-    return (
-      <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ 
-        backgroundColor: 'rgba(0,0,0,0.5)', 
-        zIndex: 9999 
-      }}>
-        <div className="card shadow-lg border-0" style={{ 
-          borderRadius: '8px', 
-          overflow: 'hidden',
-          maxWidth: '500px',
-          width: '90%',
-          maxHeight: '80vh',
-          overflowY: 'auto'
-        }}>
-          <div 
-            className="position-relative d-flex align-items-center justify-content-center" 
-            style={{ 
-              height: '80px',
-              borderRadius: '8px 8px 0 0',
-              backgroundColor: HEADER_BLUE
-            }}
-          >
-            <div 
-              className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-              style={{ 
-                width: '80px', 
-                height: '80px',
-                left: '20px',
-                top: '40px',
-                zIndex: 10,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                backgroundColor: '#4dd0ff'
-              }}
-            >
-              {type === 'warning' ? <AlertCircle className="text-white" size={32} /> : <CreditCard className="text-white" size={32} />}
-            </div>
-            
-            <div className="text-white text-center">
-              <h3 className="mb-0 fw-bold">{title}</h3>
-            </div>
-          </div>
-          
-          <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-            <div className="mb-4">
-            </div>
-            {children}
-            
-            <div className="d-flex gap-3 justify-content-end mt-4">
-              <button
-                className="btn btn-secondary"
-                onClick={onClose}
-                style={{ borderRadius: '8px', fontWeight: '600' }}
-              >
-                {cancelText}
-              </button>
-              {onConfirm && (
-                <button
-                  className={`btn ${type === 'warning' ? 'btn-danger' : 'btn-primary'} shadow`}
-                  onClick={() => {
-                    onConfirm();
-                    onClose();
-                  }}
-                  style={{ borderRadius: '8px', fontWeight: '600' }}
-                >
-                  {confirmText}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Show modal helper function
-  const showModalDialog = (config) => {
-    setModalConfig(config);
-    setShowModal(true);
-  };
 
   // Load saved data from localStorage on component mount
   useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      // Load API key
-      const savedApiKey = localStorage.getItem('runway-automation-api-key');
-      if (savedApiKey && savedApiKey.trim()) {
-        console.log('Loading saved API key from localStorage');
-        setRunwayApiKey(savedApiKey);
-      }
-      
-      // Load prompt
-      const savedPrompt = localStorage.getItem('runway-automation-prompt');
-      if (savedPrompt && savedPrompt.trim()) {
-        console.log('Loading saved prompt from localStorage');
-        setPrompt(savedPrompt);
-      }
-      
-      // Load image URL
-      const savedImageUrl = localStorage.getItem('runway-automation-image-url');
-      if (savedImageUrl && savedImageUrl.trim()) {
-        console.log('Loading saved image URL from localStorage');
-        setImageUrl(savedImageUrl);
-      }
-
-      // Load model
-      const savedModel = localStorage.getItem('runway-automation-model');
-      if (savedModel && savedModel.trim()) {
-        console.log('Loading saved model from localStorage');
-        setModel(savedModel);
-      }
-
-      // Load aspect ratio
-      const savedAspectRatio = localStorage.getItem('runway-automation-aspect-ratio');
-      if (savedAspectRatio && savedAspectRatio.trim()) {
-        console.log('Loading saved aspect ratio from localStorage');
-        setAspectRatio(savedAspectRatio);
-      }
-
-      // Load duration
-      const savedDuration = localStorage.getItem('runway-automation-duration');
-      if (savedDuration && savedDuration.trim()) {
-        console.log('Loading saved duration from localStorage');
-        setDuration(parseInt(savedDuration));
-      }
-
-      // Load concurrency
-      const savedConcurrency = localStorage.getItem('runway-automation-concurrency');
-      if (savedConcurrency && savedConcurrency.trim()) {
-        console.log('Loading saved concurrency from localStorage');
-        setConcurrency(parseInt(savedConcurrency));
-      }
-
-      // Load generated videos
-      const savedResults = localStorage.getItem('runway-automation-results');
-      if (savedResults && savedResults.trim()) {
-        try {
-          const parsedResults = JSON.parse(savedResults);
-          if (Array.isArray(parsedResults) && parsedResults.length > 0) {
-            console.log('Loading saved results from localStorage:', parsedResults.length, 'videos');
-            setResults(parsedResults);
-          }
-        } catch (parseError) {
-          console.warn('Failed to parse saved results:', parseError);
-          localStorage.removeItem('runway-automation-results');
+    if (typeof window !== 'undefined') {
+      try {
+        // Load API key
+        const savedApiKey = localStorage.getItem('runway-automation-api-key');
+        if (savedApiKey && savedApiKey.trim()) {
+          console.log('Loading saved API key from localStorage');
+          setRunwayApiKey(savedApiKey);
         }
-      }
-
-      // Load generation counter
-      const savedGenerationCounter = localStorage.getItem('runway-automation-generation-counter');
-      if (savedGenerationCounter && savedGenerationCounter.trim()) {
-        setGenerationCounter(parseInt(savedGenerationCounter));
-      }
-
-      // Load favorite videos
-      const savedFavorites = localStorage.getItem('runway-automation-favorites');
-      if (savedFavorites && savedFavorites.trim()) {
-        try {
-          const parsedFavorites = JSON.parse(savedFavorites);
-          if (Array.isArray(parsedFavorites)) {
-            setFavoriteVideos(new Set(parsedFavorites));
-          }
-        } catch (parseError) {
-          console.warn('Failed to parse saved favorites:', parseError);
-          localStorage.removeItem('runway-automation-favorites');
+        
+        // Load prompt
+        const savedPrompt = localStorage.getItem('runway-automation-prompt');
+        if (savedPrompt && savedPrompt.trim()) {
+          console.log('Loading saved prompt from localStorage');
+          setPrompt(savedPrompt);
         }
+        
+        // Load image URL
+        const savedImageUrl = localStorage.getItem('runway-automation-image-url');
+        if (savedImageUrl && savedImageUrl.trim()) {
+          console.log('Loading saved image URL from localStorage');
+          setImageUrl(savedImageUrl);
+        }
+      } catch (error) {
+        console.warn('Failed to load saved data from localStorage:', error);
       }
-
-      // Load cost warning status - if user has ever generated videos, don't show modal again
-      const savedHasShownCostWarning = localStorage.getItem('runway-automation-cost-warning-shown');
-      if (savedHasShownCostWarning === 'true') {
-        console.log('Loading cost warning status from localStorage');
-        setHasShownCostWarning(true);
-      }
-    } catch (error) {
-      console.warn('Failed to load saved data from localStorage:', error);
     }
-  }, [mounted]);
+  }, []);
 
   // Save API key to localStorage when it changes
   useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
-        console.log('Saving API key to localStorage');
-        localStorage.setItem('runway-automation-api-key', runwayApiKey);
-      } else if (runwayApiKey === '') {
-        console.log('Removing API key from localStorage');
-        localStorage.removeItem('runway-automation-api-key');
+    if (typeof window !== 'undefined') {
+      try {
+        if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 5) {
+          console.log('Saving API key to localStorage');
+          localStorage.setItem('runway-automation-api-key', runwayApiKey);
+        } else if (runwayApiKey === '') {
+          console.log('Removing API key from localStorage');
+          localStorage.removeItem('runway-automation-api-key');
+        }
+      } catch (error) {
+        console.warn('Failed to save API key to localStorage:', error);
       }
-    } catch (error) {
-      console.warn('Failed to save API key to localStorage:', error);
     }
-  }, [runwayApiKey, mounted]);
+  }, [runwayApiKey]);
 
   // Save prompt to localStorage when it changes
   useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (prompt && prompt.trim()) {
-        localStorage.setItem('runway-automation-prompt', prompt);
-      } else if (prompt === '') {
-        localStorage.removeItem('runway-automation-prompt');
+    if (typeof window !== 'undefined') {
+      try {
+        if (prompt && prompt.trim()) {
+          localStorage.setItem('runway-automation-prompt', prompt);
+        } else if (prompt === '') {
+          localStorage.removeItem('runway-automation-prompt');
+        }
+      } catch (error) {
+        console.warn('Failed to save prompt to localStorage:', error);
       }
-    } catch (error) {
-      console.warn('Failed to save prompt to localStorage:', error);
     }
-  }, [prompt, mounted]);
+  }, [prompt]);
 
   // Save image URL to localStorage when it changes
   useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (imageUrl && imageUrl.trim()) {
-        localStorage.setItem('runway-automation-image-url', imageUrl);
-      } else if (imageUrl === '') {
-        localStorage.removeItem('runway-automation-image-url');
+    if (typeof window !== 'undefined') {
+      try {
+        if (imageUrl && imageUrl.trim()) {
+          localStorage.setItem('runway-automation-image-url', imageUrl);
+        } else if (imageUrl === '') {
+          localStorage.removeItem('runway-automation-image-url');
+        }
+      } catch (error) {
+        console.warn('Failed to save image URL to localStorage:', error);
       }
-    } catch (error) {
-      console.warn('Failed to save image URL to localStorage:', error);
     }
-  }, [imageUrl, mounted]);
-
-  // Save model to localStorage when it changes
-  useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (model && model.trim()) {
-        localStorage.setItem('runway-automation-model', model);
-      }
-    } catch (error) {
-      console.warn('Failed to save model to localStorage:', error);
-    }
-  }, [model, mounted]);
-
-  // Save aspect ratio to localStorage when it changes
-  useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (aspectRatio && aspectRatio.trim()) {
-        localStorage.setItem('runway-automation-aspect-ratio', aspectRatio);
-      }
-    } catch (error) {
-      console.warn('Failed to save aspect ratio to localStorage:', error);
-    }
-  }, [aspectRatio, mounted]);
-
-  // Save duration to localStorage when it changes
-  useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (duration) {
-        localStorage.setItem('runway-automation-duration', duration.toString());
-      }
-    } catch (error) {
-      console.warn('Failed to save duration to localStorage:', error);
-    }
-  }, [duration, mounted]);
-
-  // Save concurrency to localStorage when it changes
-  useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (concurrency) {
-        localStorage.setItem('runway-automation-concurrency', concurrency.toString());
-      }
-    } catch (error) {
-      console.warn('Failed to save concurrency to localStorage:', error);
-    }
-  }, [concurrency, mounted]);
-
-  // Save results to localStorage when they change
-  useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (results && results.length > 0) {
-        localStorage.setItem('runway-automation-results', JSON.stringify(results));
-      } else if (results.length === 0) {
-        localStorage.removeItem('runway-automation-results');
-      }
-    } catch (error) {
-      console.warn('Failed to save results to localStorage:', error);
-    }
-  }, [results, mounted]);
-
-  // Save generation counter to localStorage when it changes
-  useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (generationCounter > 0) {
-        localStorage.setItem('runway-automation-generation-counter', generationCounter.toString());
-      }
-    } catch (error) {
-      console.warn('Failed to save generation counter to localStorage:', error);
-    }
-  }, [generationCounter, mounted]);
-
-  // Save favorites to localStorage when they change
-  useEffect(() => {
-    if (!mounted) return;
-    
-    try {
-      if (favoriteVideos.size > 0) {
-        localStorage.setItem('runway-automation-favorites', JSON.stringify([...favoriteVideos]));
-      } else {
-        localStorage.removeItem('runway-automation-favorites');
-      }
-    } catch (error) {
-      console.warn('Failed to save favorites to localStorage:', error);
-    }
-  }, [favoriteVideos, mounted]);
+  }, [imageUrl]);
 
   // Clear API key function for security
   const clearStoredApiKey = () => {
@@ -380,23 +119,9 @@ export default function RunwayAutomationApp() {
       localStorage.removeItem('runway-automation-api-key');
       localStorage.removeItem('runway-automation-prompt');
       localStorage.removeItem('runway-automation-image-url');
-      localStorage.removeItem('runway-automation-model');
-      localStorage.removeItem('runway-automation-aspect-ratio');
-      localStorage.removeItem('runway-automation-duration');
-      localStorage.removeItem('runway-automation-concurrency');
-      localStorage.removeItem('runway-automation-results');
-      localStorage.removeItem('runway-automation-generation-counter');
-      localStorage.removeItem('runway-automation-favorites');
       setRunwayApiKey('');
       setPrompt('');
       setImageUrl('');
-      setModel('gen3a_turbo');
-      setAspectRatio('16:9');
-      setDuration(5);
-      setConcurrency(1);
-      setResults([]);
-      setGenerationCounter(0);
-      setFavoriteVideos(new Set());
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -404,64 +129,6 @@ export default function RunwayAutomationApp() {
     } catch (error) {
       console.warn('Failed to clear stored data:', error);
     }
-  };
-
-  // Clear generated videos function with modal
-  const clearGeneratedVideos = () => {
-    const videoCount = results.length;
-    if (videoCount === 0) {
-      addLog('ℹ️ No videos to clear', 'info');
-      return;
-    }
-
-    showModalDialog({
-      title: "Clear All Videos",
-      type: "warning",
-      confirmText: "Clear Videos",
-      cancelText: "Cancel",
-      onConfirm: () => {
-        try {
-          localStorage.removeItem('runway-automation-results');
-          localStorage.removeItem('runway-automation-generation-counter');
-          localStorage.removeItem('runway-automation-favorites');
-          // Do NOT remove the cost warning flag when clearing videos
-          setResults([]);
-          setGenerationCounter(0);
-          setCompletedGeneration(null);
-          setFavoriteVideos(new Set());
-          addLog(`🗑️ Cleared ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from browser storage`, 'info');
-        } catch (error) {
-          console.warn('Failed to clear videos:', error);
-          addLog('❌ Failed to clear videos: ' + error.message, 'error');
-        }
-      },
-      content: (
-        <div>
-          <p className="mb-3">
-            <strong>This will permanently remove {videoCount} generated video{videoCount !== 1 ? 's' : ''} from your browser.</strong>
-          </p>
-          <p className="mb-3">
-            Videos will still be accessible via their original URLs if you have them saved elsewhere.
-          </p>
-          <p className="mb-0 text-muted">
-            Are you sure you want to continue?
-          </p>
-        </div>
-      )
-    });
-  };
-
-  // Toggle favorite status for a video
-  const toggleFavorite = (videoId) => {
-    setFavoriteVideos(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(videoId)) {
-        newFavorites.delete(videoId);
-      } else {
-        newFavorites.add(videoId);
-      }
-      return newFavorites;
-    });
   };
 
   const isValidImageUrl = (url) => {
@@ -538,31 +205,25 @@ export default function RunwayAutomationApp() {
     fileInputRef.current?.click();
   };
 
-  // Initialize Bootstrap tooltips - optimized for performance
+  // Initialize Bootstrap tooltips
   useEffect(() => {
-    if (!mounted) return;
-    
-    // Only reinitialize tooltips when switching to setup tab or when results change
-    if (typeof window !== 'undefined' && window.bootstrap && (activeTab === 'setup' || activeTab === 'results')) {
-      // Use requestAnimationFrame to avoid blocking the UI
-      requestAnimationFrame(() => {
-        // Dispose existing tooltips first to prevent duplicates
-        const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        existingTooltips.forEach(function (tooltipEl) {
-          const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
-          if (existingTooltip) {
-            existingTooltip.dispose();
-          }
-        });
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      // Dispose existing tooltips first to prevent duplicates
+      const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      existingTooltips.forEach(function (tooltipEl) {
+        const existingTooltip = window.bootstrap.Tooltip.getInstance(tooltipEl);
+        if (existingTooltip) {
+          existingTooltip.dispose();
+        }
+      });
 
-        // Initialize new tooltips only for the current tab
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-          new window.bootstrap.Tooltip(tooltipTriggerEl);
-        });
+      // Initialize new tooltips
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new window.bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
-  }, [activeTab, mounted]);
+  }, [activeTab, model, results]);
 
   const modelOptions = [
     { value: 'gen4_turbo', label: 'Gen-4 Turbo (Newest, highest quality)' },
@@ -581,13 +242,7 @@ export default function RunwayAutomationApp() {
   ];
 
   const addLog = (message, type = 'info') => {
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      hour12: true,
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+    const timestamp = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, { message, type, timestamp }]);
   };
 
@@ -623,7 +278,7 @@ export default function RunwayAutomationApp() {
     return null; // Return null if we can't check credits
   };
 
-  // Improved generateVideo function with better error handling and reliability
+  // Improved generateVideo function with better error handling
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
@@ -677,14 +332,14 @@ export default function RunwayAutomationApp() {
         seed: Math.floor(Math.random() * 1000000)
       };
 
-      // Enhanced retry logic with exponential backoff and jitter
+      // Add retry logic for initial API call
       let retryCount = 0;
-      const maxRetries = 5; // Increased from 3
+      const maxRetries = 3;
       
       while (retryCount <= maxRetries) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s
+          const timeoutId = setTimeout(() => controller.abort(), 45000);
 
           const response = await fetch(API_BASE + '/runway-generate', {
             method: 'POST',
@@ -704,17 +359,12 @@ export default function RunwayAutomationApp() {
             const errorData = await response.json();
             let errorMessage = errorData.error || 'API Error: ' + response.status;
             
-            // Handle retryable errors with exponential backoff
+            // Handle retryable errors
             if (response.status === 429 || response.status >= 500) {
               if (retryCount < maxRetries) {
-                // Exponential backoff with jitter: base * 2^retry + random(0-50% of base)
-                const baseDelay = 15000;
-                const exponentialDelay = baseDelay * Math.pow(2, retryCount);
-                const jitter = Math.random() * (baseDelay * 0.5);
-                const totalDelay = Math.min(exponentialDelay + jitter, 120000); // Cap at 2 minutes
-                
-                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
-                await new Promise(resolve => setTimeout(resolve, totalDelay));
+                const retryDelay = (retryCount + 1) * 10000;
+                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
                 retryCount++;
                 continue;
               }
@@ -723,11 +373,6 @@ export default function RunwayAutomationApp() {
             // Handle insufficient credits - don't retry, fail immediately
             if (response.status === 400 && errorMessage.includes('not have enough credits')) {
               throw new Error('Insufficient credits: ' + errorMessage);
-            }
-            
-            // Handle content safety failures - don't retry
-            if (response.status === 400 && errorMessage.toLowerCase().includes('safety')) {
-              throw new Error('Content safety violation: ' + errorMessage);
             }
             
             if (errorMessage.includes('Invalid asset aspect ratio')) {
@@ -747,16 +392,11 @@ export default function RunwayAutomationApp() {
           if (retryCount < maxRetries && (
             fetchError.name === 'AbortError' || 
             fetchError.message.includes('fetch') ||
-            fetchError.message.includes('network') ||
-            fetchError.message.includes('Failed to fetch')
+            fetchError.message.includes('network')
           )) {
-            const baseDelay = 10000;
-            const exponentialDelay = baseDelay * Math.pow(1.5, retryCount);
-            const jitter = Math.random() * (baseDelay * 0.3);
-            const totalDelay = Math.min(exponentialDelay + jitter, 60000);
-            
-            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, totalDelay));
+            const retryDelay = (retryCount + 1) * 5000;
+            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${retryDelay/1000}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
             retryCount++;
             continue;
           }
@@ -776,25 +416,21 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // Enhanced polling logic with better error handling and timeout management
+  // Improved polling logic with better error handling and backoff
   const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
-    const maxPolls = Math.floor(3600 / 12); // Increased to 60 minutes total
+    const maxPolls = Math.floor(2400 / 12);
     let pollCount = 0;
     let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 5; // Increased tolerance
+    const maxConsecutiveErrors = 3;
     let isThrottled = false;
     let throttledStartTime = null;
     let lastKnownStatus = 'unknown';
     let stuckInPendingCount = 0;
-    const maxStuckInPending = 15; // Increased tolerance
-    let processingStartTime = null;
+    const maxStuckInPending = 10;
 
     while (pollCount < maxPolls) {
       try {
-        // Adaptive timeout based on current status
-        const timeoutMs = consecutiveErrors > 0 ? 60000 : 
-                          isThrottled ? 90000 : 
-                          lastKnownStatus === 'RUNNING' ? 45000 : 30000;
+        const timeoutMs = consecutiveErrors > 0 ? 45000 : (isThrottled ? 60000 : 30000);
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -819,9 +455,8 @@ export default function RunwayAutomationApp() {
           
           if (consecutiveErrors < maxConsecutiveErrors) {
             consecutiveErrors++;
-            const backoffDelay = 20000 + (consecutiveErrors * 10000) + (Math.random() * 5000);
-            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 15000 + (consecutiveErrors * 5000)));
             pollCount++;
             continue;
           }
@@ -831,8 +466,8 @@ export default function RunwayAutomationApp() {
 
         if (!response.ok) {
           if (response.status === 429) {
-            const backoffTime = 45000 + (consecutiveErrors * 20000) + (Math.random() * 15000);
-            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${Math.round(backoffTime/1000)}s...`, 'warning');
+            const backoffTime = 30000 + (consecutiveErrors * 15000);
+            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${backoffTime/1000}s...`, 'warning');
             await new Promise(resolve => setTimeout(resolve, backoffTime));
             consecutiveErrors++;
             pollCount++;
@@ -842,9 +477,8 @@ export default function RunwayAutomationApp() {
             if (consecutiveErrors >= maxConsecutiveErrors) {
               throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
             }
-            const backoffDelay = 30000 + (consecutiveErrors * 15000) + (Math.random() * 10000);
-            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 20000 + (consecutiveErrors * 10000)));
             pollCount++;
             continue;
           }
@@ -854,7 +488,6 @@ export default function RunwayAutomationApp() {
         
         consecutiveErrors = 0;
         
-        // Enhanced throttling detection and handling
         if (task.status === 'THROTTLED') {
           if (!isThrottled) {
             isThrottled = true;
@@ -868,65 +501,51 @@ export default function RunwayAutomationApp() {
             [jobId]: { 
               status: 'throttled', 
               progress: 5,
-              message: `Queued for ${Math.floor(throttledDuration / 60)}m ${throttledDuration % 60}s` 
+              message: `Queued for ${throttledDuration}s` 
             }
           }));
           
-          // More frequent logging for throttled jobs
-          if (throttledDuration > 0 && throttledDuration % 180 === 0) { // Every 3 minutes
+          if (throttledDuration > 0 && throttledDuration % 120 === 0) {
             addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
           }
           
-          await new Promise(resolve => setTimeout(resolve, 25000)); // Slightly longer wait
+          await new Promise(resolve => setTimeout(resolve, 20000));
           pollCount++;
           continue;
         }
         
         if (isThrottled && task.status !== 'THROTTLED') {
           const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
-          addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + Math.floor(queueTime / 60) + 'm ' + (queueTime % 60) + 's in queue', 'info');
+          addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + queueTime + 's in queue', 'info');
           isThrottled = false;
           stuckInPendingCount = 0;
-          processingStartTime = Date.now();
         }
         
-        // Enhanced PENDING status handling
         if (task.status === 'PENDING') {
           if (lastKnownStatus === 'PENDING') {
             stuckInPendingCount++;
           } else {
             stuckInPendingCount = 1;
-            if (!processingStartTime) processingStartTime = Date.now();
           }
           
           if (stuckInPendingCount >= maxStuckInPending) {
-            addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING for ${stuckInPendingCount} cycles, using longer polling interval...`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 40000));
+            addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING, using longer polling interval...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 30000));
           } else {
-            await new Promise(resolve => setTimeout(resolve, 18000));
+            await new Promise(resolve => setTimeout(resolve, 15000));
           }
-        } else if (task.status === 'RUNNING') {
-          if (!processingStartTime) processingStartTime = Date.now();
-          stuckInPendingCount = 0;
-          await new Promise(resolve => setTimeout(resolve, 12000));
         } else {
           stuckInPendingCount = 0;
         }
         
         lastKnownStatus = task.status;
         
-        // Enhanced progress calculation
         let progress = 10;
-        const now = Date.now();
-        let runningTime = 0;
-        
         if (task.status === 'PENDING') {
-          progress = Math.min(20 + (stuckInPendingCount * 1.5), 35);
+          progress = 20 + Math.min(stuckInPendingCount * 2, 20);
         } else if (task.status === 'RUNNING') {
-          runningTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
-          const expectedDuration = duration * 8; // Rough estimate: 8 seconds processing per 1 second of video
-          const runningProgress = Math.min((runningTime / expectedDuration) * 60, 60);
-          progress = Math.min(35 + runningProgress, 95);
+          const runningTime = Math.max(0, pollCount - 5);
+          progress = Math.min(40 + (runningTime * 2), 90);
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
         }
@@ -935,18 +554,15 @@ export default function RunwayAutomationApp() {
           ...prev,
           [jobId]: { 
             status: task.status.toLowerCase(), 
-            progress: Math.round(progress),
-            message: task.status === 'RUNNING' ? 
-              `Processing... (${Math.floor(runningTime / 60)}m ${runningTime % 60}s)` : 
-              task.status === 'PENDING' && stuckInPendingCount > 8 ? 
-                'Processing (high load)...' :
-              task.status.toLowerCase()
+            progress: progress,
+            message: task.status === 'RUNNING' ? 'Processing...' : 
+                    task.status === 'PENDING' && stuckInPendingCount > 5 ? 'Processing (high load)...' :
+                    task.status.toLowerCase()
           }
         }));
 
         if (task.status === 'SUCCEEDED') {
-          const totalTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
-          addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully in ' + Math.floor(totalTime / 60) + 'm ' + (totalTime % 60) + 's', 'success');
+          addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully', 'success');
           
           // Remove from progress tracking since it's now completed
           setGenerationProgress(prev => {
@@ -963,8 +579,7 @@ export default function RunwayAutomationApp() {
             image_url: imageUrlText,
             status: 'completed',
             created_at: new Date().toISOString(),
-            jobId: jobId,
-            processingTime: totalTime
+            jobId: jobId
           };
 
           setResults(prev => [...prev, completedVideo]);
@@ -972,19 +587,8 @@ export default function RunwayAutomationApp() {
         }
 
         if (task.status === 'FAILED') {
-          const failureReason = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
-          
-          // Enhanced failure reason handling
-          let enhancedFailureReason = failureReason;
-          if (failureReason.includes('SAFETY')) {
-            enhancedFailureReason = 'Content safety violation: ' + failureReason;
-          } else if (failureReason.includes('INTERNAL.BAD_OUTPUT')) {
-            enhancedFailureReason = 'Output quality issue: ' + failureReason + ' (Try different prompt/image)';
-          } else if (failureReason.includes('INTERNAL')) {
-            enhancedFailureReason = 'Internal processing error: ' + failureReason + ' (Retryable)';
-          }
-          
-          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + enhancedFailureReason, 'error');
+          const failureReason = task.failure_reason || task.error || 'Generation failed - no specific reason provided';
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
           
           // Remove from progress tracking since it failed
           setGenerationProgress(prev => {
@@ -993,16 +597,13 @@ export default function RunwayAutomationApp() {
             return updated;
           });
           
-          throw new Error(enhancedFailureReason);
+          throw new Error(failureReason);
         }
 
-        // Adaptive polling intervals based on status and load
         const pollInterval = 
-          task.status === 'PENDING' && stuckInPendingCount > 8 ? 35000 :
-          task.status === 'RUNNING' ? 15000 :
-          task.status === 'THROTTLED' ? 25000 :
-          isThrottled ? 30000 :
-          15000;
+          task.status === 'PENDING' && stuckInPendingCount > 5 ? 25000 :
+          task.status === 'RUNNING' ? 10000 :
+          12000;
         
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         pollCount++;
@@ -1010,14 +611,11 @@ export default function RunwayAutomationApp() {
       } catch (error) {
         consecutiveErrors++;
         
-        // Don't retry certain permanent failures
-        if (error.message.includes('Content safety violation') || 
-            error.message.includes('Insufficient credits') ||
-            (error.message.includes('Generation failed') && 
-             !error.message.includes('timeout') && 
-             !error.message.includes('network') && 
-             !error.message.includes('rate limit') &&
-             !error.message.includes('server error'))) {
+        if (error.message.includes('Generation failed') && 
+            !error.message.includes('timeout') && 
+            !error.message.includes('network') && 
+            !error.message.includes('rate limit') &&
+            !error.message.includes('server error')) {
           addLog('✗ Job ' + (jobIndex + 1) + ' permanently failed: ' + error.message, 'error');
           setGenerationProgress(prev => ({
             ...prev,
@@ -1032,7 +630,7 @@ export default function RunwayAutomationApp() {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         } else if (error.message.includes('429') || error.message.includes('rate limit')) {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
-          await new Promise(resolve => setTimeout(resolve, 90000)); // 1.5 minutes
+          await new Promise(resolve => setTimeout(resolve, 60000));
         } else {
           addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
         }
@@ -1043,12 +641,10 @@ export default function RunwayAutomationApp() {
           throw new Error(finalError);
         }
         
-        // Enhanced exponential backoff with jitter
-        const baseDelay = 20000;
-        const maxDelay = 180000; // 3 minutes max
-        const exponentialDelay = baseDelay * Math.pow(1.8, consecutiveErrors);
-        const jitter = Math.random() * (baseDelay * 0.5);
-        const backoffDelay = Math.min(exponentialDelay + jitter, maxDelay);
+        const baseDelay = 15000;
+        const maxDelay = 120000;
+        const jitter = Math.random() * 5000;
+        const backoffDelay = Math.min(baseDelay * Math.pow(1.5, consecutiveErrors) + jitter, maxDelay);
         
         addLog(`⏳ Job ${jobIndex + 1} waiting ${Math.round(backoffDelay/1000)}s before retry...`, 'info');
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
@@ -1056,98 +652,12 @@ export default function RunwayAutomationApp() {
       }
     }
 
-    const totalTime = Math.floor((pollCount * 15) / 60); // Updated for new intervals
+    const totalTime = Math.floor((pollCount * 12) / 60);
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
-  // Improved generation logic with safety features and modal for cost warning
+  // Improved generation logic with safety features
   const generateVideos = async () => {
-    // SAFETY CHECK: Prevent massive API costs
-    const requestedJobs = parseInt(concurrency) || 1;
-    const MAX_CONCURRENT_JOBS = 20;
-    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
-    
-    if (!prompt.trim()) {
-      addLog('❌ No prompt provided!', 'error');
-      return;
-    }
-
-    if (!imageUrl.trim()) {
-      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
-      return;
-    }
-
-    if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required!', 'error');
-      return;
-    }
-
-    if (requestedJobs > MAX_CONCURRENT_JOBS) {
-      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
-      return;
-    }
-    
-    if (isNaN(totalJobs) || totalJobs < 1) {
-      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
-      return;
-    }
-    
-    // Cost estimation and user confirmation - show modal only the very first time ever
-    const estimatedCostMin = totalJobs * 0.25;
-    const estimatedCostMax = totalJobs * 0.75;
-    
-    // Show modal only if user has never seen it before (not based on current session)
-    if (!hasShownCostWarning) {
-      showModalDialog({
-        title: estimatedCostMax > 20 ? "High Cost Warning" : "Cost Warning",
-        type: "warning",
-        confirmText: "Proceed with Generation",
-        cancelText: "Cancel",
-        onConfirm: () => {
-          setHasShownCostWarning(true);
-          // Save to localStorage so it persists across sessions
-          localStorage.setItem('runway-automation-cost-warning-shown', 'true');
-          startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
-        },
-        content: (
-          <div>
-            <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-              <div className="d-flex align-items-center mb-2">
-                <AlertCircle size={20} className="text-warning me-2" />
-                <strong>{estimatedCostMax > 20 ? "High Cost Warning" : "Cost Confirmation"}</strong>
-              </div>
-              <p className="mb-0">You are about to generate <strong>{totalJobs} video{totalJobs !== 1 ? 's' : ''}</strong>.</p>
-            </div>
-            
-            <div className="row g-3 mb-3">
-              <div className="col-6">
-                <div className="text-center p-3 border rounded">
-                  <div className="h5 mb-1">${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}</div>
-                  <small className="text-muted">Estimated Cost</small>
-                </div>
-              </div>
-              <div className="col-6">
-                <div className="text-center p-3 border rounded">
-                  <div className="h5 mb-1">{totalJobs * 25} - {totalJobs * 50}</div>
-                  <small className="text-muted">Credits Required</small>
-                </div>
-              </div>
-            </div>
-            
-            <p className="mb-0 text-muted">
-              This will use credits from your RunwayML account. Are you sure you want to proceed?
-            </p>
-          </div>
-        )
-      });
-      return;
-    }
-
-    // For subsequent generations (after first warning), proceed directly
-    startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
-  };
-
-  const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
     setIsRunning(true);
     setLogs([]);
     
@@ -1156,7 +666,67 @@ export default function RunwayAutomationApp() {
     
     addLog('🚀 Starting Runway video generation...', 'info');
     addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
+    
+    if (!prompt.trim()) {
+      addLog('❌ No prompt provided!', 'error');
+      setIsRunning(false);
+      return;
+    }
+
+    if (!imageUrl.trim()) {
+      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
+      setIsRunning(false);
+      return;
+    }
+
+    if (!runwayApiKey.trim()) {
+      addLog('❌ RunwayML API key is required!', 'error');
+      setIsRunning(false);
+      return;
+    }
+
+    // SAFETY CHECK: Prevent massive API costs
+    const requestedJobs = parseInt(concurrency) || 1;
+    const MAX_CONCURRENT_JOBS = 20;
+    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
+    
+    if (requestedJobs > MAX_CONCURRENT_JOBS) {
+      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
+      setIsRunning(false);
+      return;
+    }
+    
+    if (isNaN(totalJobs) || totalJobs < 1) {
+      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
+      setIsRunning(false);
+      return;
+    }
+    
+    // Cost estimation and user confirmation for larger batches
+    const estimatedCostMin = totalJobs * 0.25;
+    const estimatedCostMax = totalJobs * 0.75;
+    
     addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
+    
+    // Extra confirmation for large batches (10+ videos) - ALWAYS show popup
+    if (totalJobs >= 10) {
+      const confirmLargeBatch = window.confirm(
+        `⚠️ COST WARNING ⚠️\n\n` +
+        `You are about to generate ${totalJobs} videos.\n` +
+        `Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}\n\n` +
+        `This will use ${totalJobs * 25}-${totalJobs * 50} credits from your RunwayML account.\n\n` +
+        `Are you sure you want to proceed?`
+      );
+      
+      if (!confirmLargeBatch) {
+        addLog('🛑 Generation cancelled by user (cost protection)', 'warning');
+        setIsRunning(false);
+        return;
+      }
+      
+      addLog('✅ User confirmed large batch generation', 'info');
+    }
+
     addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
     addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
@@ -1317,24 +887,14 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // Generate timestamp for folder name
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      hour12: true,
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    const folderName = `Runway Videos ${timestamp}`;
-
     addLog(`📦 Creating zip file with ${videosWithUrls.length} videos from all generations...`, 'info');
 
     try {
       // Create a new JSZip instance
       const zip = new JSZip();
       
-      // Create the folder with timestamp
-      const videosFolder = zip.folder(folderName);
+      // Create the "Runway Videos" folder
+      const videosFolder = zip.folder("Runway Videos");
       
       // Download all videos and add to zip inside the folder
       for (let i = 0; i < videosWithUrls.length; i++) {
@@ -1351,7 +911,7 @@ export default function RunwayAutomationApp() {
           
           const blob = await response.blob();
           
-          // Add the video file to the timestamped folder in the zip
+          // Add the video file to the "Runway Videos" folder in the zip
           videosFolder.file(filename, blob);
           
         } catch (error) {
@@ -1387,99 +947,6 @@ export default function RunwayAutomationApp() {
     setIsDownloadingAll(false);
   };
 
-  const downloadFavoritedVideos = async () => {
-    setIsDownloadingAll(true);
-    
-    // Get favorited videos that are completed
-    const favoritedVideos = results
-      .filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id))
-      .sort((a, b) => {
-        const parseJobId = (jobId) => {
-          if (!jobId) return { generation: 0, video: 0 };
-          const genMatch = jobId.match(/Generation (\d+)/);
-          const vidMatch = jobId.match(/Video (\d+)/);
-          return {
-            generation: genMatch ? parseInt(genMatch[1]) : 0,
-            video: vidMatch ? parseInt(vidMatch[1]) : 0
-          };
-        };
-        
-        const aData = parseJobId(a.jobId);
-        const bData = parseJobId(b.jobId);
-        
-        if (aData.generation !== bData.generation) {
-          return aData.generation - bData.generation;
-        }
-        return aData.video - bData.video;
-      });
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
-      setIsDownloadingAll(false);
-      return;
-    }
-
-    // Generate timestamp for folder name
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      hour12: true,
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    const folderName = `Favorited Videos ${timestamp}`;
-
-    addLog(`📦 Creating zip file with ${favoritedVideos.length} favorited videos...`, 'info');
-
-    try {
-      const zip = new JSZip();
-      const videosFolder = zip.folder(folderName);
-      
-      for (let i = 0; i < favoritedVideos.length; i++) {
-        const result = favoritedVideos[i];
-        const filename = generateFilename(result.jobId, result.id);
-        
-        try {
-          addLog(`📥 Adding to zip ${i + 1}/${favoritedVideos.length}: ${filename}...`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const blob = await response.blob();
-          videosFolder.file(filename, blob);
-          
-        } catch (error) {
-          addLog(`❌ Failed to add ${filename} to zip: ${error.message}`, 'error');
-          continue;
-        }
-      }
-
-      addLog('🗜️ Generating zip file...', 'info');
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      const zipUrl = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = zipUrl;
-      a.download = 'favorited-videos.zip';
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      window.URL.revokeObjectURL(zipUrl);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded favorited-videos.zip with ${favoritedVideos.length} videos successfully!`, 'success');
-      
-    } catch (error) {
-      addLog(`❌ Failed to create favorited videos zip file: ${error.message}`, 'error');
-    }
-
-    setIsDownloadingAll(false);
-  };
-
   const exportResults = () => {
     const exportData = {
       generated_at: new Date().toISOString(),
@@ -1510,10 +977,14 @@ export default function RunwayAutomationApp() {
     addLog('📊 Results exported to JSON', 'success');
   };
 
-  // Don't render until mounted to avoid hydration mismatch
-  if (!mounted) {
-    return null;
-  }
+  const upscaleVideo = async (videoId, videoTitle) => {
+    try {
+      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
+      addLog('⚠️ 4K upscaling is not yet implemented in the API. This feature would require RunwayML to add upscaling to their API endpoints.', 'warning');
+    } catch (error) {
+      addLog('❌ 4K upscale failed: ' + error.message, 'error');
+    }
+  };
 
   return (
     <>
@@ -1543,8 +1014,8 @@ export default function RunwayAutomationApp() {
         <meta name="robots" content="index, follow" />
         
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#0d6efd" />
-        <meta name="msapplication-navbutton-color" content="#0d6efd" />
+        <meta name="theme-color" content="#667eea" />
+        <meta name="msapplication-navbutton-color" content="#667eea" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         <link 
@@ -1571,19 +1042,6 @@ export default function RunwayAutomationApp() {
           }
         `}</style>
       </Head>
-
-      {/* Modal */}
-      <Modal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        title={modalConfig.title}
-        type={modalConfig.type}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-        onConfirm={modalConfig.onConfirm}
-      >
-        {modalConfig.content}
-      </Modal>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
         <div className="container-fluid py-4">
@@ -1649,11 +1107,10 @@ export default function RunwayAutomationApp() {
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="position-relative d-flex align-items-center justify-content-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '8px 8px 0 0',
-                          backgroundColor: HEADER_BLUE
+                          borderRadius: '8px 8px 0 0'
                         }}
                       >
                         <div 
@@ -1811,23 +1268,14 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">
-                            Video Generation Limits by Tier
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="All tiers can generate up to 20 videos, but you will be throttled past your tier's limits."
-                            ></i>
-                          </label>
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead>
-                                <tr style={{ backgroundColor: HEADER_BLUE }}>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Tier</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Criteria</th>
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
                                 </tr>
                               </thead>
                               <tbody className="small">
@@ -1870,11 +1318,10 @@ export default function RunwayAutomationApp() {
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="position-relative d-flex align-items-center justify-content-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
                           height: '80px',
-                          borderRadius: '8px 8px 0 0',
-                          backgroundColor: HEADER_BLUE
+                          borderRadius: '8px 8px 0 0'
                         }}
                       >
                         <div 
@@ -2018,19 +1465,9 @@ export default function RunwayAutomationApp() {
                                     fileInputRef.current.value = '';
                                   }
                                 }}
-                                style={{ 
-                                  borderRadius: '50%', 
-                                  width: '32px', 
-                                  height: '32px',
-                                  fontSize: '20px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  lineHeight: '1',
-                                  padding: '0'
-                                }}
+                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
                               >
-                                <span style={{ transform: 'translateY(-1px)' }}>×</span>
+                                ×
                               </button>
                             </div>
                           )}
@@ -2065,12 +1502,8 @@ export default function RunwayAutomationApp() {
                                 borderRadius: '8px', 
                                 fontWeight: '600',
                                 backgroundColor: '#28a745',
-                                borderColor: '#28a745',
-                                opacity: '1',
-                                transition: 'opacity 0.1s ease-in-out'
+                                borderColor: '#28a745'
                               }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
                             >
                               <Play size={20} className="me-2" />
                               Generate Video{concurrency > 1 ? 's' : ''}
@@ -2095,11 +1528,10 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
-                    className="position-relative d-flex align-items-center justify-content-between" 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '60px',
-                      borderRadius: '8px 8px 0 0',
-                      backgroundColor: HEADER_BLUE
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
                     }}
                   >
                     <div 
@@ -2118,7 +1550,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Video Generation</h3>
+                      <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
                     <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
@@ -2133,11 +1565,11 @@ export default function RunwayAutomationApp() {
                             marginTop: '5px', 
                             marginBottom: '5px',
                             opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out',
+                            transition: 'opacity 0.2s ease-in-out',
                             backgroundColor: '#28a745',
                             borderColor: '#28a745'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
@@ -2287,7 +1719,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span className="text-primary">[{log.timestamp}]</span> {log.message}
+                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2308,11 +1740,10 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
-                    className="position-relative d-flex align-items-center justify-content-between" 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '8px 8px 0 0',
-                      backgroundColor: HEADER_BLUE
+                      borderRadius: '8px 8px 0 0'
                     }}
                   >
                     <div 
@@ -2321,7 +1752,7 @@ export default function RunwayAutomationApp() {
                         width: '80px', 
                         height: '80px',
                         left: '20px',
-                        top: '20px',
+                        top: '40px',
                         zIndex: 10,
                         backgroundColor: '#4dd0ff',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
@@ -2331,23 +1762,16 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
+                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px' }} className="d-flex gap-2 flex-wrap">
+                      <div style={{ marginRight: '30px' }}>
                         <button
                           className="btn btn-light shadow"
                           onClick={downloadAllVideos}
                           disabled={isDownloadingAll}
-                          style={{ 
-                            borderRadius: '8px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out'
-                          }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          style={{ borderRadius: '8px', fontWeight: '600' }}
                         >
                           {isDownloadingAll ? (
                             <>
@@ -2358,55 +1782,13 @@ export default function RunwayAutomationApp() {
                             </>
                           ) : (
                             <>
-                              <Download size={16} className="me-2" />
-                              All Videos
+                              <Download size={20} className="me-2" />
+                              Download All as ZIP
                               <span className="ms-2 badge bg-primary">
                                 {results.filter(result => result.video_url && result.status === 'completed').length}
                               </span>
                             </>
                           )}
-                        </button>
-                        
-                        {favoriteVideos.size > 0 && (
-                          <button
-                            className="btn btn-light shadow"
-                            onClick={downloadFavoritedVideos}
-                            disabled={isDownloadingAll}
-                            style={{ 
-                              borderRadius: '8px', 
-                              fontWeight: '600',
-                              opacity: '1',
-                              transition: 'opacity 0.1s ease-in-out'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
-                          >
-                            <Download size={16} className="me-2" />
-                            Favorited Videos
-                            <span className="ms-2 badge bg-danger">
-                              {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
-                            </span>
-                          </button>
-                        )}
-                        
-                        <button
-                          className="btn btn-danger shadow"
-                          onClick={clearGeneratedVideos}
-                          style={{ 
-                            borderRadius: '8px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out'
-                          }}
-                          title="Clear all generated videos from browser storage"
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        >
-                          <Trash2 size={16} className="me-2" />
-                          Clear Videos
-                          <span className="ms-2 badge bg-light text-dark">
-                            {results.length}
-                          </span>
                         </button>
                       </div>
                     )}
@@ -2496,37 +1878,16 @@ export default function RunwayAutomationApp() {
                               </div>
                               
                               <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-start mb-3">
-                                  <div className="fw-bold text-primary flex-grow-1">{result.jobId}</div>
-                                  <button
-                                    className="btn btn-sm p-1 ms-2"
-                                    onClick={() => toggleFavorite(result.id)}
-                                    style={{
-                                      border: 'none',
-                                      background: 'none',
-                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
-                                      transition: 'color 0.2s ease',
-                                      flexShrink: 0,
-                                      marginTop: '-5px'
-                                    }}
-                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                  >
-                                    <Heart 
-                                      size={18} 
-                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                    />
-                                  </button>
-                                </div>
+                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
                                 <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
-                                    <div className="btn-group w-100" role="group">
+                                    <div className="btn-group" role="group">
                                       <button
                                         className="btn btn-primary btn-sm"
-                                        style={{ width: '50%' }}
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
                                       >
                                         <Download size={16} className="me-1" />
@@ -2534,11 +1895,26 @@ export default function RunwayAutomationApp() {
                                       </button>
                                       <button
                                         className="btn btn-outline-primary btn-sm"
-                                        style={{ width: '50%' }}
                                         onClick={() => window.open(result.video_url, '_blank')}
                                       >
                                         <ExternalLink size={16} className="me-1" />
                                         View
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => upscaleVideo(result.id, result.jobId)}
+                                        data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="4K upscaling API endpoints are not yet documented by RunwayML. This feature will be available when the API is officially released."
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1">
+                                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                          <polyline points="7.5 4.21,12 6.81,16.5 4.21"/>
+                                          <polyline points="7.5 19.79,7.5 14.6,3 12"/>
+                                          <polyline points="21 12,16.5 14.6,16.5 19.79"/>
+                                          <polyline points="12 22.81,12 17"/>
+                                        </svg>
+                                        4K
                                       </button>
                                     </div>
                                   )}
@@ -2555,16 +1931,19 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center mt-4">
+          <div className="text-center mt-5">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="d-flex align-items-center justify-content-center">
-                <svg width="100" height="24" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8.85714 0C13.7321 0 17.7143 4.02857 17.7143 9V24H8.85714C3.98214 24 0 19.9714 0 15C0 10.0286 3.98214 6 8.85714 6V0Z" fill="white" fillOpacity="0.7"/>
-                  <path d="M26.5714 24C21.6964 24 17.7143 19.9714 17.7143 15V0H26.5714C31.4464 0 35.4286 4.02857 35.4286 9C35.4286 13.9714 31.4464 18 26.5714 18V24Z" fill="white" fillOpacity="0.7"/>
-                  <text x="44" y="16" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
+                  <g transform="translate(75, 2)">
+                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
+                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
+                    <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                  </g>
                 </svg>
               </a>
             </div>
