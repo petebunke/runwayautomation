@@ -1,5 +1,5 @@
 // /pages/api/runway-upscale.js
-// Enhanced 4K upscale endpoint using RunwayML Gen-4 Upscale API
+// Updated to use official RunwayML v1/video_upscale endpoint
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
 
     console.log('Starting 4K upscale for task:', taskId);
 
-    // Create the upscale request payload according to the API documentation
+    // Create the upscale request payload according to the official API
     const requestBody = {
       taskId: taskId
     };
@@ -44,8 +44,8 @@ export default async function handler(req, res) {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
     try {
-      // Make request to RunwayML Gen-4 upscale API
-      const response = await fetch('https://api.dev.runwayml.com/v1/gen4_upscale', {
+      // Make request to official RunwayML video_upscale API
+      const response = await fetch('https://api.dev.runwayml.com/v1/video_upscale', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -121,8 +121,8 @@ export default async function handler(req, res) {
         
         if (response.status === 404) {
           return res.status(404).json({
-            error: 'Task not found',
-            message: 'The requested task ID does not exist or cannot be upscaled'
+            error: 'Task not found or endpoint not available',
+            message: 'The requested task ID does not exist or the upscale endpoint is not available'
           });
         }
 
@@ -140,7 +140,7 @@ export default async function handler(req, res) {
           if (errorMessage.includes('not eligible') || errorMessage.includes('cannot be upscaled')) {
             return res.status(400).json({
               error: 'Video not eligible for upscaling',
-              message: 'This video cannot be upscaled. Only completed Gen-4 videos can be upscaled to 4K.',
+              message: 'This video cannot be upscaled. Only completed videos can be upscaled to 4K.',
               details: data
             });
           }
