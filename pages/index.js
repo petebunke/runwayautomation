@@ -11,6 +11,8 @@ export default function RunwayAutomationApp() {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
   const [concurrency, setConcurrency] = useState(1);
+  const [minWait, setMinWait] = useState(8);
+  const [maxWait, setMaxWait] = useState(15);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -185,6 +187,7 @@ export default function RunwayAutomationApp() {
         setHasShownCostWarning(true);
       }
 
+      // Load saved logs
       const savedLogs = localStorage.getItem('runway-automation-logs');
       if (savedLogs && savedLogs.trim()) {
         try {
@@ -321,6 +324,7 @@ export default function RunwayAutomationApp() {
     }
   }, [favoriteVideos, mounted]);
 
+  // Save logs to localStorage whenever logs change
   useEffect(() => {
     if (!mounted || !Array.isArray(logs)) return;
     try {
@@ -526,6 +530,7 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Initialize Bootstrap tooltips
   useEffect(() => {
     if (!mounted) return;
     
@@ -632,62 +637,6 @@ export default function RunwayAutomationApp() {
       '21:9': '1344:576'
     };
     return ratioMap[ratio] || '1280:720';
-  };
-
-  const upscaleVideo = async (videoId, videoTitle, videoUrl) => {
-    try {
-      addLog('🔄 Starting 4K upscale for ' + videoTitle + '...', 'info');
-      
-      if (!runwayApiKey.trim()) {
-        addLog('❌ RunwayML API key is required for upscaling!', 'error');
-        return;
-      }
-
-      const response = await fetch(API_BASE + '/runway-upscale', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          payload: {
-            promptVideo: videoUrl
-          }
-        })
-      });
-
-      const responseText = await response.text();
-
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = JSON.parse(responseText);
-        } catch (parseError) {
-          throw new Error(`Upscale API Error ${response.status}: Could not parse error response`);
-        }
-        
-        let errorMessage = errorData.error || 'Upscale API Error: ' + response.status;
-        
-        if (response.status === 400 && errorMessage.includes('not have enough credits')) {
-          throw new Error('Insufficient credits for upscaling: ' + errorMessage);
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      let upscaleTask;
-      try {
-        upscaleTask = JSON.parse(responseText);
-      } catch (parseError) {
-        throw new Error('Could not parse upscale API response');
-      }
-      
-      addLog('✓ 4K upscale started for ' + videoTitle + ' (Task ID: ' + upscaleTask.id + ')', 'success');
-      addLog('⏳ Upscaling may take several minutes to complete. Check your RunwayML dashboard for progress.', 'info');
-      
-    } catch (error) {
-      addLog('❌ 4K upscale failed for ' + videoTitle + ': ' + error.message, 'error');
-    }
   };
 
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
@@ -1193,6 +1142,7 @@ export default function RunwayAutomationApp() {
 
   const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
     setIsRunning(true);
+    // Don't clear logs here anymore - let them persist
     
     const currentGeneration = generationCounter + 1;
     setGenerationCounter(currentGeneration);
@@ -1276,6 +1226,7 @@ export default function RunwayAutomationApp() {
     setCompletedGeneration(currentGeneration);
     setIsRunning(false);
     
+    // Auto-advance to Results tab when generation completes successfully
     if (successCount > 0) {
       setActiveTab('results');
     }
@@ -1326,6 +1277,7 @@ export default function RunwayAutomationApp() {
           return false;
         }
         
+        // Wait before retry with exponential backoff
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -1364,9 +1316,131 @@ export default function RunwayAutomationApp() {
     addLog(`📦 Creating zip archive with ${videosWithUrls.length} videos...`, 'info');
 
     try {
+      // Dynamic import of JSZip to avoid SSR issues
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
 
+      // Create timestamp for unique folder naming
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Runway Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      // Sort videos by generation and video number for organized download
+      const sortedVideos = videosWithUrls
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      // Add each video to the zip with progress tracking
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Verify blob size before adding to zip
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          // Add video to Videos folder
+          videosFolder.file(result.filename, blob);
+          
+          // Add metadata file to JSON folder
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown'
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      // Generate zip with no compression for faster processing
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      // Calculate final zip size
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      // Create download link and trigger download
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const downloadFavoritedVideos = async () => {
+    const favoritedVideos = results.filter(result => 
+      result.video_url && 
+      result.status === 'completed' && 
+      favoriteVideos.has(result.id)
+    );
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      // Dynamic import of JSZip to avoid SSR issues
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      // Create timestamp for unique folder naming
       const timestamp = new Date().toLocaleString('en-US', {
         year: 'numeric',
         month: '2-digit', 
@@ -1383,6 +1457,7 @@ export default function RunwayAutomationApp() {
       const videosFolder = folder.folder('Videos');
       const jsonFolder = folder.folder('JSON');
 
+      // Sort videos by generation and video number for organized download
       const sortedVideos = favoritedVideos
         .map(result => ({
           ...result,
@@ -1390,6 +1465,7 @@ export default function RunwayAutomationApp() {
         }))
         .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
 
+      // Add each video to the zip with progress tracking
       for (let i = 0; i < sortedVideos.length; i++) {
         const result = sortedVideos[i];
         try {
@@ -1402,12 +1478,15 @@ export default function RunwayAutomationApp() {
           
           const blob = await response.blob();
           
+          // Verify blob size before adding to zip
           if (blob.size === 0) {
             throw new Error('Empty video file received');
           }
           
+          // Add video to Videos folder
           videosFolder.file(result.filename, blob);
           
+          // Add metadata file to JSON folder
           const metadata = {
             id: result.id,
             prompt: result.prompt,
@@ -1427,15 +1506,18 @@ export default function RunwayAutomationApp() {
 
       addLog('🔄 Generating zip file...', 'info');
       
+      // Generate zip with no compression for faster processing
       const zipBlob = await zip.generateAsync({
         type: 'blob',
         compression: 'STORE',
         compressionOptions: { level: 0 }
       });
 
+      // Calculate final zip size
       const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
       addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
 
+      // Create download link and trigger download
       const url = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -1445,6 +1527,7 @@ export default function RunwayAutomationApp() {
       document.body.appendChild(a);
       a.click();
       
+      // Clean up
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
@@ -1515,22 +1598,26 @@ export default function RunwayAutomationApp() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
+        {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://runway-automation.vercel.app/" />
         <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
         <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta property="og:image" content="/og-image.png" />
 
+        {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
         <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
         <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta property="twitter:image" content="/og-image.png" />
 
+        {/* Additional SEO tags */}
         <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
         <meta name="author" content="Runway Automation Pro" />
         <meta name="robots" content="index, follow" />
         
+        {/* Theme color for mobile browsers */}
         <meta name="theme-color" content="#667eea" />
         <meta name="msapplication-navbutton-color" content="#667eea" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -1700,12 +1787,11 @@ export default function RunwayAutomationApp() {
                             <CreditCard size={20} className="text-warning me-2" />
                             <strong>Credits Required</strong>
                           </div>
-                          <p className="mb-2 small">The RunwayML API requires credits for all video generations and upscaling.</p>
+                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
                           <ul className="small mb-0 ps-3">
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>~100-200 credits per 4K upscale ($1.00-$2.00)</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
                         </div>
@@ -1927,6 +2013,7 @@ export default function RunwayAutomationApp() {
                             ></i>
                           </label>
                           
+                          {/* Hidden file input */}
                           <input
                             ref={fileInputRef}
                             type="file"
@@ -1935,6 +2022,7 @@ export default function RunwayAutomationApp() {
                             style={{ display: 'none' }}
                           />
                           
+                          {/* Upload button or URL input */}
                           {!imageUrl ? (
                             <div 
                               className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
@@ -1998,6 +2086,7 @@ export default function RunwayAutomationApp() {
                             </div>
                           )}
                           
+                          {/* URL input as alternative */}
                           <div className="mt-3">
                             <input
                               type="url"
@@ -2009,11 +2098,13 @@ export default function RunwayAutomationApp() {
                             />
                           </div>
                           
+                          {/* Generate Video Button */}
                           <div className="mt-4">
                             <button
                               className="btn btn-success btn-lg w-100 shadow"
                               onClick={() => {
                                 setActiveTab('generation');
+                                // Small delay to ensure tab switch completes before starting generation
                                 setTimeout(() => {
                                   if (!isRunning) {
                                     generateVideos();
@@ -2139,15 +2230,19 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
+                    {/* Always show generation status */}
                     <div className="mb-3" style={{ minHeight: '100px' }}>
                       <div className="text-center py-3">
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
+                              // During generation
                               return `Generation ${generationCounter || 1} in progress`;
                             } else if (completedGeneration) {
+                              // After completion
                               return `Generation ${completedGeneration} completed`;
                             } else {
+                              // Initial state
                               return `Generation ${generationCounter || 1}`;
                             }
                           })()}
@@ -2155,12 +2250,15 @@ export default function RunwayAutomationApp() {
                         <p className="text-muted mb-0">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
+                              // During generation - show active job count
                               const count = Object.keys(generationProgress).length;
                               return `${count} video${count !== 1 ? 's' : ''} generating`;
                             } else if (completedGeneration) {
+                              // After completion - show completed count from that generation
                               const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
                               return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
                             } else {
+                              // Initial state
                               return '0 videos generated';
                             }
                           })()}
@@ -2417,6 +2515,7 @@ export default function RunwayAutomationApp() {
                                   </div>
                                 )}
                                 
+                                {/* Add favorite button overlay */}
                                 <button
                                   className="btn btn-sm position-absolute top-0 end-0 m-2"
                                   onClick={() => toggleFavorite(result.id)}
@@ -2449,7 +2548,7 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
-                                    <div className="btn-group w-100" role="group">
+                                    <div className="btn-group" role="group">
                                       <button
                                         className="btn btn-primary btn-sm"
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
@@ -2463,16 +2562,6 @@ export default function RunwayAutomationApp() {
                                       >
                                         <ExternalLink size={16} className="me-1" />
                                         View
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm"
-                                        onClick={() => upscaleVideo(result.id, result.jobId, result.video_url)}
-                                        title="Upscale video to 4K resolution using RunwayML Gen-4 Upscale. Requires additional credits."
-                                      >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1">
-                                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                                        </svg>
-                                        4K
                                       </button>
                                     </div>
                                   )}
@@ -2510,113 +2599,4 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}').replace(', ', '_');
-
-      const folderName = `Runway Videos (${timestamp})`;
-      const folder = zip.folder(folderName);
-      const videosFolder = folder.folder('Videos');
-      const jsonFolder = folder.folder('JSON');
-
-      const sortedVideos = videosWithUrls
-        .map(result => ({
-          ...result,
-          filename: generateFilename(result.jobId, result.id)
-        }))
-        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
-
-      for (let i = 0; i < sortedVideos.length; i++) {
-        const result = sortedVideos[i];
-        try {
-          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
-          }
-          
-          const blob = await response.blob();
-          
-          if (blob.size === 0) {
-            throw new Error('Empty video file received');
-          }
-          
-          videosFolder.file(result.filename, blob);
-          
-          const metadata = {
-            id: result.id,
-            prompt: result.prompt,
-            jobId: result.jobId,
-            created_at: result.created_at,
-            image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown'
-          };
-          
-          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
-          
-        } catch (error) {
-          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
-        }
-      }
-
-      addLog('🔄 Generating zip file...', 'info');
-      
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'STORE',
-        compressionOptions: { level: 0 }
-      });
-
-      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
-      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
-
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${folderName}.zip`;
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
-      console.error('Zip creation error:', error);
-    } finally {
-      setIsDownloadingAll(false);
-    }
-  };
-
-  const downloadFavoritedVideos = async () => {
-    const favoritedVideos = results.filter(result => 
-      result.video_url && 
-      result.status === 'completed' && 
-      favoriteVideos.has(result.id)
-    );
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
-
-    try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      const timestamp = new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'America/Los_Angeles'
-      }).replace(/[/:]/g, '-
+}
