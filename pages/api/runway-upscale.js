@@ -1,5 +1,5 @@
 // /pages/api/runway-upscale.js
-// Updated to use official RunwayML v1/video_upscale endpoint
+// Updated to use official RunwayML v1/video_upscale endpoint fdjfkdj
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
