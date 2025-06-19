@@ -86,102 +86,6 @@
                                   <div className="w-100 h-100 rounded-circle bg-primary"></div>
                                 )}
                               </div>
-                              
-                              <div className="card-body p-3">
-                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group">
-                                      <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
-                                      >
-                                        <Download size={16} className="me-1" />
-                                        Download
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm"
-                                        onClick={() => window.open(result.video_url, '_blank')}
-                                      >
-                                        <ExternalLink size={16} className="me-1" />
-                                        View
-                                      </button>
-                                      <button
-                                        className="btn btn-warning btn-sm"
-                                        onClick={() => upscaleVideo(result)}
-                                        disabled={!!upscaleProgress[result.id] || result.upscaled}
-                                        title={
-                                          result.upscaled ? 'Already upscaled to 4K' :
-                                          upscaleProgress[result.id] ? 'Upscaling in progress...' :
-                                          'Upscale to 4K (~500 credits, ~$5.00)'
-                                        }
-                                      >
-                                        {upscaleProgress[result.id] ? (
-                                          <div className="d-flex align-items-center">
-                                            <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
-                                              <span className="visually-hidden">Loading...</span>
-                                            </div>
-                                            <span style={{ fontSize: '12px' }}>4K</span>
-                                          </div>
-                                        ) : (
-                                          <>
-                                            <Zap size={16} className="me-1" />
-                                            4K
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  )}
-                                  
-                                  {/* Show 4K download button if upscaled */}
-                                  {result.upscaled && result.upscale_url && (
-                                    <button
-                                      className="btn btn-success btn-sm mt-1"
-                                      onClick={() => downloadVideo(result.upscale_url, generateFilename(result.jobId, result.id, true))}
-                                    >
-                                      <Download size={16} className="me-1" />
-                                      Download 4K Version
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="text-center mt-5">
-            <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
-            </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <text x="0" y="14" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(75, 2)">
-                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
-                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
-                    <text x="32" y="12" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
-                  </g>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
                               <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                             </div>
                           </div>
@@ -515,7 +419,103 @@
                                     fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
                                   />
                                 </button>
-                              </div>import React, { useState, useEffect, useRef } from 'react';
+                              </div>
+                              
+                              <div className="card-body p-3">
+                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                  {result.prompt}
+                                </h6>
+                                
+                                <div className="d-grid gap-2">
+                                  {result.video_url && (
+                                    <div className="btn-group" role="group">
+                                      <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                      >
+                                        <Download size={16} className="me-1" />
+                                        Download
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm"
+                                        onClick={() => window.open(result.video_url, '_blank')}
+                                      >
+                                        <ExternalLink size={16} className="me-1" />
+                                        View
+                                      </button>
+                                      <button
+                                        className="btn btn-warning btn-sm"
+                                        onClick={() => upscaleVideo(result)}
+                                        disabled={!!upscaleProgress[result.id] || result.upscaled}
+                                        title={
+                                          result.upscaled ? 'Already upscaled to 4K' :
+                                          upscaleProgress[result.id] ? 'Upscaling in progress...' :
+                                          'Upscale to 4K (~500 credits, ~$5.00)'
+                                        }
+                                      >
+                                        {upscaleProgress[result.id] ? (
+                                          <div className="d-flex align-items-center">
+                                            <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
+                                              <span className="visually-hidden">Loading...</span>
+                                            </div>
+                                            <span style={{ fontSize: '12px' }}>4K</span>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <Zap size={16} className="me-1" />
+                                            4K
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show 4K download button if upscaled */}
+                                  {result.upscaled && result.upscale_url && (
+                                    <button
+                                      className="btn btn-success btn-sm mt-1"
+                                      onClick={() => downloadVideo(result.upscale_url, generateFilename(result.jobId, result.id, true))}
+                                    >
+                                      <Download size={16} className="me-1" />
+                                      Download 4K Version
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mt-5">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <text x="0" y="14" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="400" fill="white" fillOpacity="0.7">Powered by</text>
+                  <g transform="translate(75, 2)">
+                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
+                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
+                    <text x="32" y="12" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                  </g>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}import React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, Zap } from 'lucide-react';
 import Head from 'next/head';
 
