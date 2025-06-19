@@ -30,8 +30,6 @@ export default function RunwayAutomationApp() {
   const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
   const fileInputRef = useRef(null);
 
-  const HEADER_BLUE = '#0d6efd';
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -53,11 +51,10 @@ export default function RunwayAutomationApp() {
           overflowY: 'auto'
         }}>
           <div 
-            className="position-relative d-flex align-items-center justify-content-center" 
+            className="bg-primary position-relative d-flex align-items-center justify-content-center" 
             style={{ 
               height: '80px',
-              borderRadius: '8px 8px 0 0',
-              backgroundColor: HEADER_BLUE
+              borderRadius: '8px 8px 0 0'
             }}
           >
             <div 
@@ -506,6 +503,7 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Initialize Bootstrap tooltips
   useEffect(() => {
     if (!mounted) return;
     
@@ -1311,126 +1309,6 @@ export default function RunwayAutomationApp() {
             jobId: result.jobId,
             created_at: result.created_at,
             image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown'
-          };
-          
-          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
-          
-        } catch (error) {
-          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
-        }
-      }
-
-      addLog('🔄 Generating zip file...', 'info');
-      
-      // Generate zip with no compression for faster processing
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'STORE',
-        compressionOptions: { level: 0 }
-      });
-
-      // Calculate final zip size
-      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
-      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
-
-      // Create download link and trigger download
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${folderName}.zip`;
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
-      console.error('Zip creation error:', error);
-    } finally {
-      setIsDownloadingAll(false);
-    }
-  };
-
-  const downloadFavoritedVideos = async () => {
-    const favoritedVideos = results.filter(result => 
-      result.video_url && 
-      result.status === 'completed' && 
-      favoriteVideos.has(result.id)
-    );
-    
-    if (favoritedVideos.length === 0) {
-      addLog('❌ No favorited videos available for download', 'error');
-      return;
-    }
-
-    setIsDownloadingAll(true);
-    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
-
-    try {
-      // Dynamic import of JSZip to avoid SSR issues
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      // Create timestamp for unique folder naming
-      const timestamp = new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: 'America/Los_Angeles'
-      }).replace(/[/:]/g, '-').replace(', ', '_');
-
-      const folderName = `Favorited Videos (${timestamp})`;
-      const folder = zip.folder(folderName);
-      const videosFolder = folder.folder('Videos');
-      const jsonFolder = folder.folder('JSON');
-
-      // Sort videos by generation and video number for organized download
-      const sortedVideos = favoritedVideos
-        .map(result => ({
-          ...result,
-          filename: generateFilename(result.jobId, result.id)
-        }))
-        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
-
-      // Add each video to the zip with progress tracking
-      for (let i = 0; i < sortedVideos.length; i++) {
-        const result = sortedVideos[i];
-        try {
-          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
-          
-          const response = await fetch(result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
-          }
-          
-          const blob = await response.blob();
-          
-          // Verify blob size before adding to zip
-          if (blob.size === 0) {
-            throw new Error('Empty video file received');
-          }
-          
-          // Add video to Videos folder
-          videosFolder.file(result.filename, blob);
-          
-          // Add metadata file to JSON folder
-          const metadata = {
-            id: result.id,
-            prompt: result.prompt,
-            jobId: result.jobId,
-            created_at: result.created_at,
-            image_url: result.image_url,
             processingTime: result.processingTime || 'unknown',
             favorited: true
           };
@@ -1531,10 +1409,34 @@ export default function RunwayAutomationApp() {
   return (
     <>
       <Head>
-        <title>Runway Automation - Batch Video Generation</title>
-        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file." />
+        <title>Runway Automation Pro - AI Video Generation</title>
+        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://runway-automation.vercel.app/" />
+        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="og:image" content="/og-image.png" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
+        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="twitter:image" content="/og-image.png" />
+
+        {/* Additional SEO tags */}
+        <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
+        <meta name="author" content="Runway Automation Pro" />
+        <meta name="robots" content="index, follow" />
+        
+        {/* Theme color for mobile browsers */}
+        <meta name="theme-color" content="#667eea" />
+        <meta name="msapplication-navbutton-color" content="#667eea" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
@@ -1580,15 +1482,15 @@ export default function RunwayAutomationApp() {
               <button 
                 onClick={() => setActiveTab('setup')}
                 className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                style={{ fontSize: '1.9rem', fontWeight: 'bold' }}
+                style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
               >
                 <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
-                Runway Automation
+                Runway Automation Pro
               </button>
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos from a single prompt. Download all videos as MP4 and JSON in a ZIP file.
+                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
               </p>
             </div>
           </div>
@@ -1637,11 +1539,10 @@ export default function RunwayAutomationApp() {
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="position-relative d-flex align-items-center justify-content-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
-                          borderRadius: '8px 8px 0 0',
-                          backgroundColor: HEADER_BLUE
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
                         }}
                       >
                         <div 
@@ -1650,18 +1551,17 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '20px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff',
-                            paddingBottom:'3px'
+                            backgroundColor: '#4dd0ff'
                           }}
                         >
                           <Key className="text-white" size={32} />
                         </div>
                         
                         <div className="text-white text-center">
-                          <h4 className="mb-0 fw-bold">API Setup</h4>
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
                         </div>
                       </div>
                       
@@ -1669,7 +1569,7 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">Runway API Key</label>
+                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
                             {runwayApiKey && (
                               <button
                                 type="button"
@@ -1693,38 +1593,9 @@ export default function RunwayAutomationApp() {
                           <div className="form-text">
                             <ExternalLink size={14} className="me-1" />
                             <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from Runway Developer Portal
+                              Get your API key from RunwayML Developer Portal
                             </a>
                           </div>
-                          
-                          {runwayApiKey && (
-                            <div className="mt-2">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-info"
-                                onClick={async () => {
-                                  addLog('🔍 Testing API connectivity...', 'info');
-                                  try {
-                                    const response = await fetch('/api/runway-debug', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ apiKey: runwayApiKey })
-                                    });
-                                    const data = await response.json();
-                                    addLog('✅ Debug test completed - check browser console for details', 'success');
-                                    console.log('=== RUNWAY API DEBUG RESULTS ===');
-                                    console.log(JSON.stringify(data, null, 2));
-                                  } catch (error) {
-                                    addLog('❌ Debug test failed: ' + error.message, 'error');
-                                    console.error('Debug test error:', error);
-                                  }
-                                }}
-                                style={{ fontSize: '12px' }}
-                              >
-                                🔍 Test API
-                              </button>
-                            </div>
-                          )}
                         </div>
 
                         <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
@@ -1732,7 +1603,7 @@ export default function RunwayAutomationApp() {
                             <CreditCard size={20} className="text-warning me-2" />
                             <strong>Credits Required</strong>
                           </div>
-                          <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
+                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
                           <ul className="small mb-0 ps-3">
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
@@ -1766,7 +1637,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="16:9 for YouTube, TV, and desktop. 9:16 for TikTok, FB Reels, and IG Stories. 1:1 for IG posts and profile pics. 4:3 for classic TV and monitors. 3:4 for print and documents. 21:9 for ultrawide movies."
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
                               ></i>
                             </label>
                             <select
@@ -1828,23 +1699,14 @@ export default function RunwayAutomationApp() {
                         </div>
 
                         <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">
-                            Video Generation Limits by Tier
-                            <i 
-                              className="bi bi-info-circle ms-1 text-primary" 
-                              style={{ cursor: 'help' }}
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="top" 
-                              title="All tiers can generate up to 20 videos at once, but you will be throttled past your tier's limits."
-                            ></i>
-                          </label>
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
                           <div className="table-responsive">
                             <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead>
-                                <tr style={{ backgroundColor: HEADER_BLUE }}>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Tier</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark text-white" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid', backgroundColor: HEADER_BLUE }}>Criteria</th>
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
+                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
                                 </tr>
                               </thead>
                               <tbody className="small">
@@ -1887,11 +1749,10 @@ export default function RunwayAutomationApp() {
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="position-relative d-flex align-items-center justify-content-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
-                          borderRadius: '8px 8px 0 0',
-                          backgroundColor: HEADER_BLUE
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
                         }}
                       >
                         <div 
@@ -1900,18 +1761,17 @@ export default function RunwayAutomationApp() {
                             width: '80px', 
                             height: '80px',
                             left: '20px',
-                            top: '20px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#4dd0ff',
-                            paddingBottom:'3px'
+                            backgroundColor: '#4dd0ff'
                           }}
                         >
                           <Film className="text-white" size={32} />
                         </div>
                         
                         <div className="text-white text-center">
-                          <h4 className="mb-0 fw-bold">Video Setup</h4>
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
                         </div>
                       </div>
                       
@@ -1969,6 +1829,7 @@ export default function RunwayAutomationApp() {
                             ></i>
                           </label>
                           
+                          {/* Hidden file input */}
                           <input
                             ref={fileInputRef}
                             type="file"
@@ -1977,6 +1838,7 @@ export default function RunwayAutomationApp() {
                             style={{ display: 'none' }}
                           />
                           
+                          {/* Upload button or URL input */}
                           {!imageUrl ? (
                             <div 
                               className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center"
@@ -2033,23 +1895,14 @@ export default function RunwayAutomationApp() {
                                     fileInputRef.current.value = '';
                                   }
                                 }}
-                                style={{ 
-                                  borderRadius: '50%', 
-                                  width: '32px', 
-                                  height: '32px',
-                                  fontSize: '20px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  lineHeight: '1',
-                                  padding: '0'
-                                }}
+                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
                               >
-                                <span style={{ transform: 'translateY(-1px)' }}>×</span>
+                                ×
                               </button>
                             </div>
                           )}
                           
+                          {/* URL input as alternative */}
                           <div className="mt-3">
                             <input
                               type="url"
@@ -2061,11 +1914,13 @@ export default function RunwayAutomationApp() {
                             />
                           </div>
                           
+                          {/* Generate Video Button */}
                           <div className="mt-4">
                             <button
-                              className="btn btn-success w-100 shadow"
+                              className="btn btn-success btn-lg w-100 shadow"
                               onClick={() => {
                                 setActiveTab('generation');
+                                // Small delay to ensure tab switch completes before starting generation
                                 setTimeout(() => {
                                   if (!isRunning) {
                                     generateVideos();
@@ -2077,13 +1932,8 @@ export default function RunwayAutomationApp() {
                                 borderRadius: '8px', 
                                 fontWeight: '600',
                                 backgroundColor: '#28a745',
-                                borderColor: '#28a745',
-                                opacity: '1',
-                                transition: 'opacity 0.1s ease-in-out',
-                                padding: '8px 16px'
+                                borderColor: '#28a745'
                               }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
                             >
                               <Play size={20} className="me-2" />
                               Generate Video{concurrency > 1 ? 's' : ''}
@@ -2108,14 +1958,10 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
-                    className="position-relative d-flex align-items-center justify-content-between" 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '60px',
-                      borderRadius: '8px 8px 0 0',
-                      backgroundColor: HEADER_BLUE,
-                      paddingLeft: '105px',
-                      paddingRight: '30px',
-                      paddingBottom: '3px'
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
                     }}
                   >
                     <div 
@@ -2124,7 +1970,7 @@ export default function RunwayAutomationApp() {
                         width: '80px', 
                         height: '80px',
                         left: '20px',
-                        top: '20px',
+                        top: '40px',
                         zIndex: 10,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         backgroundColor: '#4dd0ff'
@@ -2133,26 +1979,27 @@ export default function RunwayAutomationApp() {
                       <Video className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white flex-grow-1">
-                      <h4 className="mb-0 fw-bold">Video Generation</h4>
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
-                    <div className="flex-shrink-0">
+                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-success shadow"
+                          className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600', 
+                            marginTop: '5px', 
+                            marginBottom: '5px',
                             opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out',
+                            transition: 'opacity 0.2s ease-in-out',
                             backgroundColor: '#28a745',
-                            borderColor: '#28a745',
-                            padding: '8px 16px'
+                            borderColor: '#28a745'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
@@ -2165,9 +2012,9 @@ export default function RunwayAutomationApp() {
                         </button>
                       ) : (
                         <button
-                          className="btn btn-danger shadow"
+                          className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '8px', fontWeight: '600', padding: '8px 16px' }}
+                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
@@ -2199,32 +2046,39 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
+                    {/* Always show generation status */}
                     <div className="mb-3" style={{ minHeight: '100px' }}>
                       <div className="text-center py-3">
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
                             if (Object.keys(generationProgress).length > 0) {
+                              // During generation
                               return `Generation ${generationCounter || 1} in progress`;
                             } else if (completedGeneration) {
+                              // After completion
                               return `Generation ${completedGeneration} completed`;
                             } else {
+                              // Initial state
                               return `Generation ${generationCounter || 1}`;
                             }
                           })()}
                         </h4>
-                          <p className="text-muted mb-0">
-                            {(() => {
-                              if (Object.keys(generationProgress).length > 0) {
-                                const count = Object.keys(generationProgress).length;
-                                return `${count} video${count !== 1 ? 's' : ''} generating`;
-                              } else if (completedGeneration) {
-                                const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
-                                return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                              } else {
-                                return '0 videos generated';
-                              }
-                            })()}
-                          </p>
+                        <p className="text-muted mb-0">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              // During generation - show active job count
+                              const count = Object.keys(generationProgress).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generating`;
+                            } else if (completedGeneration) {
+                              // After completion - show completed count from that generation
+                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                            } else {
+                              // Initial state
+                              return '0 videos generated';
+                            }
+                          })()}
+                        </p>
                       </div>
                     </div>
 
@@ -2286,57 +2140,17 @@ export default function RunwayAutomationApp() {
                           <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
                         </button>
                       </div>
-                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace', lineHeight: logs.length > 0 ? '1.4' : '0.4' }}>
-                        {logs.map((log, index) => {
-                          // Check if message contains actual line breaks
-                          const hasLineBreaks = log.message.includes('\n');
-                          
-                          if (hasLineBreaks) {
-                            const lines = log.message.split('\n');
-                            const timestampText = `[${log.timestamp}] `;
-                            
-                            return (
-                              <div key={index} className="small mb-1">
-                                <div className={`${
-                                  log.type === 'error' ? 'text-danger' :
-                                  log.type === 'success' ? 'text-light' :
-                                  log.type === 'warning' ? 'text-warning' :
-                                  'text-light'
-                                }`}>
-                                  <span className="text-primary">{timestampText}</span>{lines[0]}
-                                </div>
-                                {lines.slice(1).map((line, lineIndex) => (
-                                  <div 
-                                    key={lineIndex} 
-                                    className={`${
-                                      log.type === 'error' ? 'text-danger' :
-                                      log.type === 'success' ? 'text-light' :
-                                      log.type === 'warning' ? 'text-warning' :
-                                      'text-light'
-                                    }`}
-                                    style={{ 
-                                      paddingLeft: '12.5ch' // Width of timestamp in monospace
-                                    }}
-                                  >
-                                    {line}
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          } else {
-                            // Single line message
-                            return (
-                              <div key={index} className={`small mb-1 ${
-                                log.type === 'error' ? 'text-danger' :
-                                log.type === 'success' ? 'text-light' :
-                                log.type === 'warning' ? 'text-warning' :
-                                'text-light'
-                              }`}>
-                                <span className="text-primary">[{log.timestamp}]</span> {log.message}
-                              </div>
-                            );
-                          }
-                        })}
+                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
+                        {logs.map((log, index) => (
+                          <div key={index} className={`small mb-1 ${
+                            log.type === 'error' ? 'text-danger' :
+                            log.type === 'success' ? 'text-light' :
+                            log.type === 'warning' ? 'text-warning' :
+                            'text-light'
+                          }`}>
+                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
+                          </div>
+                        ))}
                         {logs.length === 0 && (
                           <div className="text-muted small">
                             Ready to start generation... Configure your settings and click "Start Generation"
@@ -2355,14 +2169,10 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
-                    className="position-relative d-flex align-items-center justify-content-between" 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '60px',
-                      borderRadius: '8px 8px 0 0',
-                      backgroundColor: HEADER_BLUE,
-                      paddingLeft: '105px',
-                      paddingRight: '30px',
-                      paddingBottom: '3px'
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
                     }}
                   >
                     <div 
@@ -2371,7 +2181,7 @@ export default function RunwayAutomationApp() {
                         width: '80px', 
                         height: '80px',
                         left: '20px',
-                        top: '20px',
+                        top: '40px',
                         zIndex: 10,
                         backgroundColor: '#4dd0ff',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
@@ -2380,84 +2190,52 @@ export default function RunwayAutomationApp() {
                       <Download className="text-white" size={32} />
                     </div>
                     
-                    <div className="text-white flex-grow-1">
-                      <h4 className="mb-0 fw-bold">Generated Videos</h4>
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div className="d-flex gap-2 flex-wrap flex-shrink-0">
-                        <button
-                          className="btn btn-light shadow"
-                          onClick={downloadAllVideos}
-                          disabled={isDownloadingAll}
-                          style={{ 
-                            borderRadius: '8px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out'
-                          }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        >
-                          {isDownloadingAll ? (
-                            <>
-                              <div className="spinner-border spinner-border-sm me-2" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                              </div>
-                              Downloading...
-                            </>
-                          ) : (
-                            <>
-                              <Download size={16} className="me-2" />
-                              All Videos
-                              <span className="ms-2 badge bg-primary">
-                                {results.filter(result => result.video_url && result.status === 'completed').length}
-                              </span>
-                            </>
-                          )}
-                        </button>
-                        
-                        {favoriteVideos.size > 0 && (
+                      <div style={{ marginRight: '30px' }}>
+                        <div className="d-flex gap-2">
                           <button
                             className="btn btn-light shadow"
-                            onClick={downloadFavoritedVideos}
+                            onClick={downloadAllVideos}
                             disabled={isDownloadingAll}
-                            style={{ 
-                              borderRadius: '8px', 
-                              fontWeight: '600',
-                              opacity: '1',
-                              transition: 'opacity 0.1s ease-in-out'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
                           >
-                            <Download size={16} className="me-2" />
-                            Favorited Videos
-                            <span className="ms-2 badge bg-danger">
-                              {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
-                            </span>
+                            {isDownloadingAll ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={20} className="me-2" />
+                                Download All as ZIP
+                                <span className="ms-2 badge bg-primary">
+                                  {results.filter(result => result.video_url && result.status === 'completed').length}
+                                </span>
+                              </>
+                            )}
                           </button>
-                        )}
-                        
-                        <button
-                          className="btn btn-danger shadow"
-                          onClick={clearGeneratedVideos}
-                          style={{ 
-                            borderRadius: '8px', 
-                            fontWeight: '600',
-                            opacity: '1',
-                            transition: 'opacity 0.1s ease-in-out'
-                          }}
-                          title="Clear all generated videos from browser storage"
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        >
-                          <Trash2 size={16} className="me-2" />
-                          Clear Videos
-                          <span className="ms-2 badge bg-light text-dark">
-                            {results.length}
-                          </span>
-                        </button>
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-danger shadow"
+                              onClick={downloadFavoritedVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Heart size={16} className="me-2" />
+                              Favorites
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                              </span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2465,9 +2243,9 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-4">
-                        <div className="mb-3">
-                          <Film size={70} className="text-muted" />
+                      <div className="text-center py-5">
+                        <div className="mb-4">
+                          <Film size={80} className="text-muted" />
                         </div>
                         <h4 className="text-muted mb-3">No videos generated yet</h4>
                         <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
@@ -2506,7 +2284,7 @@ export default function RunwayAutomationApp() {
                           })
                           .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100 d-flex flex-column" style={{ borderRadius: '8px' }}>
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
                               <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
@@ -2542,40 +2320,43 @@ export default function RunwayAutomationApp() {
                                     </span>
                                   </div>
                                 )}
+                                
+                                {/* Add favorite button overlay */}
+                                <button
+                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                  onClick={() => toggleFavorite(result.id)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Heart 
+                                    size={16} 
+                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                  />
+                                </button>
                               </div>
                               
-                              <div className="card-body p-3 d-flex flex-column flex-grow-1">
-                                <div className="d-flex justify-content-between align-items-start mb-3">
-                                  <div className="fw-bold text-primary flex-grow-1">{result.jobId}</div>
-                                  <button
-                                    className="btn btn-sm p-1 ms-2"
-                                    onClick={() => toggleFavorite(result.id)}
-                                    style={{
-                                      border: 'none',
-                                      background: 'none',
-                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#dee2e6',
-                                      transition: 'color 0.2s ease',
-                                      flexShrink: 0,
-                                      marginTop: '-5px'
-                                    }}
-                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                  >
-                                    <Heart 
-                                      size={18} 
-                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                    />
-                                  </button>
-                                </div>
-                                <h6 className="card-title mb-3 flex-grow-1" style={{ fontWeight: '400' }} title={result.prompt}>
+                              <div className="card-body p-3">
+                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
                                 
-                                <div className="mt-auto">
+                                <div className="d-grid gap-2">
                                   {result.video_url && (
-                                    <div className="btn-group w-100" role="group">
+                                    <div className="btn-group" role="group">
                                       <button
                                         className="btn btn-primary btn-sm"
-                                        style={{ width: '50%' }}
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
                                       >
                                         <Download size={16} className="me-1" />
@@ -2583,7 +2364,6 @@ export default function RunwayAutomationApp() {
                                       </button>
                                       <button
                                         className="btn btn-outline-primary btn-sm"
-                                        style={{ width: '50%' }}
                                         onClick={() => window.open(result.video_url, '_blank')}
                                       >
                                         <ExternalLink size={16} className="me-1" />
@@ -2604,17 +2384,20 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center mt-4">
+          <div className="text-center mt-5">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-1" style={{ marginLeft: '12px' }}>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <img 
-                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
-                  alt="Powered by Runway" 
-                  style={{ height: '20px', width: 'auto' }}
-                />
+                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <text x="0" y="14" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="white" fillOpacity="0.7">Powered by</text>
+                  <g transform="translate(75, 2)">
+                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
+                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
+                    <text x="32" y="12" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                  </g>
+                </svg>
               </a>
             </div>
           </div>
@@ -2622,4 +2405,124 @@ export default function RunwayAutomationApp() {
       </div>
     </>
   );
-}
+}}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Verify blob size before adding to zip
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          // Add video to Videos folder
+          videosFolder.file(result.filename, blob);
+          
+          // Add metadata file to JSON folder
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown'
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      // Generate zip with no compression for faster processing
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      // Calculate final zip size
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      // Create download link and trigger download
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const downloadFavoritedVideos = async () => {
+    const favoritedVideos = results.filter(result => 
+      result.video_url && 
+      result.status === 'completed' && 
+      favoriteVideos.has(result.id)
+    );
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      // Dynamic import of JSZip to avoid SSR issues
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      // Create timestamp for unique folder naming
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Favorited Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      // Sort videos by generation and video number for organized download
+      const sortedVideos = favoritedVideos
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      // Add each video to the zip with progress tracking
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1
