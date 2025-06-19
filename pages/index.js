@@ -1,4 +1,4 @@
-    }
+}
 
     addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
     addLog('⚡ RunwayML will automatically queue jobs beyond your tier limit', 'info');
@@ -3036,4 +3036,3 @@ export default function RunwayAutomationApp() {
       });
       
       allPromises.push(delayedPromise);
-    
