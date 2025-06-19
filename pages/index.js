@@ -1,5 +1,522 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
+          )}
+
+          {activeTab === 'generation' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-10">
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        backgroundColor: '#4dd0ff'
+                      }}
+                    >
+                      <Video className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h2 className="mb-0 fw-bold">Video Generation</h2>
+                    </div>
+                    
+                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
+                      {!isRunning ? (
+                        <button
+                          className="btn btn-success btn-lg shadow"
+                          onClick={generateVideos}
+                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
+                          style={{ 
+                            borderRadius: '8px', 
+                            fontWeight: '600', 
+                            marginTop: '5px', 
+                            marginBottom: '5px',
+                            opacity: '1',
+                            transition: 'opacity 0.2s ease-in-out',
+                            backgroundColor: '#28a745',
+                            borderColor: '#28a745'
+                          }}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
+                          onMouseLeave={(e) => e.target.style.opacity = '1'}
+                        >
+                          <Play size={24} className="me-2" />
+                          Start Generation
+                          {concurrency > 1 && (
+                            <span className="ms-2 badge bg-light text-dark">
+                              {concurrency} videos
+                            </span>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-danger btn-lg shadow"
+                          onClick={stopGeneration}
+                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
+                        >
+                          <AlertCircle size={24} className="me-2" />
+                          Stop Generation
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
+                      <div className="card-body p-3">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
+                          <div className="d-flex gap-5 align-items-center text-center">
+                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <div className="d-flex align-items-center">
+                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
+                                {isRunning && (
+                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
+                                )}
+                              </div>
+                              
+                              <div className="card-body p-3">
+                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                  {result.prompt}
+                                </h6>
+                                
+                                <div className="d-grid gap-2">
+                                  {result.video_url && (
+                                    <div className="btn-group" role="group">
+                                      <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                      >
+                                        <Download size={16} className="me-1" />
+                                        Download
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm"
+                                        onClick={() => window.open(result.video_url, '_blank')}
+                                      >
+                                        <ExternalLink size={16} className="me-1" />
+                                        View
+                                      </button>
+                                      <button
+                                        className="btn btn-warning btn-sm"
+                                        onClick={() => upscaleVideo(result)}
+                                        disabled={!!upscaleProgress[result.id] || result.upscaled}
+                                        title={
+                                          result.upscaled ? 'Already upscaled to 4K' :
+                                          upscaleProgress[result.id] ? 'Upscaling in progress...' :
+                                          'Upscale to 4K (~500 credits, ~$5.00)'
+                                        }
+                                      >
+                                        {upscaleProgress[result.id] ? (
+                                          <div className="d-flex align-items-center">
+                                            <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
+                                              <span className="visually-hidden">Loading...</span>
+                                            </div>
+                                            <span style={{ fontSize: '12px' }}>4K</span>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <Zap size={16} className="me-1" />
+                                            4K
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show 4K download button if upscaled */}
+                                  {result.upscaled && result.upscale_url && (
+                                    <button
+                                      className="btn btn-success btn-sm mt-1"
+                                      onClick={() => downloadVideo(result.upscale_url, generateFilename(result.jobId, result.id, true))}
+                                    >
+                                      <Download size={16} className="me-1" />
+                                      Download 4K Version
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mt-5">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <text x="0" y="14" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="400" fill="white" fillOpacity="0.7">Powered by</text>
+                  <g transform="translate(75, 2)">
+                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
+                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
+                    <text x="32" y="12" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                  </g>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Always show generation status */}
+                    <div className="mb-3" style={{ minHeight: '100px' }}>
+                      <div className="text-center py-3">
+                        <h4 className="fw-bold text-dark mb-2">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              // During generation
+                              return `Generation ${generationCounter || 1} in progress`;
+                            } else if (completedGeneration) {
+                              // After completion
+                              return `Generation ${completedGeneration} completed`;
+                            } else {
+                              // Initial state
+                              return `Generation ${generationCounter || 1}`;
+                            }
+                          })()}
+                        </h4>
+                        <p className="text-muted mb-0">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              // During generation - show active job count
+                              const count = Object.keys(generationProgress).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generating`;
+                            } else if (completedGeneration) {
+                              // After completion - show completed count from that generation
+                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                            } else {
+                              // Initial state
+                              return '0 videos generated';
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {Object.keys(generationProgress).length > 0 && (
+                      <div className="mb-3">
+                        <div className="row g-3">
+                          {Object.entries(generationProgress).map(([jobId, progress]) => (
+                            <div key={jobId} className="col-md-6 col-xl-3">
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <span className="fw-bold small" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
+                                      {jobId}
+                                    </span>
+                                    <span className={`badge ${
+                                      progress.status === 'completed' ? 'bg-success' :
+                                      progress.status === 'failed' ? 'bg-danger' :
+                                      progress.status === 'throttled' ? 'bg-warning' :
+                                      'bg-primary'
+                                    }`}>
+                                      {progress.status}
+                                    </span>
+                                  </div>
+                                  <div className="progress mb-2" style={{ height: '8px' }}>
+                                    <div 
+                                      className={`progress-bar ${
+                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'failed' ? 'bg-danger' :
+                                        progress.status === 'throttled' ? 'bg-warning' :
+                                        'bg-primary'
+                                      }`}
+                                      style={{ width: progress.progress + '%' }}
+                                    ></div>
+                                  </div>
+                                  <small className="text-muted">
+                                    {progress.message || progress.status}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
+                      <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
+                        <div className="d-flex gap-2">
+                          <button 
+                            className="btn btn-sm btn-outline-danger" 
+                            onClick={clearLogs}
+                            title="Clear all logs"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-outline-light" 
+                            onClick={copyLogsToClipboard}
+                            title="Copy all logs to clipboard"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
+                        {logs.map((log, index) => (
+                          <div key={index} className={`small mb-1 ${
+                            log.type === 'error' ? 'text-danger' :
+                            log.type === 'success' ? 'text-light' :
+                            log.type === 'warning' ? 'text-warning' :
+                            'text-light'
+                          }`}>
+                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
+                          </div>
+                        ))}
+                        {logs.length === 0 && (
+                          <div className="text-muted small">
+                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'results' && (
+            <div className="row justify-content-center">
+              <div className="col-lg-10">
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        backgroundColor: '#4dd0ff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Download className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
+                    </div>
+                    
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
+                      <div style={{ marginRight: '30px' }}>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-light shadow"
+                            onClick={downloadAllVideos}
+                            disabled={isDownloadingAll}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            {isDownloadingAll ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={20} className="me-2" />
+                                Download All as ZIP
+                                <span className="ms-2 badge bg-primary">
+                                  {results.filter(result => result.video_url && result.status === 'completed').length}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-danger shadow"
+                              onClick={downloadFavoritedVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Heart size={16} className="me-2" />
+                              Favorites
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
+                    {results.length === 0 ? (
+                      <div className="text-center py-5">
+                        <div className="mb-4">
+                          <Film size={80} className="text-muted" />
+                        </div>
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <button
+                          className="btn btn-primary btn-lg shadow"
+                          onClick={() => setActiveTab('setup')}
+                          style={{ borderRadius: '6px' }}
+                        >
+                          Get Started
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="row g-4">
+                        {results
+                          .slice()
+                          .sort((a, b) => {
+                            const parseJobId = (jobId) => {
+                              if (!jobId) return { generation: 0, video: 0 };
+                              
+                              const genMatch = jobId.match(/Generation (\d+)/);
+                              const vidMatch = jobId.match(/Video (\d+)/);
+                              
+                              return {
+                                generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                video: vidMatch ? parseInt(vidMatch[1]) : 0
+                              };
+                            };
+                            
+                            const aData = parseJobId(a.jobId);
+                            const bData = parseJobId(b.jobId);
+                            
+                            if (aData.generation !== bData.generation) {
+                              return aData.generation - bData.generation;
+                            }
+                            return aData.video - bData.video;
+                          })
+                          .map((result, index) => (
+                          <div key={index} className="col-md-6 col-lg-3">
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                {result.video_url ? (
+                                  <video
+                                    src={result.video_url}
+                                    poster={result.thumbnail_url}
+                                    controls
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                    preload="metadata"
+                                  >
+                                    Your browser does not support video playback.
+                                  </video>
+                                ) : result.thumbnail_url ? (
+                                  <img 
+                                    src={result.thumbnail_url}
+                                    alt={'Thumbnail for: ' + result.prompt}
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                    <div className="text-center">
+                                      <Film size={48} className="text-primary mb-3" />
+                                      <div className="fw-bold text-muted">Processing...</div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {result.status !== 'completed' && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-warning shadow-sm">
+                                      ⏳ Processing
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Show upscale status badge */}
+                                {upscaleProgress[result.id] && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-info shadow-sm">
+                                      ⚡ Upscaling {upscaleProgress[result.id].progress}%
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Show 4K badge if upscaled */}
+                                {result.upscaled && (
+                                  <div className="position-absolute bottom-0 start-0 m-3">
+                                    <span className="badge bg-success shadow-sm">
+                                      ⚡ 4K Available
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Add favorite button overlay */}
+                                <button
+                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                  onClick={() => toggleFavorite(result.id)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Heart 
+                                    size={16} 
+                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                  />
+                                </button>
+                              </div>import React, { useState, useEffect, useRef } from 'react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, Zap } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -28,6 +545,7 @@ export default function RunwayAutomationApp() {
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
+  const [upscaleProgress, setUpscaleProgress] = useState({});
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -639,6 +1157,225 @@ export default function RunwayAutomationApp() {
     return ratioMap[ratio] || '1280:720';
   };
 
+  const upscaleVideo = async (videoResult) => {
+    const upscaleId = `upscale_${videoResult.id}`;
+    
+    try {
+      if (!runwayApiKey.trim()) {
+        addLog('❌ API key required for upscaling', 'error');
+        return;
+      }
+
+      addLog(`🚀 Starting 4K upscale for ${videoResult.jobId || 'video'}...`, 'info');
+      
+      setUpscaleProgress(prev => ({
+        ...prev,
+        [videoResult.id]: { status: 'starting', progress: 0 }
+      }));
+
+      const response = await fetch(API_BASE + '/runway-upscale', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          taskId: videoResult.id
+        })
+      });
+
+      const responseText = await response.text();
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error(`Upscale API Error ${response.status}: Could not parse error response`);
+        }
+        
+        let errorMessage = errorData.error || 'Upscale API Error: ' + response.status;
+        
+        if (response.status === 400 && errorMessage.includes('not have enough credits')) {
+          throw new Error('Insufficient credits for 4K upscale: ' + errorMessage);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      let upscaleTask;
+      try {
+        upscaleTask = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error('Could not parse upscale API response');
+      }
+      
+      addLog(`✓ 4K upscale started for ${videoResult.jobId || 'video'} (Task ID: ${upscaleTask.id})`, 'success');
+      
+      return await pollUpscaleCompletion(upscaleTask.id, videoResult);
+      
+    } catch (error) {
+      addLog(`✗ 4K upscale failed for ${videoResult.jobId || 'video'}: ${error.message}`, 'error');
+      setUpscaleProgress(prev => {
+        const updated = { ...prev };
+        delete updated[videoResult.id];
+        return updated;
+      });
+      throw error;
+    }
+  };
+
+  const pollUpscaleCompletion = async (upscaleTaskId, originalVideo) => {
+    const maxPolls = Math.floor(1800 / 15); // 30 minutes max
+    let pollCount = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 5;
+
+    while (pollCount < maxPolls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + upscaleTaskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          if (consecutiveErrors < maxConsecutiveErrors) {
+            consecutiveErrors++;
+            const backoffDelay = 20000 + (consecutiveErrors * 10000);
+            addLog(`⚠️ Upscale polling error, retrying in ${Math.round(backoffDelay/1000)}s...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          throw new Error('Invalid response from upscale status API');
+        }
+
+        if (!response.ok) {
+          if (response.status === 429 || response.status >= 500) {
+            consecutiveErrors++;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
+            }
+            const backoffDelay = 30000 + (consecutiveErrors * 15000);
+            addLog(`⚠️ Upscale status error (${response.status}), retrying in ${Math.round(backoffDelay/1000)}s...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          throw new Error(task.error || 'Upscale status polling failed: ' + response.status);
+        }
+        
+        consecutiveErrors = 0;
+        
+        let progress = 10;
+        if (task.status === 'PENDING') {
+          progress = Math.min(20, 20);
+        } else if (task.status === 'RUNNING') {
+          progress = Math.min(50, 70);
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+        }
+        
+        setUpscaleProgress(prev => ({
+          ...prev,
+          [originalVideo.id]: { 
+            status: task.status.toLowerCase(), 
+            progress: Math.round(progress),
+            message: task.status.toLowerCase()
+          }
+        }));
+
+        if (task.status === 'SUCCEEDED') {
+          addLog(`✓ 4K upscale completed for ${originalVideo.jobId || 'video'}`, 'success');
+          
+          // Update the original video result with upscale info
+          setResults(prev => prev.map(result => {
+            if (result.id === originalVideo.id) {
+              return {
+                ...result,
+                upscale_url: task.output && task.output[0] ? task.output[0] : null,
+                upscale_thumbnail: task.output && task.output[1] ? task.output[1] : null,
+                upscaled: true,
+                upscale_task_id: upscaleTaskId
+              };
+            }
+            return result;
+          }));
+          
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+
+          return task;
+        }
+
+        if (task.status === 'FAILED') {
+          const failureReason = task.failure_reason || task.failureCode || task.error || 'Upscale failed - no specific reason provided';
+          addLog(`✗ 4K upscale failed for ${originalVideo.jobId || 'video'}: ${failureReason}`, 'error');
+          
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+          
+          throw new Error(failureReason);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 15000)); // Poll every 15 seconds for upscale
+        pollCount++;
+        
+      } catch (error) {
+        consecutiveErrors++;
+        
+        if (error.message.includes('Insufficient credits') || 
+            (error.message.includes('failed') && 
+             !error.message.includes('timeout') && 
+             !error.message.includes('network'))) {
+          addLog(`✗ 4K upscale permanently failed: ${error.message}`, 'error');
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+          throw error;
+        }
+        
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          const finalError = `Upscale failed after ${maxConsecutiveErrors} consecutive errors: ${error.message}`;
+          addLog(`✗ ${finalError}`, 'error');
+          setUpscaleProgress(prev => {
+            const updated = { ...prev };
+            delete updated[originalVideo.id];
+            return updated;
+          });
+          throw new Error(finalError);
+        }
+        
+        const backoffDelay = 20000 + (consecutiveErrors * 10000);
+        addLog(`⏳ Upscale polling error, waiting ${Math.round(backoffDelay/1000)}s before retry...`, 'info');
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        pollCount++;
+      }
+    }
+
+    throw new Error('4K upscale timeout after 30 minutes');
+  };
+
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
@@ -968,7 +1705,8 @@ export default function RunwayAutomationApp() {
             status: 'completed',
             created_at: new Date().toISOString(),
             jobId: jobId,
-            processingTime: totalTime
+            processingTime: totalTime,
+            upscaled: false
           };
 
           setResults(prev => [...prev, completedVideo]);
@@ -1289,8 +2027,8 @@ export default function RunwayAutomationApp() {
     return await downloadVideoWithRetry(videoUrl, filename);
   };
 
-  const generateFilename = (jobId, taskId) => {
-    if (!jobId) return 'video_' + taskId + '.mp4';
+  const generateFilename = (jobId, taskId, isUpscale = false) => {
+    if (!jobId) return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
     
     const genMatch = jobId.match(/Generation (\d+)/);
     const vidMatch = jobId.match(/Video (\d+)/);
@@ -1298,10 +2036,10 @@ export default function RunwayAutomationApp() {
     if (genMatch && vidMatch) {
       const generation = genMatch[1];
       const video = vidMatch[1];
-      return `gen-${generation}-video-${video}.mp4`;
+      return `gen-${generation}-video-${video}${isUpscale ? '_4K' : ''}.mp4`;
     }
     
-    return 'video_' + taskId + '.mp4';
+    return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
   };
 
   const downloadAllVideos = async () => {
@@ -1366,6 +2104,24 @@ export default function RunwayAutomationApp() {
           // Add video to Videos folder
           videosFolder.file(result.filename, blob);
           
+          // Add 4K version if available
+          if (result.upscale_url) {
+            try {
+              const upscaleFilename = generateFilename(result.jobId, result.id, true);
+              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
+              
+              const upscaleResponse = await fetch(result.upscale_url);
+              if (upscaleResponse.ok) {
+                const upscaleBlob = await upscaleResponse.blob();
+                if (upscaleBlob.size > 0) {
+                  videosFolder.file(upscaleFilename, upscaleBlob);
+                }
+              }
+            } catch (upscaleError) {
+              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
+            }
+          }
+          
           // Add metadata file to JSON folder
           const metadata = {
             id: result.id,
@@ -1373,7 +2129,9 @@ export default function RunwayAutomationApp() {
             jobId: result.jobId,
             created_at: result.created_at,
             image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown'
+            processingTime: result.processingTime || 'unknown',
+            upscaled: result.upscaled || false,
+            upscale_task_id: result.upscale_task_id || null
           };
           
           jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
@@ -1486,6 +2244,24 @@ export default function RunwayAutomationApp() {
           // Add video to Videos folder
           videosFolder.file(result.filename, blob);
           
+          // Add 4K version if available
+          if (result.upscale_url) {
+            try {
+              const upscaleFilename = generateFilename(result.jobId, result.id, true);
+              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
+              
+              const upscaleResponse = await fetch(result.upscale_url);
+              if (upscaleResponse.ok) {
+                const upscaleBlob = await upscaleResponse.blob();
+                if (upscaleBlob.size > 0) {
+                  videosFolder.file(upscaleFilename, upscaleBlob);
+                }
+              }
+            } catch (upscaleError) {
+              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
+            }
+          }
+          
           // Add metadata file to JSON folder
           const metadata = {
             id: result.id,
@@ -1494,7 +2270,9 @@ export default function RunwayAutomationApp() {
             created_at: result.created_at,
             image_url: result.image_url,
             processingTime: result.processingTime || 'unknown',
-            favorited: true
+            favorited: true,
+            upscaled: result.upscaled || false,
+            upscale_task_id: result.upscale_task_id || null
           };
           
           jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
@@ -1547,6 +2325,7 @@ export default function RunwayAutomationApp() {
       total_videos: results.length,
       completed_videos: results.filter(r => r.status === 'completed').length,
       favorited_videos: results.filter(r => favoriteVideos.has(r.id)).length,
+      upscaled_videos: results.filter(r => r.upscaled).length,
       configuration: {
         model,
         aspect_ratio: aspectRatio,
@@ -1571,7 +2350,10 @@ export default function RunwayAutomationApp() {
         jobId: result.jobId,
         processingTime: result.processingTime,
         favorited: favoriteVideos.has(result.id),
-        filename: generateFilename(result.jobId, result.id)
+        filename: generateFilename(result.jobId, result.id),
+        upscaled: result.upscaled || false,
+        upscale_url: result.upscale_url || null,
+        upscale_task_id: result.upscale_task_id || null
       }))
     };
 
@@ -1792,6 +2574,7 @@ export default function RunwayAutomationApp() {
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li><strong>~500 credits for 4K upscale (~$5.00)</strong></li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
                         </div>
@@ -2136,467 +2919,3 @@ export default function RunwayAutomationApp() {
               </div>
             </div>
           )}
-
-          {activeTab === 'generation' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
-                    style={{ 
-                      height: '80px',
-                      borderRadius: '8px 8px 0 0'
-                    }}
-                  >
-                    <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '80px', 
-                        height: '80px',
-                        left: '20px',
-                        top: '40px',
-                        zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        backgroundColor: '#4dd0ff'
-                      }}
-                    >
-                      <Video className="text-white" size={32} />
-                    </div>
-                    
-                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Video Generation</h2>
-                    </div>
-                    
-                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
-                      {!isRunning ? (
-                        <button
-                          className="btn btn-success btn-lg shadow"
-                          onClick={generateVideos}
-                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
-                          style={{ 
-                            borderRadius: '8px', 
-                            fontWeight: '600', 
-                            marginTop: '5px', 
-                            marginBottom: '5px',
-                            opacity: '1',
-                            transition: 'opacity 0.2s ease-in-out',
-                            backgroundColor: '#28a745',
-                            borderColor: '#28a745'
-                          }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        >
-                          <Play size={24} className="me-2" />
-                          Start Generation
-                          {concurrency > 1 && (
-                            <span className="ms-2 badge bg-light text-dark">
-                              {concurrency} videos
-                            </span>
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-danger btn-lg shadow"
-                          onClick={stopGeneration}
-                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
-                        >
-                          <AlertCircle size={24} className="me-2" />
-                          Stop Generation
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
-                      <div className="card-body p-3">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
-                          <div className="d-flex gap-5 align-items-center text-center">
-                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <div className="d-flex align-items-center">
-                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
-                                {isRunning && (
-                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
-                                )}
-                              </div>
-                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Always show generation status */}
-                    <div className="mb-3" style={{ minHeight: '100px' }}>
-                      <div className="text-center py-3">
-                        <h4 className="fw-bold text-dark mb-2">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              // During generation
-                              return `Generation ${generationCounter || 1} in progress`;
-                            } else if (completedGeneration) {
-                              // After completion
-                              return `Generation ${completedGeneration} completed`;
-                            } else {
-                              // Initial state
-                              return `Generation ${generationCounter || 1}`;
-                            }
-                          })()}
-                        </h4>
-                        <p className="text-muted mb-0">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              // During generation - show active job count
-                              const count = Object.keys(generationProgress).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generating`;
-                            } else if (completedGeneration) {
-                              // After completion - show completed count from that generation
-                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            } else {
-                              // Initial state
-                              return '0 videos generated';
-                            }
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-3">
-                        <div className="row g-3">
-                          {Object.entries(generationProgress).map(([jobId, progress]) => (
-                            <div key={jobId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '120px'
-                                    }}>
-                                      {jobId}
-                                    </span>
-                                    <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-success' :
-                                      progress.status === 'failed' ? 'bg-danger' :
-                                      progress.status === 'throttled' ? 'bg-warning' :
-                                      'bg-primary'
-                                    }`}>
-                                      {progress.status}
-                                    </span>
-                                  </div>
-                                  <div className="progress mb-2" style={{ height: '8px' }}>
-                                    <div 
-                                      className={`progress-bar ${
-                                        progress.status === 'completed' ? 'bg-success' :
-                                        progress.status === 'failed' ? 'bg-danger' :
-                                        progress.status === 'throttled' ? 'bg-warning' :
-                                        'bg-primary'
-                                      }`}
-                                      style={{ width: progress.progress + '%' }}
-                                    ></div>
-                                  </div>
-                                  <small className="text-muted">
-                                    {progress.message || progress.status}
-                                  </small>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
-                      <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
-                        <div className="d-flex gap-2">
-                          <button 
-                            className="btn btn-sm btn-outline-danger" 
-                            onClick={clearLogs}
-                            title="Clear all logs"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-outline-light" 
-                            onClick={copyLogsToClipboard}
-                            title="Copy all logs to clipboard"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                          </button>
-                        </div>
-                      </div>
-                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`}>
-                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">
-                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'results' && (
-            <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
-                    style={{ 
-                      height: '80px',
-                      borderRadius: '8px 8px 0 0'
-                    }}
-                  >
-                    <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '80px', 
-                        height: '80px',
-                        left: '20px',
-                        top: '40px',
-                        zIndex: 10,
-                        backgroundColor: '#4dd0ff',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Download className="text-white" size={32} />
-                    </div>
-                    
-                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
-                    </div>
-                    
-                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px' }}>
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-light shadow"
-                            onClick={downloadAllVideos}
-                            disabled={isDownloadingAll}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            {isDownloadingAll ? (
-                              <>
-                                <div className="spinner-border spinner-border-sm me-2" role="status">
-                                  <span className="visually-hidden">Loading...</span>
-                                </div>
-                                Downloading...
-                              </>
-                            ) : (
-                              <>
-                                <Download size={20} className="me-2" />
-                                Download All as ZIP
-                                <span className="ms-2 badge bg-primary">
-                                  {results.filter(result => result.video_url && result.status === 'completed').length}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                          
-                          {favoriteVideos.size > 0 && (
-                            <button
-                              className="btn btn-danger shadow"
-                              onClick={downloadFavoritedVideos}
-                              disabled={isDownloadingAll}
-                              style={{ borderRadius: '8px', fontWeight: '600' }}
-                            >
-                              <Heart size={16} className="me-2" />
-                              Favorites
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
-                              </span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-                    {results.length === 0 ? (
-                      <div className="text-center py-5">
-                        <div className="mb-4">
-                          <Film size={80} className="text-muted" />
-                        </div>
-                        <h4 className="text-muted mb-3">No videos generated yet</h4>
-                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
-                        <button
-                          className="btn btn-primary btn-lg shadow"
-                          onClick={() => setActiveTab('setup')}
-                          style={{ borderRadius: '6px' }}
-                        >
-                          Get Started
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="row g-4">
-                        {results
-                          .slice()
-                          .sort((a, b) => {
-                            const parseJobId = (jobId) => {
-                              if (!jobId) return { generation: 0, video: 0 };
-                              
-                              const genMatch = jobId.match(/Generation (\d+)/);
-                              const vidMatch = jobId.match(/Video (\d+)/);
-                              
-                              return {
-                                generation: genMatch ? parseInt(genMatch[1]) : 0,
-                                video: vidMatch ? parseInt(vidMatch[1]) : 0
-                              };
-                            };
-                            
-                            const aData = parseJobId(a.jobId);
-                            const bData = parseJobId(b.jobId);
-                            
-                            if (aData.generation !== bData.generation) {
-                              return aData.generation - bData.generation;
-                            }
-                            return aData.video - bData.video;
-                          })
-                          .map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
-                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                {result.video_url ? (
-                                  <video
-                                    src={result.video_url}
-                                    poster={result.thumbnail_url}
-                                    controls
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                    preload="metadata"
-                                  >
-                                    Your browser does not support video playback.
-                                  </video>
-                                ) : result.thumbnail_url ? (
-                                  <img 
-                                    src={result.thumbnail_url}
-                                    alt={'Thumbnail for: ' + result.prompt}
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                  />
-                                ) : (
-                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <div className="text-center">
-                                      <Film size={48} className="text-primary mb-3" />
-                                      <div className="fw-bold text-muted">Processing...</div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {result.status !== 'completed' && (
-                                  <div className="position-absolute top-0 start-0 m-3">
-                                    <span className="badge bg-warning shadow-sm">
-                                      ⏳ Processing
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* Add favorite button overlay */}
-                                <button
-                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
-                                  onClick={() => toggleFavorite(result.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.9)',
-                                    borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
-                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                >
-                                  <Heart 
-                                    size={16} 
-                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                  />
-                                </button>
-                              </div>
-                              
-                              <div className="card-body p-3">
-                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group">
-                                      <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
-                                      >
-                                        <Download size={16} className="me-1" />
-                                        Download
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm"
-                                        onClick={() => window.open(result.video_url, '_blank')}
-                                      >
-                                        <ExternalLink size={16} className="me-1" />
-                                        View
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="text-center mt-5">
-            <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
-            </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <text x="0" y="14" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(75, 2)">
-                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
-                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
-                    <text x="32" y="12" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
-                  </g>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
