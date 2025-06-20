@@ -1,5 +1,5 @@
 // /pages/api/runway-upscale.js
-// Corrected 4K upscale endpoint based on official RunwayML API
+// Corrected implementation based on official RunwayML API documentation
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -19,23 +19,74 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { apiKey, taskId } = req.body;
+    const { apiKey, taskId, videoUrl } = req.body;
 
     // Validate required fields
     if (!apiKey) {
       return res.status(400).json({ error: 'API key is required' });
     }
 
-    if (!taskId) {
-      return res.status(400).json({ error: 'Task ID is required' });
+    // We need either taskId (to fetch video URL) or direct videoUrl
+    if (!taskId && !videoUrl) {
+      return res.status(400).json({ error: 'Task ID or video URL is required' });
     }
 
     console.log('Starting 4K upscale for task:', taskId);
 
-    // Create the upscale request payload - trying different possible formats
-    // Based on the RunwayML API pattern, it might expect a "task" or "taskId" field
+    let videoUri = videoUrl;
+
+    // If we have taskId but no videoUrl, we need to fetch the completed video URL first
+    if (taskId && !videoUrl) {
+      console.log('Fetching video URL from task:', taskId);
+      
+      try {
+        const taskResponse = await fetch(`https://api.dev.runwayml.com/v1/tasks/${taskId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'X-Runway-Version': '2024-11-06'
+          }
+        });
+
+        if (!taskResponse.ok) {
+          return res.status(taskResponse.status).json({
+            error: 'Failed to fetch task details',
+            message: `Could not retrieve video URL for task ${taskId}`
+          });
+        }
+
+        const taskData = await taskResponse.json();
+        
+        if (taskData.status !== 'SUCCEEDED') {
+          return res.status(400).json({
+            error: 'Video not ready for upscaling',
+            message: `Task ${taskId} has status: ${taskData.status}. Only completed videos can be upscaled.`
+          });
+        }
+
+        if (!taskData.output || !taskData.output[0]) {
+          return res.status(400).json({
+            error: 'No video URL found',
+            message: `Task ${taskId} completed but no video URL available`
+          });
+        }
+
+        videoUri = taskData.output[0];
+        console.log('Retrieved video URL:', videoUri.substring(0, 50) + '...');
+        
+      } catch (fetchError) {
+        return res.status(500).json({
+          error: 'Failed to fetch task details',
+          message: fetchError.message
+        });
+      }
+    }
+
+    // Create the upscale request payload according to official API docs
     const requestBody = {
-      task: taskId  // Try "task" instead of "taskId"
+      videoUri: videoUri,
+      model: "upscale_v1"
     };
 
     console.log('Upscale request body:', JSON.stringify(requestBody, null, 2));
@@ -45,7 +96,7 @@ export default async function handler(req, res) {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
     try {
-      // Make request to official RunwayML video_upscale API
+      // Make request to official RunwayML video_upscale API with correct parameters
       const response = await fetch('https://api.dev.runwayml.com/v1/video_upscale', {
         method: 'POST',
         headers: {
@@ -61,46 +112,16 @@ export default async function handler(req, res) {
 
       const responseText = await response.text();
       console.log('RunwayML upscale API response status:', response.status);
-      console.log('RunwayML upscale API response (first 500 chars):', responseText.substring(0, 500));
+      console.log('RunwayML upscale API response:', responseText.substring(0, 500));
 
-      // If we get HTML, the endpoint might not exist or the request format is wrong
+      // Check if response is HTML (indicates server error or non-JSON response)
       if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
         console.error('Received HTML response instead of JSON:', responseText.substring(0, 300));
-        
-        // Try alternative request format
-        console.log('Trying alternative request format...');
-        
-        const alternativeBody = {
-          taskId: taskId  // Try "taskId" format
-        };
-        
-        const altResponse = await fetch('https://api.dev.runwayml.com/v1/video_upscale', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'X-Runway-Version': '2024-11-06'
-          },
-          body: JSON.stringify(alternativeBody),
-          signal: controller.signal
+        return res.status(502).json({
+          error: 'RunwayML upscale API returned an HTML page instead of JSON',
+          message: 'This usually indicates a server error or maintenance on RunwayML\'s side.',
+          videoUri: videoUri.substring(0, 50) + '...'
         });
-        
-        const altResponseText = await altResponse.text();
-        console.log('Alternative request response status:', altResponse.status);
-        console.log('Alternative request response (first 500 chars):', altResponseText.substring(0, 500));
-        
-        if (altResponseText.startsWith('<!DOCTYPE') || altResponseText.startsWith('<html')) {
-          return res.status(501).json({
-            error: '4K upscale endpoint not available',
-            message: 'The 4K upscale feature may not be available in your API tier or the endpoint format has changed. Please use the web interface for 4K upscaling.',
-            taskId: taskId,
-            suggestion: 'Visit runwayml.com to upscale videos to 4K through the web interface'
-          });
-        }
-        
-        // Use alternative response if it worked
-        responseText = altResponseText;
-        response = altResponse;
       }
 
       // Check if response is empty
@@ -108,8 +129,7 @@ export default async function handler(req, res) {
         console.error('Received empty response from RunwayML upscale API');
         return res.status(502).json({
           error: 'Empty response from RunwayML upscale API',
-          message: 'The upscale API returned an empty response',
-          taskId: taskId
+          message: 'The upscale API returned an empty response'
         });
       }
 
@@ -120,20 +140,10 @@ export default async function handler(req, res) {
         console.error('Failed to parse upscale response as JSON:', parseError);
         console.log('Raw response causing parse error:', responseText.substring(0, 500));
         
-        // Check if it's a binary response
-        if (responseText.charCodeAt(0) === 0 || responseText.includes('\u0000')) {
-          return res.status(502).json({
-            error: 'Binary response received instead of JSON',
-            message: 'RunwayML upscale API returned binary data instead of expected JSON response',
-            taskId: taskId
-          });
-        }
-
         return res.status(502).json({
           error: 'Invalid response from RunwayML upscale API',
           message: 'The API returned an unexpected response format',
           rawResponse: responseText.substring(0, 200),
-          taskId: taskId,
           parseError: parseError.message
         });
       }
@@ -152,9 +162,8 @@ export default async function handler(req, res) {
         
         if (response.status === 404) {
           return res.status(404).json({
-            error: 'Upscale endpoint or task not found',
-            message: 'The 4K upscale endpoint may not be available for your account tier, or the task ID is invalid',
-            suggestion: 'Try using the web interface at runwayml.com for 4K upscaling'
+            error: 'Upscale endpoint not found',
+            message: 'The 4K upscale endpoint may not be available for your account tier'
           });
         }
 
@@ -169,10 +178,18 @@ export default async function handler(req, res) {
             });
           }
           
-          if (errorMessage.includes('not eligible') || errorMessage.includes('cannot be upscaled')) {
+          if (errorMessage.includes('duration') || errorMessage.includes('40 seconds')) {
             return res.status(400).json({
-              error: 'Video not eligible for upscaling',
-              message: 'This video cannot be upscaled. Only completed videos can be upscaled to 4K.',
+              error: 'Video too long for upscaling',
+              message: 'Videos longer than 40 seconds cannot be upscaled to 4K',
+              details: data
+            });
+          }
+
+          if (errorMessage.includes('4096px') || errorMessage.includes('resolution')) {
+            return res.status(400).json({
+              error: 'Video resolution too large',
+              message: 'Videos larger than 4096px on any side cannot be upscaled',
               details: data
             });
           }
@@ -204,12 +221,11 @@ export default async function handler(req, res) {
         return res.status(response.status).json({
           error: `RunwayML Upscale API Error (${response.status})`,
           message: data.error || data.message || 'Unknown error',
-          details: data,
-          rawResponse: responseText.substring(0, 500)
+          details: data
         });
       }
 
-      console.log('4K upscale request successful, task ID:', data.id || data.taskId);
+      console.log('4K upscale request successful, task ID:', data.id);
       res.status(200).json(data);
 
     } catch (fetchError) {
