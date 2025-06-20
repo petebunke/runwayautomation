@@ -1678,6 +1678,128 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  const downloadUpscaledVideos = async () => {
+    const upscaledVideos = results.filter(result => 
+      result.upscaled_video_url && 
+      result.status === 'completed'
+    );
+    
+    if (upscaledVideos.length === 0) {
+      addLog('❌ No 4K videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${upscaledVideos.length} 4K videos...`, 'info');
+
+    try {
+      // Dynamic import of JSZip to avoid SSR issues
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      // Create timestamp for unique folder naming
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `4K Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      // Sort videos by generation and video number for organized download
+      const sortedVideos = upscaledVideos
+        .map(result => ({
+          ...result,
+          upscaledFilename: generateFilename(result.jobId, result.id, true)
+        }))
+        .sort((a, b) => a.upscaledFilename.localeCompare(b.upscaledFilename, undefined, { numeric: true }));
+
+      // Add each 4K video to the zip with progress tracking
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding 4K video ${result.upscaledFilename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.upscaled_video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch 4K video`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Verify blob size before adding to zip
+          if (blob.size === 0) {
+            throw new Error('Empty 4K video file received');
+          }
+          
+          // Add 4K video to Videos folder
+          videosFolder.file(result.upscaledFilename, blob);
+          
+          // Add metadata file to JSON folder
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown',
+            upscale_task_id: result.upscale_task_id,
+            resolution: '4K',
+            original_video_url: result.video_url
+          };
+          
+          jsonFolder.file(result.upscaledFilename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add 4K video ${result.upscaledFilename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating 4K zip file...', 'info');
+      
+      // Generate zip with no compression for faster processing
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      // Calculate final zip size
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 4K zip file created: ${zipSizeMB}MB`, 'info');
+
+      // Create download link and trigger download
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded 4K zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create 4K zip archive: ' + error.message, 'error');
+      console.error('4K zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
   const downloadFavoritedVideos = async () => {
     const favoritedVideos = results.filter(result => 
       result.video_url && 
@@ -2734,13 +2856,28 @@ export default function RunwayAutomationApp() {
                             ) : (
                               <>
                                 <Download size={20} className="me-2" />
-                                Download All as ZIP
+                                All Videos
                                 <span className="ms-2 badge bg-primary">
                                   {results.filter(result => result.video_url && result.status === 'completed').length}
                                 </span>
                               </>
                             )}
                           </button>
+                          
+                          {results.filter(result => result.upscaled_video_url && result.status === 'completed').length > 0 && (
+                            <button
+                              className="btn shadow"
+                              onClick={downloadUpscaledVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                            >
+                              <Download size={16} className="me-2" />
+                              4K Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.upscaled_video_url && result.status === 'completed').length}
+                              </span>
+                            </button>
+                          )}
                           
                           {favoriteVideos.size > 0 && (
                             <button
@@ -2749,8 +2886,8 @@ export default function RunwayAutomationApp() {
                               disabled={isDownloadingAll}
                               style={{ borderRadius: '8px', fontWeight: '600' }}
                             >
-                              <Heart size={16} className="me-2" />
-                              Favorites
+                              <Download size={16} className="me-2" />
+                              Favorited Videos
                               <span className="ms-2 badge bg-light text-dark">
                                 {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
                               </span>
@@ -2886,7 +3023,7 @@ export default function RunwayAutomationApp() {
                                   {result.video_url && (
                                     <div className="btn-group" role="group">
                                       <button
-                                        className="btn btn-primary btn-sm"
+                                        className="btn btn-primary btn-sm flex-fill"
                                         onClick={() => downloadVideo(
                                           result.upscaled_video_url || result.video_url, 
                                           generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
@@ -2897,7 +3034,7 @@ export default function RunwayAutomationApp() {
                                         Download{result.upscaled_video_url ? ' 4K' : ''}
                                       </button>
                                       <button
-                                        className="btn btn-outline-primary btn-sm"
+                                        className="btn btn-outline-primary btn-sm flex-fill"
                                         onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank')}
                                         title={result.upscaled_video_url ? "View 4K version" : "View video"}
                                       >
@@ -2906,10 +3043,11 @@ export default function RunwayAutomationApp() {
                                       </button>
                                       {!result.upscaled_video_url && result.video_url && (
                                         <button
-                                          className="btn btn-warning btn-sm"
+                                          className="btn btn-sm"
                                           onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
                                           disabled={upscalingProgress[`upscale_${result.id}`]}
                                           title="Upscale to 4K resolution (~$5)"
+                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
                                         >
                                           <ArrowUp size={16} className="me-1" />
                                           4K
@@ -2922,7 +3060,7 @@ export default function RunwayAutomationApp() {
                                   {result.upscaled_video_url && result.video_url && (
                                     <div className="btn-group mt-2" role="group">
                                       <button
-                                        className="btn btn-outline-secondary btn-sm"
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
                                         title="Download original resolution"
                                       >
@@ -2930,7 +3068,7 @@ export default function RunwayAutomationApp() {
                                         Original
                                       </button>
                                       <button
-                                        className="btn btn-outline-secondary btn-sm"
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
                                         onClick={() => window.open(result.video_url, '_blank')}
                                         title="View original resolution"
                                       >
