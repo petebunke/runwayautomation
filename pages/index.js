@@ -1160,7 +1160,7 @@ export default function RunwayAutomationApp() {
     }
 
     if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required!', 'error');
+      addLog('❌ Runway API key is required!', 'error');
       return;
     }
 
@@ -1177,6 +1177,7 @@ export default function RunwayAutomationApp() {
     // Check credits before proceeding (only if we have prompt and image)
     if (prompt.trim() && imageUrl.trim()) {
       const creditCheck = await checkCredits();
+
       
       if (!creditCheck.hasCredits && creditCheck.isCreditsError) {
         showModalDialog({
@@ -1206,7 +1207,7 @@ export default function RunwayAutomationApp() {
               </div>
               
               <p className="mb-0 text-muted">
-                Visit the RunwayML Developer Portal to purchase more credits.
+                Visit the Runway Developer Portal to purchase more credits.
               </p>
             </div>
           )
@@ -1255,7 +1256,7 @@ export default function RunwayAutomationApp() {
             </div>
             
             <p className="mb-0 text-muted">
-              This will use credits from your RunwayML account. Are you sure you want to proceed?
+              This will use credits from your Runway account. Are you sure you want to proceed?
             </p>
           </div>
         )
@@ -1278,7 +1279,7 @@ export default function RunwayAutomationApp() {
     addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
-    addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
+    addLog('🔄 Jobs will process based on your Runway tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
 
     const batchResults = [];
     const errors = [];
@@ -1308,7 +1309,7 @@ export default function RunwayAutomationApp() {
     }
 
     addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
-    addLog('⚡ RunwayML will automatically queue jobs beyond your tier limit', 'info');
+    addLog('⚡ Runway will automatically queue jobs beyond your tier limit', 'info');
 
     try {
       const allResults = await Promise.all(allPromises);
@@ -1366,7 +1367,7 @@ export default function RunwayAutomationApp() {
   // 4K Upscaling functionality
   const upscaleVideo = async (taskId, videoUrl, videoName) => {
     if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required for 4K upscaling!', 'error');
+      addLog('❌ Runway API key is required for 4K upscaling!', 'error');
       return;
     }
 
@@ -1374,7 +1375,7 @@ export default function RunwayAutomationApp() {
     
     // Show cost warning for upscaling
     showModalDialog({
-      title: "4K Upscaling Cost Warning",
+      title: "Upscaling Cost Warning",
       type: "warning",
       confirmText: "Start 4K Upscaling",
       cancelText: "Cancel",
@@ -1492,7 +1493,7 @@ export default function RunwayAutomationApp() {
             continue;
           }
           
-          throw new Error('Invalid response from RunwayML upscale API');
+          throw new Error('Invalid response from Runway upscale API');
         }
 
         if (!response.ok) {
@@ -2120,28 +2121,28 @@ export default function RunwayAutomationApp() {
   return (
     <>
       <Head>
-        <title>Runway Automation Pro - AI Video Generation</title>
-        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <title>Runway Automation - Batch Video Generation</title>
+        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale after. Download all 4K videos as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://runway-automation.vercel.app/" />
-        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="og:title" content="Runway Automation - Batch Video Generation" />
+        <meta property="og:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale after. Download all 4K videos as MP4 and JSON." />
         <meta property="og:image" content="/og-image.png" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
-        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="twitter:title" content="Runway Automation - Batch Video Generation" />
+        <meta property="twitter:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale after. Download all 4K videos as MP4 and JSON." />
         <meta property="twitter:image" content="/og-image.png" />
 
         {/* Additional SEO tags */}
         <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
-        <meta name="author" content="Runway Automation Pro" />
+        <meta name="author" content="Runway Automation" />
         <meta name="robots" content="index, follow" />
         
         {/* Theme color for mobile browsers */}
@@ -2193,15 +2194,15 @@ export default function RunwayAutomationApp() {
               <button 
                 onClick={() => setActiveTab('setup')}
                 className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
+                style={{ fontSize: '1.9rem', fontWeight: 'bold' }}
               >
                 <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
-                Runway Automation Pro
+                Runway Automation
               </button>
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale after. Download all 4K videos as MP4 and JSON.
               </p>
             </div>
           </div>
@@ -2280,7 +2281,7 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
+                            <label className="form-label fw-bold mb-0">Runway API Key</label>
                             {runwayApiKey && (
                               <button
                                 type="button"
@@ -2304,7 +2305,7 @@ export default function RunwayAutomationApp() {
                           <div className="form-text">
                             <ExternalLink size={14} className="me-1" />
                             <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from RunwayML Developer Portal
+                              Get your API key from Runway Developer Portal
                             </a>
                           </div>
                         </div>
@@ -2692,7 +2693,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Video Generation</h2>
+                      <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
                     <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
@@ -2959,7 +2960,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
+                      <h3 className="mb-0 fw-bold">Generated Videos</h>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
