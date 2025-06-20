@@ -1060,6 +1060,61 @@ export default function RunwayAutomationApp() {
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
+  // Credit check function
+  const checkCredits = async () => {
+    if (!runwayApiKey.trim()) {
+      return { hasCredits: false, error: 'API key required' };
+    }
+
+    try {
+      const response = await fetch(API_BASE + '/runway-credits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey
+        })
+      });
+
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (parseError) {
+          return { hasCredits: false, error: `API Error ${response.status}: Could not parse response` };
+        }
+        
+        const errorMessage = errorData.error || errorData.message || 'Unknown error';
+        
+        // Check for insufficient credits specifically
+        if (response.status === 400 && (
+          errorMessage.toLowerCase().includes('insufficient') ||
+          errorMessage.toLowerCase().includes('not have enough') ||
+          errorMessage.toLowerCase().includes('credits')
+        )) {
+          return { hasCredits: false, error: 'Insufficient credits', isCreditsError: true };
+        }
+        
+        return { hasCredits: false, error: errorMessage };
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        return { hasCredits: true, error: 'Could not parse credits response' };
+      }
+
+      return { hasCredits: true, credits: data.credits, data };
+      
+    } catch (error) {
+      return { hasCredits: false, error: error.message };
+    }
+  };
+
   const generateVideos = async () => {
     const requestedJobs = parseInt(concurrency) || 1;
     const MAX_CONCURRENT_JOBS = 20;
@@ -1087,6 +1142,43 @@ export default function RunwayAutomationApp() {
     
     if (isNaN(totalJobs) || totalJobs < 1) {
       addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
+      return;
+    }
+    
+    // Check credits before proceeding
+    addLog('🔍 Checking credit balance...', 'info');
+    const creditCheck = await checkCredits();
+    
+    if (!creditCheck.hasCredits && creditCheck.isCreditsError) {
+      showModalDialog({
+        title: "Insufficient Credits",
+        type: "warning",
+        confirmText: "Get Credits",
+        cancelText: "Cancel",
+        onConfirm: () => {
+          window.open('https://dev.runwayml.com', '_blank');
+        },
+        content: (
+          <div>
+            <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
+              <div className="d-flex align-items-center mb-2">
+                <CreditCard size={20} className="text-danger me-2" />
+                <strong>Insufficient Credits</strong>
+              </div>
+              <p className="mb-0">You don't have enough credits to generate {totalJobs} video{totalJobs !== 1 ? 's' : ''}.</p>
+            </div>
+            
+            <div className="mb-3">
+              <p className="mb-2"><strong>Required:</strong> ~{totalJobs * 25}-{totalJobs * 50} credits</p>
+              <p className="mb-2"><strong>Estimated cost:</strong> ${(totalJobs * 0.25).toFixed(2)}-${(totalJobs * 0.75).toFixed(2)}</p>
+            </div>
+            
+            <p className="mb-0 text-muted">
+              Visit the RunwayML Developer Portal to purchase more credits.
+            </p>
+          </div>
+        )
+      });
       return;
     }
     
@@ -2763,7 +2855,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
+                        <h5 className="fw-bold mb-0" style={{ color: '#4dd0ff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
                             className="btn btn-sm btn-outline-danger" 
@@ -2791,7 +2883,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
+                            <span style={{ color: '#4dd0ff' }}>[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2893,6 +2985,15 @@ export default function RunwayAutomationApp() {
                               </span>
                             </button>
                           )}
+                          
+                          <button
+                            className="btn btn-outline-light shadow"
+                            onClick={clearGeneratedVideos}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            <Trash2 size={16} className="me-2" />
+                            Clear Videos
+                          </button>
                         </div>
                       </div>
                     )}
