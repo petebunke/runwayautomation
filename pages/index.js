@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -28,6 +28,7 @@ export default function RunwayAutomationApp() {
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const [hasShownCostWarning, setHasShownCostWarning] = useState(false);
+  const [upscalingProgress, setUpscalingProgress] = useState({});
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -1237,6 +1238,246 @@ export default function RunwayAutomationApp() {
     addLog('🛑 Generation stopped by user', 'warning');
   };
 
+  // 4K Upscaling functionality
+  const upscaleVideo = async (taskId, videoUrl, videoName) => {
+    if (!runwayApiKey.trim()) {
+      addLog('❌ RunwayML API key is required for 4K upscaling!', 'error');
+      return;
+    }
+
+    const upscaleId = `upscale_${taskId}`;
+    
+    // Show cost warning for upscaling
+    showModalDialog({
+      title: "4K Upscaling Cost Warning",
+      type: "warning",
+      confirmText: "Start 4K Upscaling",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          addLog(`🔄 Starting 4K upscaling for ${videoName}...`, 'info');
+          
+          setUpscalingProgress(prev => ({
+            ...prev,
+            [upscaleId]: { status: 'starting', progress: 0, message: 'Starting 4K upscale...' }
+          }));
+
+          const response = await fetch(API_BASE + '/runway-upscale', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: runwayApiKey,
+              taskId: taskId,
+              videoUrl: videoUrl
+            })
+          });
+
+          const responseText = await response.text();
+          
+          if (!response.ok) {
+            let errorData;
+            try {
+              errorData = JSON.parse(responseText);
+            } catch (parseError) {
+              throw new Error(`Upscale API Error ${response.status}: Could not parse error response`);
+            }
+            
+            const errorMessage = errorData.error || errorData.message || 'Upscaling failed';
+            throw new Error(errorMessage);
+          }
+
+          let upscaleTask;
+          try {
+            upscaleTask = JSON.parse(responseText);
+          } catch (parseError) {
+            throw new Error('Could not parse upscale API response');
+          }
+
+          addLog(`✓ 4K upscaling started for ${videoName} (Task ID: ${upscaleTask.id})`, 'success');
+          
+          // Start polling for upscale completion
+          await pollUpscaleCompletion(upscaleTask.id, upscaleId, taskId, videoName);
+          
+        } catch (error) {
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${error.message}`, 'error');
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+        }
+      },
+      content: (
+        <div>
+          <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
+            <div className="d-flex align-items-center mb-2">
+              <AlertCircle size={20} className="text-warning me-2" />
+              <strong>4K Upscaling Cost</strong>
+            </div>
+            <p className="mb-0">4K upscaling typically costs <strong>~500 credits ($5)</strong> per video.</p>
+          </div>
+          
+          <div className="mb-3">
+            <p className="mb-2"><strong>Video:</strong> {videoName}</p>
+            <p className="mb-2"><strong>Process:</strong> Standard → 4K resolution</p>
+            <p className="mb-0 text-muted">This will create a new high-resolution version of your video.</p>
+          </div>
+          
+          <p className="mb-0 text-muted">
+            Are you sure you want to proceed with 4K upscaling?
+          </p>
+        </div>
+      )
+    });
+  };
+
+  const pollUpscaleCompletion = async (upscaleTaskId, upscaleId, originalTaskId, videoName) => {
+    const maxPolls = Math.floor(1800 / 10); // 30 minutes with 10 second intervals
+    let pollCount = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 5;
+
+    while (pollCount < maxPolls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + upscaleTaskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          if (consecutiveErrors < maxConsecutiveErrors) {
+            consecutiveErrors++;
+            const backoffDelay = 15000 + (consecutiveErrors * 5000);
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          
+          throw new Error('Invalid response from RunwayML upscale API');
+        }
+
+        if (!response.ok) {
+          if (response.status === 429 || response.status >= 500) {
+            consecutiveErrors++;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              throw new Error(`Upscale polling failed after ${maxConsecutiveErrors} attempts`);
+            }
+            const backoffDelay = 20000 + (consecutiveErrors * 10000);
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          
+          throw new Error(task.error || 'Upscale polling failed: ' + response.status);
+        }
+        
+        consecutiveErrors = 0;
+        
+        // Update progress based on status
+        let progress = 10;
+        if (task.status === 'PENDING') {
+          progress = 25;
+        } else if (task.status === 'RUNNING') {
+          progress = 50 + (pollCount * 2); // Gradually increase progress
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+        }
+        
+        setUpscalingProgress(prev => ({
+          ...prev,
+          [upscaleId]: { 
+            status: task.status.toLowerCase(), 
+            progress: Math.min(progress, 95),
+            message: task.status === 'RUNNING' ? 'Upscaling to 4K...' : 
+                    task.status === 'PENDING' ? 'Queued for upscaling...' :
+                    task.status.toLowerCase()
+          }
+        }));
+
+        if (task.status === 'SUCCEEDED') {
+          addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
+          
+          // Update the original video result with upscaled version
+          setResults(prev => prev.map(result => 
+            result.id === originalTaskId 
+              ? { 
+                  ...result, 
+                  upscaled_video_url: task.output && task.output[0] ? task.output[0] : null,
+                  upscaled_thumbnail_url: task.output && task.output[1] ? task.output[1] : null,
+                  upscale_task_id: upscaleTaskId
+                }
+              : result
+          ));
+          
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          
+          return;
+        }
+
+        if (task.status === 'FAILED') {
+          const failureReason = task.failure_reason || task.failureCode || task.error || '4K upscaling failed';
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${failureReason}`, 'error');
+          
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          
+          throw new Error(failureReason);
+        }
+
+        // Wait before next poll
+        await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second intervals
+        pollCount++;
+        
+      } catch (error) {
+        consecutiveErrors++;
+        
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          addLog(`❌ 4K upscaling polling failed for ${videoName}: ${error.message}`, 'error');
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          throw error;
+        }
+        
+        const backoffDelay = 15000 + (consecutiveErrors * 5000);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        pollCount++;
+      }
+    }
+
+    // Timeout after max polls
+    addLog(`⏰ 4K upscaling timeout for ${videoName} after 30 minutes`, 'error');
+    setUpscalingProgress(prev => {
+      const updated = { ...prev };
+      delete updated[upscaleId];
+      return updated;
+    });
+    throw new Error('4K upscaling timeout after 30 minutes');
+  };
+
   const downloadVideoWithRetry = async (videoUrl, filename, maxRetries = 3) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -1289,8 +1530,8 @@ export default function RunwayAutomationApp() {
     return await downloadVideoWithRetry(videoUrl, filename);
   };
 
-  const generateFilename = (jobId, taskId) => {
-    if (!jobId) return 'video_' + taskId + '.mp4';
+  const generateFilename = (jobId, taskId, isUpscaled = false) => {
+    if (!jobId) return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
     
     const genMatch = jobId.match(/Generation (\d+)/);
     const vidMatch = jobId.match(/Video (\d+)/);
@@ -1298,10 +1539,10 @@ export default function RunwayAutomationApp() {
     if (genMatch && vidMatch) {
       const generation = genMatch[1];
       const video = vidMatch[1];
-      return `gen-${generation}-video-${video}.mp4`;
+      return `gen-${generation}-video-${video}${isUpscaled ? '_4K' : ''}.mp4`;
     }
     
-    return 'video_' + taskId + '.mp4';
+    return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
   };
 
   const downloadAllVideos = async () => {
@@ -1341,7 +1582,8 @@ export default function RunwayAutomationApp() {
       const sortedVideos = videosWithUrls
         .map(result => ({
           ...result,
-          filename: generateFilename(result.jobId, result.id)
+          filename: generateFilename(result.jobId, result.id),
+          upscaledFilename: result.upscaled_video_url ? generateFilename(result.jobId, result.id, true) : null
         }))
         .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
 
@@ -1349,6 +1591,7 @@ export default function RunwayAutomationApp() {
       for (let i = 0; i < sortedVideos.length; i++) {
         const result = sortedVideos[i];
         try {
+          // Add original video
           addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
           
           const response = await fetch(result.video_url);
@@ -1366,6 +1609,19 @@ export default function RunwayAutomationApp() {
           // Add video to Videos folder
           videosFolder.file(result.filename, blob);
           
+          // Add upscaled video if available
+          if (result.upscaled_video_url && result.upscaledFilename) {
+            addLog(`📥 Adding 4K version ${result.upscaledFilename} to archive...`, 'info');
+            
+            const upscaledResponse = await fetch(result.upscaled_video_url);
+            if (upscaledResponse.ok) {
+              const upscaledBlob = await upscaledResponse.blob();
+              if (upscaledBlob.size > 0) {
+                videosFolder.file(result.upscaledFilename, upscaledBlob);
+              }
+            }
+          }
+          
           // Add metadata file to JSON folder
           const metadata = {
             id: result.id,
@@ -1373,7 +1629,9 @@ export default function RunwayAutomationApp() {
             jobId: result.jobId,
             created_at: result.created_at,
             image_url: result.image_url,
-            processingTime: result.processingTime || 'unknown'
+            processingTime: result.processingTime || 'unknown',
+            has_4k_version: !!result.upscaled_video_url,
+            upscale_task_id: result.upscale_task_id || null
           };
           
           jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
@@ -1461,7 +1719,8 @@ export default function RunwayAutomationApp() {
       const sortedVideos = favoritedVideos
         .map(result => ({
           ...result,
-          filename: generateFilename(result.jobId, result.id)
+          filename: generateFilename(result.jobId, result.id),
+          upscaledFilename: result.upscaled_video_url ? generateFilename(result.jobId, result.id, true) : null
         }))
         .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
 
@@ -1469,6 +1728,7 @@ export default function RunwayAutomationApp() {
       for (let i = 0; i < sortedVideos.length; i++) {
         const result = sortedVideos[i];
         try {
+          // Add original video
           addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
           
           const response = await fetch(result.video_url);
@@ -1486,6 +1746,19 @@ export default function RunwayAutomationApp() {
           // Add video to Videos folder
           videosFolder.file(result.filename, blob);
           
+          // Add upscaled video if available
+          if (result.upscaled_video_url && result.upscaledFilename) {
+            addLog(`📥 Adding 4K version ${result.upscaledFilename} to archive...`, 'info');
+            
+            const upscaledResponse = await fetch(result.upscaled_video_url);
+            if (upscaledResponse.ok) {
+              const upscaledBlob = await upscaledResponse.blob();
+              if (upscaledBlob.size > 0) {
+                videosFolder.file(result.upscaledFilename, upscaledBlob);
+              }
+            }
+          }
+          
           // Add metadata file to JSON folder
           const metadata = {
             id: result.id,
@@ -1494,7 +1767,9 @@ export default function RunwayAutomationApp() {
             created_at: result.created_at,
             image_url: result.image_url,
             processingTime: result.processingTime || 'unknown',
-            favorited: true
+            favorited: true,
+            has_4k_version: !!result.upscaled_video_url,
+            upscale_task_id: result.upscale_task_id || null
           };
           
           jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
@@ -1547,6 +1822,7 @@ export default function RunwayAutomationApp() {
       total_videos: results.length,
       completed_videos: results.filter(r => r.status === 'completed').length,
       favorited_videos: results.filter(r => favoriteVideos.has(r.id)).length,
+      upscaled_videos: results.filter(r => r.upscaled_video_url).length,
       configuration: {
         model,
         aspect_ratio: aspectRatio,
@@ -1565,13 +1841,17 @@ export default function RunwayAutomationApp() {
         prompt: result.prompt,
         video_url: result.video_url,
         thumbnail_url: result.thumbnail_url,
+        upscaled_video_url: result.upscaled_video_url || null,
+        upscaled_thumbnail_url: result.upscaled_thumbnail_url || null,
+        upscale_task_id: result.upscale_task_id || null,
         image_url: result.image_url,
         status: result.status,
         created_at: result.created_at,
         jobId: result.jobId,
         processingTime: result.processingTime,
         favorited: favoriteVideos.has(result.id),
-        filename: generateFilename(result.jobId, result.id)
+        filename: generateFilename(result.jobId, result.id),
+        upscaled_filename: result.upscaled_video_url ? generateFilename(result.jobId, result.id, true) : null
       }))
     };
 
@@ -1792,6 +2072,7 @@ export default function RunwayAutomationApp() {
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li>~500 credits for 4K upscaling ($5.00)</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
                         </div>
@@ -2312,6 +2593,52 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
+                    {/* Show upscaling progress if any */}
+                    {Object.keys(upscalingProgress).length > 0 && (
+                      <div className="mb-3">
+                        <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
+                        <div className="row g-3">
+                          {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
+                            <div key={upscaleId} className="col-md-6 col-xl-3">
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <span className="fw-bold small" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
+                                      4K Upscale
+                                    </span>
+                                    <span className={`badge ${
+                                      progress.status === 'completed' ? 'bg-success' :
+                                      progress.status === 'failed' ? 'bg-danger' :
+                                      'bg-info'
+                                    }`}>
+                                      {progress.status}
+                                    </span>
+                                  </div>
+                                  <div className="progress mb-2" style={{ height: '8px' }}>
+                                    <div 
+                                      className={`progress-bar ${
+                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'failed' ? 'bg-danger' :
+                                        'bg-info'
+                                      }`}
+                                      style={{ width: progress.progress + '%' }}
+                                    ></div>
+                                  </div>
+                                  <small className="text-muted">
+                                    {progress.message || progress.status}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
@@ -2515,6 +2842,15 @@ export default function RunwayAutomationApp() {
                                   </div>
                                 )}
                                 
+                                {/* 4K badge for upscaled videos */}
+                                {result.upscaled_video_url && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-success shadow-sm">
+                                      4K ✨
+                                    </span>
+                                  </div>
+                                )}
+                                
                                 {/* Add favorite button overlay */}
                                 <button
                                   className="btn btn-sm position-absolute top-0 end-0 m-2"
@@ -2551,17 +2887,55 @@ export default function RunwayAutomationApp() {
                                     <div className="btn-group" role="group">
                                       <button
                                         className="btn btn-primary btn-sm"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                        onClick={() => downloadVideo(
+                                          result.upscaled_video_url || result.video_url, 
+                                          generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
+                                        )}
+                                        title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
                                       >
                                         <Download size={16} className="me-1" />
-                                        Download
+                                        Download{result.upscaled_video_url ? ' 4K' : ''}
                                       </button>
                                       <button
                                         className="btn btn-outline-primary btn-sm"
-                                        onClick={() => window.open(result.video_url, '_blank')}
+                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank')}
+                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
                                       >
                                         <ExternalLink size={16} className="me-1" />
                                         View
+                                      </button>
+                                      {!result.upscaled_video_url && result.video_url && (
+                                        <button
+                                          className="btn btn-warning btn-sm"
+                                          onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
+                                          disabled={upscalingProgress[`upscale_${result.id}`]}
+                                          title="Upscale to 4K resolution (~$5)"
+                                        >
+                                          <ArrowUp size={16} className="me-1" />
+                                          4K
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show both original and 4K download options if 4K exists */}
+                                  {result.upscaled_video_url && result.video_url && (
+                                    <div className="btn-group mt-2" role="group">
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                        title="Download original resolution"
+                                      >
+                                        <Download size={14} className="me-1" />
+                                        Original
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm"
+                                        onClick={() => window.open(result.video_url, '_blank')}
+                                        title="View original resolution"
+                                      >
+                                        <ExternalLink size={14} className="me-1" />
+                                        View Original
                                       </button>
                                     </div>
                                   )}
