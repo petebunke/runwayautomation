@@ -2121,7 +2121,7 @@ export default function RunwayAutomationApp() {
     <>
       <Head>
         <title>Runway Automation - Batch Video Generation</title>
-        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON." />
+        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
@@ -2129,14 +2129,14 @@ export default function RunwayAutomationApp() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://runway-automation.vercel.app/" />
         <meta property="og:title" content="Runway Automation - Batch Video Generation" />
-        <meta property="og:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON." />
+        <meta property="og:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON." />
         <meta property="og:image" content="/og-image.png" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
         <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="twitter:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON." />
+        <meta property="twitter:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON." />
         <meta property="twitter:image" content="/og-image.png" />
 
         {/* Additional SEO tags */}
@@ -2201,7 +2201,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON.
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON.
               </p>
             </div>
           </div>
@@ -2888,7 +2888,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="fw-bold mb-0" style={{ color: '#4dd0ff' }}>Video Generation Log</h5>
+                        <h5 className="fw-bold mb-0" style={{ color: '##0d6efd' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
                             className="btn btn-sm btn-outline-danger" 
