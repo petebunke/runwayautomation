@@ -2128,7 +2128,7 @@ export default function RunwayAutomationApp() {
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://runway-automation.vercel.app/" />
-        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="og:title" content="Runway Automation - Batch Video Generation" />
         <meta property="og:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON." />
         <meta property="og:image" content="/og-image.png" />
 
@@ -2201,7 +2201,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once. Upscale and download all 4K videos as MP4 and JSON.
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON.
               </p>
             </div>
           </div>
@@ -3224,7 +3224,7 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center mt-5">
+          <div className="text-center mt-3">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
