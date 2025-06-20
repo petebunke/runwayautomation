@@ -1374,7 +1374,7 @@ export default function RunwayAutomationApp() {
     
     // Show cost warning for upscaling
     showModalDialog({
-      title: "4K Upscaling Cost Warning",
+      title: "Upscaling Cost Warning",
       type: "warning",
       confirmText: "Start 4K Upscaling",
       cancelText: "Cancel",
@@ -2121,7 +2121,7 @@ export default function RunwayAutomationApp() {
     <>
       <Head>
         <title>Runway Automation - Batch Video Generation</title>
-        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once. Upscale and download all 4K videos as MP4 and JSON." />
+        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
@@ -2129,14 +2129,14 @@ export default function RunwayAutomationApp() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://runway-automation.vercel.app/" />
         <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="og:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once. Upscale and download all 4K videos as MP4 and JSON." />
+        <meta property="og:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON." />
         <meta property="og:image" content="/og-image.png" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
         <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="twitter:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once. Upscale and download all 4K videos as MP4 and JSON." />
+        <meta property="twitter:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale. Download all 4K videos as MP4 and JSON." />
         <meta property="twitter:image" content="/og-image.png" />
 
         {/* Additional SEO tags */}
@@ -2193,7 +2193,7 @@ export default function RunwayAutomationApp() {
               <button 
                 onClick={() => setActiveTab('setup')}
                 className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                style={{ fontSize: '1.9rem', fontWeight: 'bold' }}
+                style={{ fontSize: '1.95rem', fontWeight: 'bold' }}
               >
                 <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
                 Runway Automation
@@ -2692,7 +2692,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Video Generation</h2>
+                      <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
                     <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
@@ -2959,7 +2959,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
+                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
@@ -3035,7 +3035,7 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-5">
+                      <div className="text-center py-4">
                         <div className="mb-4">
                           <Film size={80} className="text-muted" />
                         </div>
