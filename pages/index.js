@@ -1,63 +1,5 @@
-                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px' }}>
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-light shadow"
-                            onClick={downloadAllVideos}
-                            disabled={isDownloadingAll}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            {isDownloadingAll ? (
-                              <>
-                                <div className="spinner-border spinner-border-sm me-2" role="status">
-                                  <span className="visually-hidden">Loading...</span>
-                                </div>
-                                Downloading...
-                              </>
-                            ) : (
-                              <>
-                                <Download size={20} className="me-2" />
-                                All Videos
-                                <span className="ms-2 badge bg-primary">
-                                  {results.filter(result => result.video_url && result.status === 'completed').length}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                          
-                          {favoriteVideos.size > 0 && (
-                            <button
-                              className="btn btn-danger shadow"
-                              onClick={() => addLog('🔧 Favorited videos download coming soon!', 'info')}
-                              disabled={isDownloadingAll}
-                              style={{ borderRadius: '8px', fontWeight: '600' }}
-                            >
-                              <Heart size={16} className="me-2" />
-                              Favorited Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
-                              </span>
-                            </button>
-                          )}
-                          
-                          {results.filter(result => result.upscaled && result.upscale_url).length > 0 && (
-                            <button
-                              className="btn btn-success shadow"
-                              onClick={() => addLog('🔧 4K videos download coming soon!', 'info')}
-                              disabled={isDownloadingAll}
-                              style={{ borderRadius: '8px', fontWeight: '600' }}
-                            >
-                              <Zap size={16} className="me-2" />
-                              4K Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.upscaled && result.upscale_url).length}
-                              </span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, Zap } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -69,6 +11,8 @@ export default function RunwayAutomationApp() {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [duration, setDuration] = useState(5);
   const [concurrency, setConcurrency] = useState(1);
+  const [minWait, setMinWait] = useState(8);
+  const [maxWait, setMaxWait] = useState(15);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -695,7 +639,7 @@ export default function RunwayAutomationApp() {
     return ratioMap[ratio] || '1280:720';
   };
 
-  // 4K UPSCALE FUNCTIONS - Updated with better error handling
+  // 4K UPSCALE FUNCTIONS - Corrected implementation per API guide
   const upscaleVideo = async (videoResult) => {
     try {
       if (!runwayApiKey.trim()) {
@@ -730,8 +674,7 @@ export default function RunwayAutomationApp() {
         },
         body: JSON.stringify({
           apiKey: runwayApiKey,
-          taskId: videoResult.id,
-          videoUrl: videoResult.video_url
+          taskId: videoResult.id
         })
       });
 
@@ -747,29 +690,13 @@ export default function RunwayAutomationApp() {
         
         let errorMessage = errorData.error || errorData.message || 'Upscale API Error: ' + response.status;
         
-        // Handle specific upscale errors
-        if (response.status === 501) {
-          addLog(`⚠️ 4K upscale not available: ${errorMessage}`, 'warning');
-          addLog(`💡 Use the web interface at runwayml.com for 4K upscaling`, 'info');
-          setUpscaleProgress(prev => {
-            const updated = { ...prev };
-            delete updated[videoResult.id];
-            return updated;
-          });
-          return;
-        }
-        
         if (response.status === 400) {
           if (errorMessage.includes('credits') || errorMessage.includes('insufficient')) {
             throw new Error('Insufficient credits for 4K upscale. Approximately 500 credits (~$5.00) required.');
           }
           if (errorMessage.includes('not eligible') || errorMessage.includes('cannot be upscaled')) {
-            throw new Error('This video is not eligible for 4K upscaling. Only completed videos can be upscaled.');
+            throw new Error('This video is not eligible for 4K upscaling. Only completed Gen-4 videos can be upscaled.');
           }
-        }
-        
-        if (response.status === 404) {
-          throw new Error('4K upscale feature may not be available for your account tier or this video.');
         }
         
         throw new Error(errorMessage);
@@ -993,7 +920,7 @@ export default function RunwayAutomationApp() {
     throw new Error(`4K upscale timeout after ${totalTime} minutes (maximum 30 minutes allowed)`);
   };
 
-  // VIDEO GENERATION FUNCTIONS
+  // VIDEO GENERATION FUNCTIONS (unchanged from original)
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
@@ -1415,7 +1342,6 @@ export default function RunwayAutomationApp() {
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
-  // Simplified generation function for working deployment
   const generateVideos = async () => {
     const requestedJobs = parseInt(concurrency) || 1;
     const MAX_CONCURRENT_JOBS = 20;
@@ -1585,6 +1511,11 @@ export default function RunwayAutomationApp() {
     if (successCount > 0) {
       setActiveTab('results');
     }
+  };
+
+  const stopGeneration = () => {
+    setIsRunning(false);
+    addLog('🛑 Generation stopped by user', 'warning');
   };
 
   const downloadVideoWithRetry = async (videoUrl, filename, maxRetries = 3) => {
@@ -1777,6 +1708,184 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  const downloadFavoritedVideos = async () => {
+    const favoritedVideos = results.filter(result => 
+      result.video_url && 
+      result.status === 'completed' && 
+      favoriteVideos.has(result.id)
+    );
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Favorited Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      const sortedVideos = favoritedVideos
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          videosFolder.file(result.filename, blob);
+          
+          if (result.upscale_url) {
+            try {
+              const upscaleFilename = generateFilename(result.jobId, result.id, true);
+              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
+              
+              const upscaleResponse = await fetch(result.upscale_url);
+              if (upscaleResponse.ok) {
+                const upscaleBlob = await upscaleResponse.blob();
+                if (upscaleBlob.size > 0) {
+                  videosFolder.file(upscaleFilename, upscaleBlob);
+                }
+              }
+            } catch (upscaleError) {
+              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
+            }
+          }
+          
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown',
+            favorited: true,
+            upscaled: result.upscaled || false,
+            upscale_task_id: result.upscale_task_id || null
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const exportResults = () => {
+    const exportData = {
+      generated_at: new Date().toISOString(),
+      total_videos: results.length,
+      completed_videos: results.filter(r => r.status === 'completed').length,
+      favorited_videos: results.filter(r => favoriteVideos.has(r.id)).length,
+      upscaled_videos: results.filter(r => r.upscaled).length,
+      configuration: {
+        model,
+        aspect_ratio: aspectRatio,
+        duration,
+        concurrency
+      },
+      statistics: {
+        generation_counter: generationCounter,
+        video_counter: videoCounter,
+        average_processing_time: results.length > 0 ? 
+          Math.round(results.reduce((sum, r) => sum + (r.processingTime || 0), 0) / results.length) + 's' : 
+          'N/A'
+      },
+      videos: results.map(result => ({
+        id: result.id,
+        prompt: result.prompt,
+        video_url: result.video_url,
+        thumbnail_url: result.thumbnail_url,
+        image_url: result.image_url,
+        status: result.status,
+        created_at: result.created_at,
+        jobId: result.jobId,
+        processingTime: result.processingTime,
+        favorited: favoriteVideos.has(result.id),
+        filename: generateFilename(result.jobId, result.id),
+        upscaled: result.upscaled || false,
+        upscale_url: result.upscale_url || null,
+        upscale_task_id: result.upscale_task_id || null
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `runway_generation_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    addLog('📊 Results exported to JSON with enhanced metadata', 'success');
+  };
+
   if (!mounted) {
     return null;
   }
@@ -1789,6 +1898,26 @@ export default function RunwayAutomationApp() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://runway-automation.vercel.app/" />
+        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="og:image" content="/og-image.png" />
+
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
+        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta property="twitter:image" content="/og-image.png" />
+
+        <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
+        <meta name="author" content="Runway Automation Pro" />
+        <meta name="robots" content="index, follow" />
+        
+        <meta name="theme-color" content="#667eea" />
+        <meta name="msapplication-navbutton-color" content="#667eea" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
           rel="stylesheet" 
@@ -1800,6 +1929,18 @@ export default function RunwayAutomationApp() {
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         />
+        <style>{`
+          .tooltip .tooltip-inner {
+            background-color: rgba(0, 0, 0, 1) !important;
+            color: white !important;
+          }
+          .tooltip.bs-tooltip-top .tooltip-arrow::before,
+          .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+          .tooltip.bs-tooltip-start .tooltip-arrow::before,
+          .tooltip.bs-tooltip-end .tooltip-arrow::before {
+            border-color: rgba(0, 0, 0, 1) transparent !important;
+          }
+        `}</style>
       </Head>
 
       <Modal
@@ -1902,80 +2043,7 @@ export default function RunwayAutomationApp() {
                           }}
                         >
                           <Key className="text-white" size={32} />
-                        <div className="mb-3" style={{ minHeight: '100px' }}>
-                      <div className="text-center py-3">
-                        <h4 className="fw-bold text-dark mb-2">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              return `Generation ${generationCounter || 1} in progress`;
-                            } else if (completedGeneration) {
-                              return `Generation ${completedGeneration} completed`;
-                            } else {
-                              return `Generation ${generationCounter || 1}`;
-                            }
-                          })()}
-                        </h4>
-                        <p className="text-muted mb-0">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              const count = Object.keys(generationProgress).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generating`;
-                            } else if (completedGeneration) {
-                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            } else {
-                              return '0 videos generated';
-                            }
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-3">
-                        <div className="row g-3">
-                          {Object.entries(generationProgress).map(([jobId, progress]) => (
-                            <div key={jobId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '120px'
-                                    }}>
-                                      {jobId}
-                                    </span>
-                                    <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-success' :
-                                      progress.status === 'failed' ? 'bg-danger' :
-                                      progress.status === 'throttled' ? 'bg-warning' :
-                                      'bg-primary'
-                                    }`}>
-                                      {progress.status}
-                                    </span>
-                                  </div>
-                                  <div className="progress mb-2" style={{ height: '8px' }}>
-                                    <div 
-                                      className={`progress-bar ${
-                                        progress.status === 'completed' ? 'bg-success' :
-                                        progress.status === 'failed' ? 'bg-danger' :
-                                        progress.status === 'throttled' ? 'bg-warning' :
-                                        'bg-primary'
-                                      }`}
-                                      style={{ width: progress.progress + '%' }}
-                                    ></div>
-                                  </div>
-                                  <small className="text-muted">
-                                    {progress.message || progress.status}
-                                  </small>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
                         </div>
-                      </div>
-                    )}
                         
                         <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">API Setup</h3>
@@ -2114,6 +2182,51 @@ export default function RunwayAutomationApp() {
                               style={{ borderRadius: '8px' }}
                             />
                           </div>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-light rounded border">
+                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
+                          <div className="table-responsive">
+                            <table className="table table-sm table-bordered border-dark mb-0">
+                              <thead className="table-secondary">
+                                <tr>
+                                  <th className="fw-bold border-dark">Tier</th>
+                                  <th className="fw-bold border-dark">Videos Generated</th>
+                                  <th className="fw-bold border-dark">Criteria</th>
+                                </tr>
+                              </thead>
+                              <tbody className="small">
+                                <tr>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">1</td>
+                                  <td className="border-dark">Default (new accounts)</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">2</td>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">1 day after $50 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">3</td>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">7 days after $100 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">4</td>
+                                  <td className="border-dark">10</td>
+                                  <td className="border-dark">14 days after $1,000 purchased</td>
+                                </tr>
+                                <tr>
+                                  <td className="border-dark">5</td>
+                                  <td className="border-dark">20</td>
+                                  <td className="border-dark">7 days after $5,000 purchased</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="small text-muted mt-2 mb-0">
+                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
+                          </p>
                         </div>
 
                         {results.length > 0 && (
@@ -2428,6 +2541,81 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
+                    <div className="mb-3" style={{ minHeight: '100px' }}>
+                      <div className="text-center py-3">
+                        <h4 className="fw-bold text-dark mb-2">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              return `Generation ${generationCounter || 1} in progress`;
+                            } else if (completedGeneration) {
+                              return `Generation ${completedGeneration} completed`;
+                            } else {
+                              return `Generation ${generationCounter || 1}`;
+                            }
+                          })()}
+                        </h4>
+                        <p className="text-muted mb-0">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              const count = Object.keys(generationProgress).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generating`;
+                            } else if (completedGeneration) {
+                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                            } else {
+                              return '0 videos generated';
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {Object.keys(generationProgress).length > 0 && (
+                      <div className="mb-3">
+                        <div className="row g-3">
+                          {Object.entries(generationProgress).map(([jobId, progress]) => (
+                            <div key={jobId} className="col-md-6 col-xl-3">
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <span className="fw-bold small" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
+                                      {jobId}
+                                    </span>
+                                    <span className={`badge ${
+                                      progress.status === 'completed' ? 'bg-success' :
+                                      progress.status === 'failed' ? 'bg-danger' :
+                                      progress.status === 'throttled' ? 'bg-warning' :
+                                      'bg-primary'
+                                    }`}>
+                                      {progress.status}
+                                    </span>
+                                  </div>
+                                  <div className="progress mb-2" style={{ height: '8px' }}>
+                                    <div 
+                                      className={`progress-bar ${
+                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'failed' ? 'bg-danger' :
+                                        progress.status === 'throttled' ? 'bg-warning' :
+                                        'bg-primary'
+                                      }`}
+                                      style={{ width: progress.progress + '%' }}
+                                    ></div>
+                                  </div>
+                                  <small className="text-muted">
+                                    {progress.message || progress.status}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
@@ -2458,7 +2646,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span className="text-primary">[{log.timestamp}]</span> {log.message}
+                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2503,6 +2691,60 @@ export default function RunwayAutomationApp() {
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
                       <h2 className="mb-0 fw-bold">Generated Videos</h2>
                     </div>
+                    
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
+                      <div style={{ marginRight: '30px' }}>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-light shadow"
+                            onClick={downloadAllVideos}
+                            disabled={isDownloadingAll}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            {isDownloadingAll ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={20} className="me-2" />
+                                Download All as ZIP
+                                <span className="ms-2 badge bg-primary">
+                                  {results.filter(result => result.video_url && result.status === 'completed').length}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-danger shadow"
+                              onClick={downloadFavoritedVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Heart size={16} className="me-2" />
+                              Favorites
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          <button
+                            className="btn btn-outline-light shadow"
+                            onClick={exportResults}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            <i className="bi bi-download me-2"></i>
+                            Export JSON
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
@@ -2650,7 +2892,7 @@ export default function RunwayAutomationApp() {
                                         View
                                       </button>
                                       <button
-                                        className="btn btn-secondary btn-sm"
+                                        className="btn btn-warning btn-sm"
                                         onClick={() => upscaleVideo(result)}
                                         disabled={!!upscaleProgress[result.id] || result.upscaled}
                                         title={
