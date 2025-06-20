@@ -1,4 +1,62 @@
-import React, { useState, useEffect, useRef } from 'react';
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
+                      <div style={{ marginRight: '30px' }}>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-light shadow"
+                            onClick={downloadAllVideos}
+                            disabled={isDownloadingAll}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            {isDownloadingAll ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={20} className="me-2" />
+                                All Videos
+                                <span className="ms-2 badge bg-primary">
+                                  {results.filter(result => result.video_url && result.status === 'completed').length}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-danger shadow"
+                              onClick={() => addLog('🔧 Favorited videos download coming soon!', 'info')}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Heart size={16} className="me-2" />
+                              Favorited Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          {results.filter(result => result.upscaled && result.upscale_url).length > 0 && (
+                            <button
+                              className="btn btn-success shadow"
+                              onClick={() => addLog('🔧 4K videos download coming soon!', 'info')}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Zap size={16} className="me-2" />
+                              4K Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.upscaled && result.upscale_url).length}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}import React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, Zap } from 'lucide-react';
 import Head from 'next/head';
 
@@ -672,7 +730,8 @@ export default function RunwayAutomationApp() {
         },
         body: JSON.stringify({
           apiKey: runwayApiKey,
-          taskId: videoResult.id
+          taskId: videoResult.id,
+          videoUrl: videoResult.video_url
         })
       });
 
@@ -934,28 +993,459 @@ export default function RunwayAutomationApp() {
     throw new Error(`4K upscale timeout after ${totalTime} minutes (maximum 30 minutes allowed)`);
   };
 
-  // Simplified generation function for working deployment
-  const generateVideos = async () => {
-    addLog('🚀 Generation feature will be implemented in the next update', 'info');
-    addLog('📋 Current setup: ' + model + ', ' + aspectRatio + ', ' + duration + 's, ' + concurrency + ' videos', 'info');
+  // VIDEO GENERATION FUNCTIONS
+  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
+    const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
-    if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required!', 'error');
-      return;
+    try {
+      if (!imageUrlText || !imageUrlText.trim()) {
+        const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+
+      if (!isValidImageUrl(imageUrlText.trim())) {
+        const errorMsg = 'Invalid image URL format. Please use a direct link to an image file (jpg, png, gif, etc.) or a supported image hosting service.';
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+
+      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
+      
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'starting', progress: 0 }
+      }));
+
+      const payload = {
+        promptText: promptText,
+        promptImage: imageUrlText.trim(),
+        model: model,
+        ratio: convertAspectRatio(aspectRatio),
+        duration: duration,
+        seed: Math.floor(Math.random() * 1000000)
+      };
+
+      let retryCount = 0;
+      const maxRetries = 5;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+          const response = await fetch(API_BASE + '/runway-generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: runwayApiKey,
+              payload: payload
+            }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          const responseText = await response.text();
+
+          if (!response.ok) {
+            let errorData;
+            try {
+              errorData = JSON.parse(responseText);
+            } catch (parseError) {
+              throw new Error(`API Error ${response.status}: Could not parse error response`);
+            }
+            
+            let errorMessage = errorData.error || 'API Error: ' + response.status;
+            
+            if (response.status === 429 || response.status >= 500) {
+              if (retryCount < maxRetries) {
+                const baseDelay = 15000;
+                const exponentialDelay = baseDelay * Math.pow(2, retryCount);
+                const jitter = Math.random() * (baseDelay * 0.5);
+                const totalDelay = Math.min(exponentialDelay + jitter, 120000);
+                
+                addLog(`⚠️ Job ${jobIndex + 1} API error (${response.status}), retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, totalDelay));
+                retryCount++;
+                continue;
+              }
+            }
+
+            if (response.status === 400 && errorMessage.includes('not have enough credits')) {
+              throw new Error('Insufficient credits: ' + errorMessage);
+            }
+            
+            if (response.status === 400 && errorMessage.toLowerCase().includes('safety')) {
+              throw new Error('Content safety violation: ' + errorMessage);
+            }
+            
+            if (errorMessage.includes('Invalid asset aspect ratio')) {
+              errorMessage = 'Image aspect ratio issue: ' + errorMessage + ' Try using an image that is closer to square, landscape, or portrait format (not ultra-wide or ultra-tall).';
+            }
+            
+            throw new Error(errorMessage);
+          }
+
+          let task;
+          try {
+            task = JSON.parse(responseText);
+          } catch (parseError) {
+            throw new Error('Could not parse successful API response');
+          }
+          
+          addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
+          
+          return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
+          
+        } catch (fetchError) {
+          if (retryCount < maxRetries && (
+            fetchError.name === 'AbortError' || 
+            fetchError.message.includes('fetch') ||
+            fetchError.message.includes('network') ||
+            fetchError.message.includes('Failed to fetch')
+          )) {
+            const baseDelay = 10000;
+            const exponentialDelay = baseDelay * Math.pow(1.5, retryCount);
+            const jitter = Math.random() * (baseDelay * 0.3);
+            const totalDelay = Math.min(exponentialDelay + jitter, 60000);
+            
+            addLog(`⚠️ Job ${jobIndex + 1} network error, retrying in ${Math.round(totalDelay/1000)}s... (${retryCount + 1}/${maxRetries})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, totalDelay));
+            retryCount++;
+            continue;
+          }
+          throw fetchError;
+        }
+      }
+      
+      throw new Error(`Failed to start generation after ${maxRetries} retries`);
+        
+    } catch (error) {
+      addLog('✗ Job ' + (jobIndex + 1) + ' failed: ' + error.message, 'error');
+      setGenerationProgress(prev => ({
+        ...prev,
+        [jobId]: { status: 'failed', progress: 0, error: error.message }
+      }));
+      throw error;
+    }
+  };
+
+  const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
+    const maxPolls = Math.floor(3600 / 12);
+    let pollCount = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 5;
+    let isThrottled = false;
+    let throttledStartTime = null;
+    let lastKnownStatus = 'unknown';
+    let stuckInPendingCount = 0;
+    const maxStuckInPending = 15;
+    let processingStartTime = null;
+
+    while (pollCount < maxPolls) {
+      try {
+        const timeoutMs = consecutiveErrors > 0 ? 30000 : 
+                          isThrottled ? 45000 : 
+                          lastKnownStatus === 'RUNNING' ? 20000 : 15000;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + taskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          if (consecutiveErrors < maxConsecutiveErrors) {
+            consecutiveErrors++;
+            const backoffDelay = 20000 + (consecutiveErrors * 10000) + (Math.random() * 5000);
+            addLog(`⚠️ Job ${jobIndex + 1} parse error, retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          
+          throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
+        }
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            const backoffTime = 45000 + (consecutiveErrors * 20000) + (Math.random() * 15000);
+            addLog(`⚠️ Job ${jobIndex + 1} rate limited (${response.status}), backing off for ${Math.round(backoffTime/1000)}s...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+            consecutiveErrors++;
+            pollCount++;
+            continue;
+          } else if (response.status >= 500) {
+            consecutiveErrors++;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+              throw new Error(`Server error after ${maxConsecutiveErrors} attempts: ${task.error || response.status}`);
+            }
+            const backoffDelay = 30000 + (consecutiveErrors * 15000) + (Math.random() * 10000);
+            addLog(`⚠️ Job ${jobIndex + 1} server error (${response.status}), retrying in ${Math.round(backoffDelay/1000)}s... (attempt ${consecutiveErrors}/${maxConsecutiveErrors})`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            pollCount++;
+            continue;
+          }
+          
+          throw new Error(task.error || 'Polling failed: ' + response.status);
+        }
+        
+        consecutiveErrors = 0;
+        
+        if (task.status === 'THROTTLED') {
+          if (!isThrottled) {
+            isThrottled = true;
+            throttledStartTime = Date.now();
+            addLog('⏸️ Job ' + (jobIndex + 1) + ' is queued (throttled) - waiting for available slot...', 'info');
+          }
+          
+          const throttledDuration = Math.floor((Date.now() - throttledStartTime) / 1000);
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { 
+              status: 'throttled', 
+              progress: 5,
+              message: `Queued for ${Math.floor(throttledDuration / 60)}m ${throttledDuration % 60}s` 
+            }
+          }));
+          
+          if (throttledDuration > 0 && throttledDuration % 180 === 0) {
+            addLog('⏸️ Job ' + (jobIndex + 1) + ' still queued after ' + Math.floor(throttledDuration / 60) + ' minute(s)', 'info');
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 4000));
+          pollCount++;
+          continue;
+        }
+        
+        if (isThrottled && task.status !== 'THROTTLED') {
+          const queueTime = Math.floor((Date.now() - throttledStartTime) / 1000);
+          addLog('▶️ Job ' + (jobIndex + 1) + ' started processing after ' + Math.floor(queueTime / 60) + 'm ' + (queueTime % 60) + 's in queue', 'info');
+          isThrottled = false;
+          stuckInPendingCount = 0;
+          processingStartTime = Date.now();
+        }
+        
+        if (task.status === 'PENDING') {
+          if (lastKnownStatus === 'PENDING') {
+            stuckInPendingCount++;
+          } else {
+            stuckInPendingCount = 1;
+            if (!processingStartTime) processingStartTime = Date.now();
+          }
+          
+          if (stuckInPendingCount >= maxStuckInPending) {
+            addLog(`⚠️ Job ${jobIndex + 1} stuck in PENDING for ${stuckInPendingCount} cycles, using longer polling interval...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 12000));
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+        } else if (task.status === 'RUNNING') {
+          if (!processingStartTime) processingStartTime = Date.now();
+          stuckInPendingCount = 0;
+          await new Promise(resolve => setTimeout(resolve, 8000));
+        } else {
+          stuckInPendingCount = 0;
+        }
+        
+        lastKnownStatus = task.status;
+        
+        let progress = 10;
+        const now = Date.now();
+        let runningTime = 0;
+        
+        if (task.status === 'PENDING') {
+          progress = Math.min(20 + (stuckInPendingCount * 1.5), 35);
+        } else if (task.status === 'RUNNING') {
+          runningTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
+          const expectedDuration = duration * 8;
+          const runningProgress = Math.min((runningTime / expectedDuration) * 60, 60);
+          progress = Math.min(35 + runningProgress, 95);
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+        }
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { 
+            status: task.status.toLowerCase(), 
+            progress: Math.round(progress),
+            message: task.status === 'RUNNING' ? 
+              `Processing... (${Math.floor(runningTime / 60)}m ${runningTime % 60}s)` : 
+              task.status === 'PENDING' && stuckInPendingCount > 8 ? 
+                'Processing (high load)...' :
+              task.status.toLowerCase()
+          }
+        }));
+
+        if (task.status === 'SUCCEEDED') {
+          const totalTime = processingStartTime ? Math.floor((now - processingStartTime) / 1000) : 0;
+          addLog('✓ Job ' + (jobIndex + 1) + ' completed successfully in ' + Math.floor(totalTime / 60) + 'm ' + (totalTime % 60) + 's', 'success');
+          
+          setGenerationProgress(prev => {
+            const updated = { ...prev };
+            delete updated[jobId];
+            return updated;
+          });
+
+          const completedVideo = {
+            id: taskId,
+            prompt: promptText,
+            video_url: task.output && task.output[0] ? task.output[0] : null,
+            thumbnail_url: task.output && task.output[1] ? task.output[1] : null,
+            image_url: imageUrlText,
+            status: 'completed',
+            created_at: new Date().toISOString(),
+            jobId: jobId,
+            processingTime: totalTime,
+            upscaled: false
+          };
+
+          setResults(prev => [...prev, completedVideo]);
+          return completedVideo;
+        }
+
+        if (task.status === 'FAILED') {
+          const failureReason = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
+          
+          let enhancedFailureReason = failureReason;
+          if (failureReason.includes('SAFETY')) {
+            enhancedFailureReason = 'Content safety violation: ' + failureReason;
+          } else if (failureReason.includes('INTERNAL.BAD_OUTPUT')) {
+            enhancedFailureReason = 'Output quality issue: ' + failureReason + ' (Try different prompt/image)';
+          } else if (failureReason.includes('INTERNAL')) {
+            enhancedFailureReason = 'Internal processing error: ' + failureReason + ' (Retryable)';
+          }
+          
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + enhancedFailureReason, 'error');
+          
+          setGenerationProgress(prev => {
+            const updated = { ...prev };
+            delete updated[jobId];
+            return updated;
+          });
+          
+          throw new Error(enhancedFailureReason);
+        }
+
+        const pollInterval = 
+          task.status === 'PENDING' && stuckInPendingCount > 8 ? 12000 :
+          task.status === 'RUNNING' ? 4000 :
+          task.status === 'THROTTLED' ? 10000 :
+          isThrottled ? 12000 :
+          5000;
+        
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        pollCount++;
+        
+      } catch (error) {
+        consecutiveErrors++;
+        
+        if (error.message.includes('Content safety violation') || 
+            error.message.includes('Insufficient credits') ||
+            (error.message.includes('Generation failed') && 
+             !error.message.includes('timeout') && 
+             !error.message.includes('network') && 
+             !error.message.includes('rate limit') &&
+             !error.message.includes('server error'))) {
+          addLog('✗ Job ' + (jobIndex + 1) + ' permanently failed: ' + error.message, 'error');
+          setGenerationProgress(prev => ({
+            ...prev,
+            [jobId]: { status: 'failed', progress: 0, error: error.message }
+          }));
+          throw error;
+        }
+        
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' polling timeout, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' network error, retrying... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' rate limited, waiting longer... (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+          await new Promise(resolve => setTimeout(resolve, 90000));
+        } else {
+          addLog('⚠️ Job ' + (jobIndex + 1) + ' error: ' + error.message + ' (attempt ' + consecutiveErrors + '/' + maxConsecutiveErrors + ')', 'warning');
+        }
+        
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          const finalError = 'Failed after ' + maxConsecutiveErrors + ' consecutive errors. Last error: ' + error.message;
+          addLog('✗ Job ' + (jobIndex + 1) + ' ' + finalError, 'error');
+          throw new Error(finalError);
+        }
+        
+        const baseDelay = 20000;
+        const maxDelay = 180000;
+        const exponentialDelay = baseDelay * Math.pow(1.8, consecutiveErrors);
+        const jitter = Math.random() * (baseDelay * 0.5);
+        const backoffDelay = Math.min(exponentialDelay + jitter, maxDelay);
+        
+        addLog(`⏳ Job ${jobIndex + 1} waiting ${Math.round(backoffDelay/1000)}s before retry...`, 'info');
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        pollCount++;
+      }
     }
 
+    const totalTime = Math.floor((pollCount * 15) / 60);
+    throw new Error('Generation timeout after ' + totalTime + ' minutes');
+  };
+
+  // Simplified generation function for working deployment
+  const generateVideos = async () => {
+    const requestedJobs = parseInt(concurrency) || 1;
+    const MAX_CONCURRENT_JOBS = 20;
+    const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
+    
     if (!prompt.trim()) {
       addLog('❌ No prompt provided!', 'error');
       return;
     }
 
     if (!imageUrl.trim()) {
-      addLog('❌ Image URL is required!', 'error');
+      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
       return;
     }
 
-    // For now, just show the cost warning
-    const totalJobs = Math.min(Math.max(parseInt(concurrency) || 1, 1), 20);
+    if (!runwayApiKey.trim()) {
+      addLog('❌ RunwayML API key is required!', 'error');
+      return;
+    }
+
+    if (requestedJobs > MAX_CONCURRENT_JOBS) {
+      addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
+      return;
+    }
+    
+    if (isNaN(totalJobs) || totalJobs < 1) {
+      addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
+      return;
+    }
+    
     const estimatedCostMin = totalJobs * 0.25;
     const estimatedCostMax = totalJobs * 0.75;
     
@@ -968,8 +1458,7 @@ export default function RunwayAutomationApp() {
         onConfirm: () => {
           setHasShownCostWarning(true);
           localStorage.setItem('runway-automation-cost-warning-shown', 'true');
-          addLog(`💰 Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
-          addLog('🔧 Video generation implementation coming soon!', 'info');
+          startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
         },
         content: (
           <div>
@@ -1005,8 +1494,287 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    addLog(`💰 Estimated cost: $${estimatedCostMin.toFixed(2)} - $${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
-    addLog('🔧 Video generation implementation coming soon!', 'info');
+    startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
+  };
+
+  const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
+    setIsRunning(true);
+    
+    const currentGeneration = generationCounter + 1;
+    setGenerationCounter(currentGeneration);
+    
+    addLog('🚀 Starting Runway video generation...', 'info');
+    addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
+    addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
+    addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
+    addLog('💳 Note: Each generation requires credits from your API account', 'info');
+    addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
+
+    const batchResults = [];
+    const errors = [];
+
+    const allPromises = [];
+    
+    for (let i = 0; i < totalJobs; i++) {
+      const jobIndex = i;
+      const currentVideoNumber = i + 1;
+      const staggerDelay = i * 1000;
+      
+      const delayedPromise = new Promise(async (resolve) => {
+        if (staggerDelay > 0) {
+          addLog('⏱️ Staggering job ' + (jobIndex + 1) + ' start by ' + (staggerDelay / 1000) + 's...', 'info');
+          await new Promise(delayResolve => setTimeout(delayResolve, staggerDelay));
+        }
+        
+        try {
+          const result = await generateVideo(prompt, imageUrl, jobIndex, currentGeneration, currentVideoNumber);
+          resolve({ status: 'fulfilled', value: result });
+        } catch (error) {
+          resolve({ status: 'rejected', reason: error, jobIndex });
+        }
+      });
+      
+      allPromises.push(delayedPromise);
+    }
+
+    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
+    addLog('⚡ RunwayML will automatically queue jobs beyond your tier limit', 'info');
+
+    try {
+      const allResults = await Promise.all(allPromises);
+      
+      allResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          batchResults.push(result.value);
+        } else {
+          errors.push(result.reason);
+        }
+      });
+      
+    } catch (error) {
+      addLog('❌ Concurrent processing error: ' + error.message, 'error');
+      errors.push(error);
+    }
+
+    setVideoCounter(prev => prev + totalJobs);
+
+    const successCount = batchResults.length;
+    addLog('🎬 Generation completed! ✅ ' + successCount + (successCount === 1 ? ' video' : ' videos') + ' generated, ❌ ' + errors.length + (errors.length === 1 ? ' failed' : ' failed'), 
+           successCount > 0 ? 'success' : 'error');
+    
+    if (errors.length > 0) {
+      const errorCounts = {};
+      errors.forEach(e => {
+        const errorType = e.message.includes('timeout') ? 'Generation timeout' :
+                        e.message.includes('rate limit') ? 'Rate limit' :
+                        e.message.includes('failed') ? 'Generation failed' :
+                        e.message.split(':')[0] || e.message;
+        errorCounts[errorType] = (errorCounts[errorType] || 0) + 1;
+      });
+      
+      const errorSummary = Object.entries(errorCounts)
+        .map(([error, count]) => `${error} (${count}x)`)
+        .join(', ');
+      
+      addLog('⚠️ Failed jobs: ' + errorSummary, 'warning');
+    }
+
+    setCompletedGeneration(currentGeneration);
+    setIsRunning(false);
+    
+    if (successCount > 0) {
+      setActiveTab('results');
+    }
+  };
+
+  const downloadVideoWithRetry = async (videoUrl, filename, maxRetries = 3) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        addLog(`📥 Downloading ${filename}... (attempt ${attempt}/${maxRetries})`, 'info');
+        
+        const response = await fetch(videoUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        
+        if (blob.size === 0) {
+          throw new Error('Empty file received');
+        }
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        
+        document.body.appendChild(a);
+        a.click();
+        
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
+        addLog(`✅ Downloaded ${filename} (${sizeMB}MB)`, 'success');
+        return true;
+        
+      } catch (error) {
+        addLog(`⚠️ Download attempt ${attempt} failed: ${error.message}`, 'warning');
+        
+        if (attempt === maxRetries) {
+          addLog(`❌ Failed to download ${filename} after ${maxRetries} attempts`, 'error');
+          return false;
+        }
+        
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    return false;
+  };
+
+  const downloadVideo = async (videoUrl, filename) => {
+    return await downloadVideoWithRetry(videoUrl, filename);
+  };
+
+  const generateFilename = (jobId, taskId, isUpscale = false) => {
+    if (!jobId) return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
+    
+    const genMatch = jobId.match(/Generation (\d+)/);
+    const vidMatch = jobId.match(/Video (\d+)/);
+    
+    if (genMatch && vidMatch) {
+      const generation = genMatch[1];
+      const video = vidMatch[1];
+      return `gen-${generation}-video-${video}${isUpscale ? '_4K' : ''}.mp4`;
+    }
+    
+    return `video_${taskId}${isUpscale ? '_4K' : ''}.mp4`;
+  };
+
+  const downloadAllVideos = async () => {
+    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
+    
+    if (videosWithUrls.length === 0) {
+      addLog('❌ No completed videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addLog(`📦 Creating zip archive with ${videosWithUrls.length} videos...`, 'info');
+
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Los_Angeles'
+      }).replace(/[/:]/g, '-').replace(', ', '_');
+
+      const folderName = `Runway Videos (${timestamp})`;
+      const folder = zip.folder(folderName);
+      const videosFolder = folder.folder('Videos');
+      const jsonFolder = folder.folder('JSON');
+
+      const sortedVideos = videosWithUrls
+        .map(result => ({
+          ...result,
+          filename: generateFilename(result.jobId, result.id)
+        }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+
+      for (let i = 0; i < sortedVideos.length; i++) {
+        const result = sortedVideos[i];
+        try {
+          addLog(`📥 Adding ${result.filename} to archive... (${i + 1}/${sortedVideos.length})`, 'info');
+          
+          const response = await fetch(result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch video`);
+          }
+          
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error('Empty video file received');
+          }
+          
+          videosFolder.file(result.filename, blob);
+          
+          if (result.upscale_url) {
+            try {
+              const upscaleFilename = generateFilename(result.jobId, result.id, true);
+              addLog(`📥 Adding 4K version ${upscaleFilename} to archive...`, 'info');
+              
+              const upscaleResponse = await fetch(result.upscale_url);
+              if (upscaleResponse.ok) {
+                const upscaleBlob = await upscaleResponse.blob();
+                if (upscaleBlob.size > 0) {
+                  videosFolder.file(upscaleFilename, upscaleBlob);
+                }
+              }
+            } catch (upscaleError) {
+              addLog(`⚠️ Failed to add 4K version: ${upscaleError.message}`, 'warning');
+            }
+          }
+          
+          const metadata = {
+            id: result.id,
+            prompt: result.prompt,
+            jobId: result.jobId,
+            created_at: result.created_at,
+            image_url: result.image_url,
+            processingTime: result.processingTime || 'unknown',
+            upscaled: result.upscaled || false,
+            upscale_task_id: result.upscale_task_id || null
+          };
+          
+          jsonFolder.file(result.filename.replace('.mp4', '_metadata.json'), JSON.stringify(metadata, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${result.filename}: ${error.message}`, 'warning');
+        }
+      }
+
+      addLog('🔄 Generating zip file...', 'info');
+      
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+        compressionOptions: { level: 0 }
+      });
+
+      const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
+      addLog(`📦 Zip file created: ${zipSizeMB}MB`, 'info');
+
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      addLog(`✅ Downloaded zip archive: ${folderName}.zip (${zipSizeMB}MB)`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to create zip archive: ' + error.message, 'error');
+      console.error('Zip creation error:', error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
   };
 
   if (!mounted) {
@@ -1134,7 +1902,80 @@ export default function RunwayAutomationApp() {
                           }}
                         >
                           <Key className="text-white" size={32} />
+                        <div className="mb-3" style={{ minHeight: '100px' }}>
+                      <div className="text-center py-3">
+                        <h4 className="fw-bold text-dark mb-2">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              return `Generation ${generationCounter || 1} in progress`;
+                            } else if (completedGeneration) {
+                              return `Generation ${completedGeneration} completed`;
+                            } else {
+                              return `Generation ${generationCounter || 1}`;
+                            }
+                          })()}
+                        </h4>
+                        <p className="text-muted mb-0">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              const count = Object.keys(generationProgress).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generating`;
+                            } else if (completedGeneration) {
+                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                            } else {
+                              return '0 videos generated';
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {Object.keys(generationProgress).length > 0 && (
+                      <div className="mb-3">
+                        <div className="row g-3">
+                          {Object.entries(generationProgress).map(([jobId, progress]) => (
+                            <div key={jobId} className="col-md-6 col-xl-3">
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <span className="fw-bold small" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
+                                      {jobId}
+                                    </span>
+                                    <span className={`badge ${
+                                      progress.status === 'completed' ? 'bg-success' :
+                                      progress.status === 'failed' ? 'bg-danger' :
+                                      progress.status === 'throttled' ? 'bg-warning' :
+                                      'bg-primary'
+                                    }`}>
+                                      {progress.status}
+                                    </span>
+                                  </div>
+                                  <div className="progress mb-2" style={{ height: '8px' }}>
+                                    <div 
+                                      className={`progress-bar ${
+                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'failed' ? 'bg-danger' :
+                                        progress.status === 'throttled' ? 'bg-warning' :
+                                        'bg-primary'
+                                      }`}
+                                      style={{ width: progress.progress + '%' }}
+                                    ></div>
+                                  </div>
+                                  <small className="text-muted">
+                                    {progress.message || progress.status}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
+                      </div>
+                    )}
                         
                         <div className="text-white text-center">
                           <h3 className="mb-0 fw-bold">API Setup</h3>
@@ -1529,27 +2370,38 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
-                      <button
-                        className="btn btn-success btn-lg shadow"
-                        onClick={generateVideos}
-                        disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
-                        style={{ 
-                          borderRadius: '8px', 
-                          fontWeight: '600', 
-                          marginTop: '5px', 
-                          marginBottom: '5px',
-                          backgroundColor: '#28a745',
-                          borderColor: '#28a745'
-                        }}
-                      >
-                        <Play size={24} className="me-2" />
-                        Start Generation
-                        {concurrency > 1 && (
-                          <span className="ms-2 badge bg-light text-dark">
-                            {concurrency} videos
-                          </span>
-                        )}
-                      </button>
+                      {!isRunning ? (
+                        <button
+                          className="btn btn-success btn-lg shadow"
+                          onClick={generateVideos}
+                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
+                          style={{ 
+                            borderRadius: '8px', 
+                            fontWeight: '600', 
+                            marginTop: '5px', 
+                            marginBottom: '5px',
+                            backgroundColor: '#28a745',
+                            borderColor: '#28a745'
+                          }}
+                        >
+                          <Play size={24} className="me-2" />
+                          Start Generation
+                          {concurrency > 1 && (
+                            <span className="ms-2 badge bg-light text-dark">
+                              {concurrency} videos
+                            </span>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-danger btn-lg shadow"
+                          onClick={stopGeneration}
+                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
+                        >
+                          <AlertCircle size={24} className="me-2" />
+                          Stop Generation
+                        </button>
+                      )}
                     </div>
                   </div>
                   
@@ -1655,20 +2507,191 @@ export default function RunwayAutomationApp() {
                   
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
-                    <div className="text-center py-5">
-                      <div className="mb-4">
-                        <Film size={80} className="text-muted" />
+                    {results.length === 0 ? (
+                      <div className="text-center py-5">
+                        <div className="mb-4">
+                          <Film size={80} className="text-muted" />
+                        </div>
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <button
+                          className="btn btn-primary btn-lg shadow"
+                          onClick={() => setActiveTab('setup')}
+                          style={{ borderRadius: '6px' }}
+                        >
+                          Get Started
+                        </button>
                       </div>
-                      <h4 className="text-muted mb-3">No videos generated yet</h4>
-                      <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
-                      <button
-                        className="btn btn-primary btn-lg shadow"
-                        onClick={() => setActiveTab('setup')}
-                        style={{ borderRadius: '6px' }}
-                      >
-                        Get Started
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="row g-4">
+                        {results
+                          .slice()
+                          .sort((a, b) => {
+                            const parseJobId = (jobId) => {
+                              if (!jobId) return { generation: 0, video: 0 };
+                              
+                              const genMatch = jobId.match(/Generation (\d+)/);
+                              const vidMatch = jobId.match(/Video (\d+)/);
+                              
+                              return {
+                                generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                video: vidMatch ? parseInt(vidMatch[1]) : 0
+                              };
+                            };
+                            
+                            const aData = parseJobId(a.jobId);
+                            const bData = parseJobId(b.jobId);
+                            
+                            if (aData.generation !== bData.generation) {
+                              return aData.generation - bData.generation;
+                            }
+                            return aData.video - bData.video;
+                          })
+                          .map((result, index) => (
+                          <div key={index} className="col-md-6 col-lg-3">
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                {result.video_url ? (
+                                  <video
+                                    src={result.video_url}
+                                    poster={result.thumbnail_url}
+                                    controls
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                    preload="metadata"
+                                  >
+                                    Your browser does not support video playback.
+                                  </video>
+                                ) : result.thumbnail_url ? (
+                                  <img 
+                                    src={result.thumbnail_url}
+                                    alt={'Thumbnail for: ' + result.prompt}
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                    <div className="text-center">
+                                      <Film size={48} className="text-primary mb-3" />
+                                      <div className="fw-bold text-muted">Processing...</div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {result.status !== 'completed' && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-warning shadow-sm">
+                                      ⏳ Processing
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {upscaleProgress[result.id] && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-info shadow-sm">
+                                      ⚡ Upscaling {upscaleProgress[result.id].progress}%
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {result.upscaled && (
+                                  <div className="position-absolute bottom-0 start-0 m-3">
+                                    <span className="badge bg-success shadow-sm">
+                                      ⚡ 4K Available
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                <button
+                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                  onClick={() => toggleFavorite(result.id)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Heart 
+                                    size={16} 
+                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                  />
+                                </button>
+                              </div>
+                              
+                              <div className="card-body p-3">
+                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                  {result.prompt}
+                                </h6>
+                                
+                                <div className="d-grid gap-2">
+                                  {result.video_url && (
+                                    <div className="btn-group" role="group">
+                                      <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id))}
+                                      >
+                                        <Download size={16} className="me-1" />
+                                        Download
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm"
+                                        onClick={() => window.open(result.video_url, '_blank')}
+                                      >
+                                        <ExternalLink size={16} className="me-1" />
+                                        View
+                                      </button>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => upscaleVideo(result)}
+                                        disabled={!!upscaleProgress[result.id] || result.upscaled}
+                                        title={
+                                          result.upscaled ? 'Already upscaled to 4K' :
+                                          upscaleProgress[result.id] ? 'Upscaling in progress...' :
+                                          'Upscale to 4K (~500 credits, ~$5.00)'
+                                        }
+                                      >
+                                        {upscaleProgress[result.id] ? (
+                                          <div className="d-flex align-items-center">
+                                            <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
+                                              <span className="visually-hidden">Loading...</span>
+                                            </div>
+                                            <span style={{ fontSize: '12px' }}>4K</span>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <Zap size={16} className="me-1" />
+                                            4K
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  {result.upscaled && result.upscale_url && (
+                                    <button
+                                      className="btn btn-success btn-sm mt-1"
+                                      onClick={() => downloadVideo(result.upscale_url, generateFilename(result.jobId, result.id, true))}
+                                    >
+                                      <Download size={16} className="me-1" />
+                                      Download 4K Version
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
