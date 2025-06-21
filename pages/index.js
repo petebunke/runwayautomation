@@ -645,22 +645,25 @@ export default function RunwayAutomationApp() {
     return ratioMap[ratio] || '1280:720';
   };
 
-  // Enhanced credit estimation function
+  // Enhanced credit estimation function based on Runway API documentation
   const estimateCreditsNeeded = (totalJobs, model, duration) => {
-    // Credit estimates based on model and duration
+    // Updated credit estimates based on actual Runway API costs
     const creditRates = {
       'gen4_turbo': {
-        5: 50,  // 50 credits for 5 seconds
-        10: 100 // 100 credits for 10 seconds
+        5: 50,   // ~50 credits for 5 seconds Gen-4 Turbo
+        10: 100  // ~100 credits for 10 seconds Gen-4 Turbo
       },
       'gen3a_turbo': {
-        5: 25,  // 25 credits for 5 seconds
-        10: 50  // 50 credits for 10 seconds
+        5: 25,   // ~25 credits for 5 seconds Gen-3 Alpha Turbo
+        10: 50   // ~50 credits for 10 seconds Gen-3 Alpha Turbo
       }
     };
 
     const creditsPerVideo = creditRates[model]?.[duration] || 50;
-    return creditsPerVideo * totalJobs;
+    const totalCredits = creditsPerVideo * totalJobs;
+    
+    // Add a 10% buffer for safety
+    return Math.ceil(totalCredits * 1.1);
   };
 
   // Enhanced credit check function using the organization endpoint
@@ -670,7 +673,7 @@ export default function RunwayAutomationApp() {
     }
 
     setIsCheckingCredits(true);
-    addLog('🔍 Checking organization credit balance...', 'info');
+    addLog('🔍 Checking organization credit balance and tier limits...', 'info');
 
     try {
       const response = await fetch(API_BASE + '/runway-credits', {
@@ -699,6 +702,10 @@ export default function RunwayAutomationApp() {
           return { success: false, error: 'Invalid API key', isAuthError: true };
         }
         
+        if (response.status === 404) {
+          return { success: false, error: 'Organization endpoint not available', isAuthError: true };
+        }
+        
         return { success: false, error: errorMessage };
       }
 
@@ -712,12 +719,30 @@ export default function RunwayAutomationApp() {
       setOrganizationInfo(organizationData);
       setLastCreditCheck(new Date().toISOString());
       
+      // Enhanced logging with tier information
+      const maxConcurrent = Math.max(
+        organizationData.tierInfo?.maxConcurrentGen4Turbo || 0,
+        organizationData.tierInfo?.maxConcurrentGen3aTurbo || 0
+      );
+      
       addLog(`✅ Credit check completed - Balance: ${organizationData.creditBalance} credits`, 'success');
+      addLog(`ℹ️ Tier limits: ${maxConcurrent} concurrent, ${organizationData.tierInfo?.maxDailyGen4Turbo || 'Unknown'} daily gen4_turbo`, 'info');
       
       return { 
         success: true, 
         data: organizationData,
         creditBalance: organizationData.creditBalance,
+        tierInfo: organizationData.tierInfo,
+        usageInfo: organizationData.usageInfo
+      };
+      
+    } catch (error) {
+      addLog('⚠️ Credit check failed due to network error: ' + error.message, 'warning');
+      return { success: false, error: error.message };
+    } finally {
+      setIsCheckingCredits(false);
+    }
+  };,
         tierInfo: organizationData.tierInfo,
         usageInfo: organizationData.usageInfo
       };
@@ -946,7 +971,8 @@ export default function RunwayAutomationApp() {
       return;
     }
     
-    // Enhanced credit check before proceeding
+    // Enhanced credit check before proceeding - MANDATORY validation
+    addLog('🔍 Checking credit balance before starting generation...', 'info');
     const creditCheckResult = await checkOrganizationCredits();
     
     if (!creditCheckResult.success) {
@@ -976,54 +1002,101 @@ export default function RunwayAutomationApp() {
         });
         return;
       } else {
-        addLog('⚠️ Could not verify credit balance, proceeding with generation...', 'warning');
-      }
-    } else {
-      const estimatedCreditsNeeded = estimateCreditsNeeded(totalJobs, model, duration);
-      const currentBalance = creditCheckResult.creditBalance || 0;
-      
-      if (currentBalance < estimatedCreditsNeeded) {
+        // If credit check fails, show error and don't proceed
         showModalDialog({
-          title: "Insufficient Credits",
+          title: "Credit Check Failed",
           type: "warning",
-          confirmText: "Get Credits",
+          confirmText: "Try Again",
           cancelText: "Cancel",
           onConfirm: () => {
-            window.open('https://dev.runwayml.com', '_blank');
+            generateVideos(); // Retry the generation process
           },
           content: (
             <div>
-              <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
+              <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
                 <div className="d-flex align-items-center mb-2">
-                  <CreditCard size={20} className="text-danger me-2" />
-                  <strong>Insufficient Credits</strong>
+                  <AlertCircle size={20} className="text-warning me-2" />
+                  <strong>Unable to Verify Credits</strong>
                 </div>
-                <p className="mb-0">You don't have enough credits to generate {totalJobs} video{totalJobs !== 1 ? 's' : ''}.</p>
+                <p className="mb-0">Could not check your credit balance: {creditCheckResult.error}</p>
               </div>
               
-              <div className="row g-3 mb-3">
-                <div className="col-6">
-                  <div className="text-center p-3 border rounded">
-                    <div className="h5 mb-1 text-success">{currentBalance}</div>
-                    <small className="text-muted">Current Balance</small>
-                  </div>
-                </div>
-                <div className="col-6">
-                  <div className="text-center p-3 border rounded">
-                    <div className="h5 mb-1 text-danger">{estimatedCreditsNeeded}</div>
-                    <small className="text-muted">Credits Needed</small>
-                  </div>
-                </div>
-              </div>
-              
+              <p className="mb-2">Please ensure you have sufficient credits before proceeding.</p>
               <p className="mb-0 text-muted">
-                Visit the Runway Developer Portal to purchase more credits.
+                Check your balance at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a>
               </p>
             </div>
           )
         });
         return;
       }
+    }
+
+    // MANDATORY: Check if current credits are sufficient
+    const estimatedCreditsNeeded = estimateCreditsNeeded(totalJobs, model, duration);
+    const currentBalance = creditCheckResult.creditBalance || 0;
+    
+    addLog(`💳 Credit analysis: ${currentBalance} available, ${estimatedCreditsNeeded} needed for ${totalJobs} video${totalJobs !== 1 ? 's' : ''}`, 'info');
+    
+    if (currentBalance < estimatedCreditsNeeded) {
+      const shortfall = estimatedCreditsNeeded - currentBalance;
+      const estimatedCost = (shortfall * 0.01).toFixed(2); // $0.01 per credit
+      
+      showModalDialog({
+        title: "Insufficient Credits",
+        type: "warning",
+        confirmText: "Buy More Credits",
+        cancelText: "Cancel",
+        onConfirm: () => {
+          window.open('https://dev.runwayml.com', '_blank');
+        },
+        content: (
+          <div>
+            <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
+              <div className="d-flex align-items-center mb-2">
+                <CreditCard size={20} className="text-danger me-2" />
+                <strong>Insufficient Credits</strong>
+              </div>
+              <p className="mb-0">You don't have enough credits to generate {totalJobs} video{totalJobs !== 1 ? 's' : ''} using {model}.</p>
+            </div>
+            
+            <div className="row g-2 mb-3">
+              <div className="col-4">
+                <div className="text-center p-3 border rounded">
+                  <div className="h5 mb-1 text-success">{currentBalance}</div>
+                  <small className="text-muted">Available</small>
+                </div>
+              </div>
+              <div className="col-4">
+                <div className="text-center p-3 border rounded">
+                  <div className="h5 mb-1 text-danger">{estimatedCreditsNeeded}</div>
+                  <small className="text-muted">Required</small>
+                </div>
+              </div>
+              <div className="col-4">
+                <div className="text-center p-3 border rounded">
+                  <div className="h5 mb-1 text-warning">{shortfall}</div>
+                  <small className="text-muted">Shortfall</small>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <p className="mb-2"><strong>Generation Details:</strong></p>
+              <ul className="small mb-2 ps-3">
+                <li>{totalJobs} video{totalJobs !== 1 ? 's' : ''} × {model} ({duration}s each)</li>
+                <li>~{Math.floor(estimatedCreditsNeeded / totalJobs)} credits per video</li>
+                <li>You need {shortfall} more credits (~${estimatedCost})</li>
+              </ul>
+            </div>
+            
+            <p className="mb-0 text-muted">
+              <strong>Visit <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> to purchase more credits.</strong>
+            </p>
+          </div>
+        )
+      });
+      return; // STOP generation - insufficient credits
     }
     
     const estimatedCostMin = totalJobs * 0.25;
