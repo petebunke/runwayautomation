@@ -1033,7 +1033,7 @@ export default function RunwayAutomationApp() {
               </div>
               
               <p className="mb-0 text-muted">
-                Visit the Runway Developer Portal to purchase more credits.
+                Visit the <a href="dev.runwayml.com">Runway Developer Portal</a> to purchase more credits.
               </p>
             </div>
           )
