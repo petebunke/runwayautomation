@@ -730,6 +730,22 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Auto-check credits when API key is entered and when videos are generated
+  useEffect(() => {
+    if (runwayApiKey && runwayApiKey.trim() && runwayApiKey.length > 10) {
+      checkOrganizationCredits();
+    }
+  }, [runwayApiKey]);
+
+  // Auto-update credits when generation completes
+  const updateCreditsAfterGeneration = () => {
+    if (runwayApiKey && runwayApiKey.trim()) {
+      setTimeout(() => {
+        checkOrganizationCredits();
+      }, 2000); // Wait 2 seconds for credits to update on Runway's side
+    }
+  };
+
   // Add the generateVideo function
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
@@ -1147,6 +1163,9 @@ export default function RunwayAutomationApp() {
     setCompletedGeneration(currentGeneration);
     setIsRunning(false);
     
+    // Update credits after generation completes
+    updateCreditsAfterGeneration();
+    
     // Auto-advance to Results tab when generation completes successfully
     if (successCount > 0) {
       setActiveTab('results');
@@ -1396,6 +1415,9 @@ export default function RunwayAutomationApp() {
             ));
             
             addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
+            
+            // Update credits after upscaling
+            updateCreditsAfterGeneration();
           }, 5000);
           
         } catch (error) {
@@ -1600,76 +1622,32 @@ export default function RunwayAutomationApp() {
                             <li>~500 credits for 4K upscaling ($5.00)</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
-                        </div>
-
-                        {/* Credit Balance Display */}
-                        {runwayApiKey && (
-                          <div className="card bg-light border-0 shadow-sm mb-4" style={{ borderRadius: '8px' }}>
-                            <div className="card-body p-3">
-                              <div className="d-flex justify-content-between align-items-center mb-2">
-                                <span className="fw-bold text-dark">Credit Balance</span>
-                                <button
-                                  className="btn btn-sm btn-outline-primary"
-                                  onClick={checkOrganizationCredits}
-                                  disabled={isCheckingCredits}
-                                  style={{ borderRadius: '6px' }}
-                                >
-                                  {isCheckingCredits ? (
-                                    <>
-                                      <div className="spinner-border spinner-border-sm me-1" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                      </div>
-                                      Checking...
-                                    </>
-                                  ) : (
-                                    'Refresh'
-                                  )}
-                                </button>
+                          
+                          {/* Credit info integrated into warning card */}
+                          {organizationInfo && (
+                            <div className="mt-3 pt-3 border-top border-warning">
+                              <div className="row g-2">
+                                <div className="col-6">
+                                  <div className="text-center p-2 border rounded bg-white">
+                                    <div className="h6 mb-1 text-success">{organizationInfo.creditBalance}</div>
+                                    <small className="text-muted">Credit Balance</small>
+                                  </div>
+                                </div>
+                                <div className="col-6">
+                                  <div className="text-center p-2 border rounded bg-white">
+                                    <div className="h6 mb-1 text-primary">
+                                      {organizationInfo.tierInfo ? 
+                                        Math.max(organizationInfo.tierInfo.maxConcurrentGen4Turbo, organizationInfo.tierInfo.maxConcurrentGen3aTurbo) :
+                                        'N/A'
+                                      }
+                                    </div>
+                                    <small className="text-muted">Max Videos Per Generation</small>
+                                  </div>
+                                </div>
                               </div>
-                              
-                              {organizationInfo ? (
-                                <div className="row g-2">
-                                  <div className="col-4">
-                                    <div className="text-center p-2 border rounded bg-white">
-                                      <div className="h6 mb-1 text-success">{organizationInfo.creditBalance}</div>
-                                      <small className="text-muted">Available Credits</small>
-                                    </div>
-                                  </div>
-                                  <div className="col-4">
-                                    <div className="text-center p-2 border rounded bg-white">
-                                      <div className="h6 mb-1 text-primary">
-                                        {organizationInfo.tierInfo ? 
-                                          Math.max(organizationInfo.tierInfo.maxConcurrentGen4Turbo, organizationInfo.tierInfo.maxConcurrentGen3aTurbo) :
-                                          'N/A'
-                                        }
-                                      </div>
-                                      <small className="text-muted">Max Concurrent</small>
-                                    </div>
-                                  </div>
-                                  <div className="col-4">
-                                    <div className="text-center p-2 border rounded bg-white">
-                                      <div className="h6 mb-1 text-info">
-                                        {organizationInfo.tierInfo ? 
-                                          Math.max(organizationInfo.tierInfo.maxDailyGen4Turbo, organizationInfo.tierInfo.maxDailyGen3aTurbo) :
-                                          'N/A'
-                                        }
-                                      </div>
-                                      <small className="text-muted">Max Daily</small>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : lastCreditCheck ? (
-                                <div className="text-center text-muted">
-                                  <small>Last checked: {new Date(lastCreditCheck).toLocaleTimeString()}</small>
-                                </div>
-                              ) : (
-                                <div className="text-center text-muted">
-                                  <small>Click "Refresh" to check your credit balance</small>
-                                </div>
-                              )}
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
 
                         <div className="row g-3">
                           <div className="col-6">
