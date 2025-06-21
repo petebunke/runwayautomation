@@ -212,6 +212,9 @@ export default function RunwayAutomationApp() {
         localStorage.setItem('runway-automation-api-key', runwayApiKey);
       } else if (runwayApiKey === '') {
         localStorage.removeItem('runway-automation-api-key');
+        // Clear organization info when API key is cleared
+        setOrganizationInfo(null);
+        setLastCreditCheck(null);
       }
     } catch (error) {
       console.warn('Failed to save API key to localStorage:', error);
@@ -269,6 +272,37 @@ export default function RunwayAutomationApp() {
       console.warn('Failed to save logs to localStorage:', error);
     }
   }, [logs, mounted]);
+
+  // Auto-check credits when API key changes
+  useEffect(() => {
+    if (!mounted || !runwayApiKey?.trim() || runwayApiKey.length < 10) return;
+    
+    // Debounce the credit check to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      checkOrganizationCredits();
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [runwayApiKey, mounted]);
+
+  // Auto-refresh credits after successful generation
+  useEffect(() => {
+    if (!mounted || !runwayApiKey?.trim()) return;
+    
+    // Check if we just completed a generation (results increased)
+    const hasNewResults = results.some(result => 
+      result.status === 'completed' && 
+      result.created_at && 
+      new Date(result.created_at).getTime() > Date.now() - 30000 // Within last 30 seconds
+    );
+    
+    if (hasNewResults && !isRunning) {
+      // Wait a bit for Runway to update their records, then refresh credits
+      setTimeout(() => {
+        checkOrganizationCredits();
+      }, 3000);
+    }
+  }, [results, isRunning, mounted, runwayApiKey]);
 
   const clearStoredApiKey = () => {
     try {
@@ -1239,6 +1273,12 @@ export default function RunwayAutomationApp() {
     // Auto-advance to Results tab when generation completes successfully
     if (successCount > 0) {
       setActiveTab('results');
+      
+      // Auto-refresh credit balance after successful generation
+      setTimeout(() => {
+        addLog('🔄 Updating credit balance after generation...', 'info');
+        checkOrganizationCredits();
+      }, 2000);
     }
   };
 
@@ -1676,82 +1716,73 @@ export default function RunwayAutomationApp() {
                             <strong>Credits Required</strong>
                           </div>
                           <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
-                          <ul className="small mb-0 ps-3">
+                          <ul className="small mb-3 ps-3">
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
                             <li>~500 credits for 4K upscaling ($5.00)</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
-                        </div>
-
-                        {runwayApiKey && (
-                          <div className="card bg-light border-0 shadow-sm mb-4" style={{ borderRadius: '8px' }}>
-                            <div className="card-body p-3">
-                              <div className="d-flex justify-content-between align-items-center mb-2">
-                                <span className="fw-bold text-dark">Credit Balance</span>
-                                <button
-                                  className="btn btn-sm btn-outline-primary"
-                                  onClick={checkOrganizationCredits}
-                                  disabled={isCheckingCredits}
-                                  style={{ borderRadius: '6px' }}
-                                >
-                                  {isCheckingCredits ? (
-                                    <>
-                                      <div className="spinner-border spinner-border-sm me-1" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                      </div>
-                                      Checking...
-                                    </>
-                                  ) : (
-                                    'Refresh'
-                                  )}
-                                </button>
+                          
+                          {runwayApiKey && (
+                            <div className="border-top pt-3">
+                              <div className="d-flex align-items-center mb-2">
+                                <CreditCard size={16} className="text-warning me-2" />
+                                <span className="fw-bold text-dark small">Credit Balance</span>
+                                {isCheckingCredits && (
+                                  <div className="spinner-border spinner-border-sm ms-2" role="status" style={{ width: '12px', height: '12px' }}>
+                                    <span className="visually-hidden">Loading...</span>
+                                  </div>
+                                )}
                               </div>
                               
                               {organizationInfo ? (
                                 <div className="row g-2">
-                                  <div className="col-4">
+                                  <div className="col-6">
                                     <div className="text-center p-2 border rounded bg-white">
-                                      <div className="h6 mb-1 text-success">{organizationInfo.creditBalance}</div>
-                                      <small className="text-muted">Available Credits</small>
-                                    </div>
-                                  </div>
-                                  <div className="col-4">
-                                    <div className="text-center p-2 border rounded bg-white">
-                                      <div className="h6 mb-1 text-primary">
-                                        {organizationInfo.tierInfo ? 
-                                          Math.max(organizationInfo.tierInfo.maxConcurrentGen4Turbo, organizationInfo.tierInfo.maxConcurrentGen3aTurbo) :
-                                          'N/A'
-                                        }
+                                      <div className="h6 mb-1 text-success d-flex align-items-center justify-content-center">
+                                        <span>{organizationInfo.creditBalance?.toLocaleString() || 0}</span>
+                                        {isCheckingCredits && (
+                                          <div className="spinner-border spinner-border-sm ms-1" role="status" style={{ width: '10px', height: '10px' }}>
+                                            <span className="visually-hidden">Updating...</span>
+                                          </div>
+                                        )}
                                       </div>
-                                      <small className="text-muted">Max Concurrent</small>
+                                      <small className="text-muted">Credits</small>
                                     </div>
                                   </div>
-                                  <div className="col-4">
+                                  <div className="col-6">
                                     <div className="text-center p-2 border rounded bg-white">
-                                      <div className="h6 mb-1 text-info">
-                                        {organizationInfo.tierInfo ? 
-                                          Math.max(organizationInfo.tierInfo.maxDailyGen4Turbo, organizationInfo.tierInfo.maxDailyGen3aTurbo) :
-                                          'N/A'
-                                        }
+                                      <div className="h6 mb-1 text-primary d-flex align-items-center justify-content-center">
+                                        <span>
+                                          {organizationInfo.tierInfo ? 
+                                            Math.max(
+                                              organizationInfo.tierInfo.maxConcurrentGen4Turbo || 0, 
+                                              organizationInfo.tierInfo.maxConcurrentGen3aTurbo || 0
+                                            ) || 'N/A' :
+                                            'N/A'
+                                          }
+                                        </span>
+                                        {isCheckingCredits && (
+                                          <div className="spinner-border spinner-border-sm ms-1" role="status" style={{ width: '10px', height: '10px' }}>
+                                            <span className="visually-hidden">Updating...</span>
+                                          </div>
+                                        )}
                                       </div>
-                                      <small className="text-muted">Max Daily</small>
+                                      <small className="text-muted">Max Videos Per Generation</small>
                                     </div>
                                   </div>
-                                </div>
-                              ) : lastCreditCheck ? (
-                                <div className="text-center text-muted">
-                                  <small>Last checked: {new Date(lastCreditCheck).toLocaleTimeString()}</small>
                                 </div>
                               ) : (
-                                <div className="text-center text-muted">
-                                  <small>Click "Refresh" to check your credit balance</small>
+                                <div className="text-center text-muted py-2">
+                                  <small>
+                                    {isCheckingCredits ? 'Checking credit balance...' : 'Credit information will appear here automatically'}
+                                  </small>
                                 </div>
                               )}
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
 
                         <div className="row g-3">
                           <div className="col-6">
@@ -2085,7 +2116,15 @@ export default function RunwayAutomationApp() {
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             {organizationInfo && (
-                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo.creditBalance} available</span>
+                              <span className="text-dark d-flex align-items-center">
+                                <CreditCard size={16} className="me-1" />
+                                <strong>Credits:</strong> {organizationInfo.creditBalance?.toLocaleString() || 0} available
+                                {isCheckingCredits && (
+                                  <div className="spinner-border spinner-border-sm ms-1" role="status" style={{ width: '10px', height: '10px' }}>
+                                    <span className="visually-hidden">Updating...</span>
+                                  </div>
+                                )}
+                              </span>
                             )}
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}></div>
