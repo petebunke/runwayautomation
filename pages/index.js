@@ -1810,7 +1810,7 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
 
-                        <div className="mb-4">
+                        <div className="mb">
                           <label className="form-label fw-bold">
                             Image
                             <i 
