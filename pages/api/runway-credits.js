@@ -124,7 +124,7 @@ export default async function handler(req, res) {
 
       console.log('Organization info retrieved successfully');
       
-      // Return the organization data with enhanced information
+      // Return the organization data with enhanced information for credit validation
       const enhancedData = {
         creditBalance: data.creditBalance || 0,
         tier: data.tier || {},
@@ -144,6 +144,11 @@ export default async function handler(req, res) {
           dailyGen4Turbo: data.usage?.models?.gen4_turbo?.dailyGenerations || 0,
           dailyGen3aTurbo: data.usage?.models?.gen3a_turbo?.dailyGenerations || 0,
           dailyUpscale: data.usage?.models?.upscale_v1?.dailyGenerations || 0
+        },
+        // Add credit validation helpers
+        validation: {
+          hasMinimumCredits: (data.creditBalance || 0) >= 25, // Minimum for cheapest generation
+          recommendedBalance: 100 // Recommended minimum balance
         },
         timestamp: new Date().toISOString()
       };
