@@ -1735,50 +1735,6 @@ export default function RunwayAutomationApp() {
                           </div>
                         </div>
 
-                        <div className="mt-4 p-3 bg-light rounded border">
-                          <label className="form-label fw-bold mb-2">Video Generation Limits by Tier</label>
-                          <div className="table-responsive">
-                            <table className="table table-sm table-bordered border-dark mb-0">
-                              <thead className="table-secondary">
-                                <tr>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Tier</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Videos Generated</th>
-                                  <th className="fw-bold border-dark" style={{ borderTop: 'black 1px solid', borderBottom: 'black 1px solid' }}>Criteria</th>
-                                </tr>
-                              </thead>
-                              <tbody className="small">
-                                <tr>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">1</td>
-                                  <td className="border-dark">Default (new accounts)</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">2</td>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">1 day after $50 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">3</td>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">7 days after $100 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">4</td>
-                                  <td className="border-dark">10</td>
-                                  <td className="border-dark">14 days after $1,000 purchased</td>
-                                </tr>
-                                <tr>
-                                  <td className="border-dark">5</td>
-                                  <td className="border-dark">20</td>
-                                  <td className="border-dark">7 days after $5,000 purchased</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                          <p className="small text-muted mt-2 mb-0">
-                            Not sure which tier you are? Go to <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">dev.runwayml.com</a> &gt; Usage.
-                          </p>
-                        </div>
                       </div>
                     </div>
                   </div>
