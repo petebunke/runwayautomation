@@ -1754,7 +1754,7 @@ export default function RunwayAutomationApp() {
                               className="form-select"
                               value={duration}
                               onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '8px', marginBottom: '3px' }}
+                              style={{ borderRadius: '8px', marginBottom: '2px' }}
                             >
                               <option value={5}>5 seconds</option>
                               <option value={10}>10 seconds</option>
@@ -1787,7 +1787,7 @@ export default function RunwayAutomationApp() {
                                   addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
                                 }
                               }}
-                              style={{ borderRadius: '8px', marginBottom: '3px' }}
+                              style={{ borderRadius: '8px', marginBottom: '2px' }}
                             />
                           </div>
                         </div>
