@@ -1667,7 +1667,7 @@ export default function RunwayAutomationApp() {
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>~10-20 credits for 4K upscaling ($0.10-$0.20)</li>
+                            <li>~10-20 credits for 4K upscaling</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
                           
@@ -1754,7 +1754,7 @@ export default function RunwayAutomationApp() {
                               className="form-select"
                               value={duration}
                               onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '8px', marginBottom: '2px' }}
+                              style={{ borderRadius: '8px' }}
                             >
                               <option value={5}>5 seconds</option>
                               <option value={10}>10 seconds</option>
@@ -1787,7 +1787,7 @@ export default function RunwayAutomationApp() {
                                   addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
                                 }
                               }}
-                              style={{ borderRadius: '8px', marginBottom: '2px' }}
+                              style={{ borderRadius: '8px' }}
                             />
                           </div>
                         </div>
