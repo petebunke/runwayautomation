@@ -1636,21 +1636,12 @@ export default function RunwayAutomationApp() {
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
                                     <div className="h6 mb-1 text-primary">
-                                      {(() => {
-                                        if (!organizationInfo.tierInfo || !organizationInfo.usageInfo) return 'N/A';
-                                        
-                                        const isGen4 = model === 'gen4_turbo';
-                                        const dailyUsed = isGen4 ? 
-                                          (organizationInfo.usageInfo.dailyGen4Turbo || 0) :
-                                          (organizationInfo.usageInfo.dailyGen3aTurbo || 0);
-                                        const dailyMax = isGen4 ?
-                                          (organizationInfo.tierInfo.maxDailyGen4Turbo || 0) :
-                                          (organizationInfo.tierInfo.maxDailyGen3aTurbo || 0);
-                                        
-                                        return `${dailyUsed}/${dailyMax}`;
-                                      })()}
+                                      {organizationInfo.tierInfo ? 
+                                        Math.max(organizationInfo.tierInfo.maxConcurrentGen4Turbo, organizationInfo.tierInfo.maxConcurrentGen3aTurbo) :
+                                        'N/A'
+                                      }
                                     </div>
-                                    <small className="text-muted">Generations Per Day</small>
+                                    <small className="text-muted">Max Videos Per Generation</small>
                                   </div>
                                 </div>
                               </div>
