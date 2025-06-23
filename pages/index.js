@@ -1629,13 +1629,13 @@ export default function RunwayAutomationApp() {
                               <div className="row g-2">
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" style={{ marginBottom: '-1px !important' }} className="text-success">{organizationInfo.creditBalance}</div>
-                                    <small className="text-muted" style={{ marginTop: '-1px', display: 'block' }}>Credit Balance</small>
+                                    <div className="h6 mb-0" className="text-success">{organizationInfo.creditBalance}</div>
+                                    <small className="text-muted" style={{ display: 'block' }}>Credit Balance</small>
                                   </div>
                                 </div>
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" style={{ marginBottom: '-1px !important' }} className="text-primary">
+                                    <div className="h6 mb-0" className="text-primary">
                                       {(() => {
                                         if (!organizationInfo.tierInfo || !organizationInfo.usageInfo) return 'N/A';
                                         
@@ -1650,7 +1650,7 @@ export default function RunwayAutomationApp() {
                                         return `${dailyUsed}/${dailyMax}`;
                                       })()}
                                     </div>
-                                    <small className="text-muted" style={{ marginTop: '-1px', display: 'block' }}>Generations Per Day</small>
+                                    <small className="text-muted" >Generations Per Day</small>
                                   </div>
                                 </div>
                               </div>
