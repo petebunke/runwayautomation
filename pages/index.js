@@ -1678,7 +1678,7 @@ export default function RunwayAutomationApp() {
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
                                     <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">{organizationInfo.creditBalance}</div>
-                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credit Balance</small>
+                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credits</small>
                                   </div>
                                 </div>
                                 <div className="col-6">
