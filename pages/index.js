@@ -1897,7 +1897,7 @@ export default function RunwayAutomationApp() {
                                     fileInputRef.current.value = '';
                                   }
                                 }}
-                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
+                                style={{ borderRadius: '50%', width: '32px', height: '32px', fontSize: '18px', fontWeight: 'bold' }}
                               >
                                 ×
                               </button>
@@ -1922,6 +1922,8 @@ export default function RunwayAutomationApp() {
                               className="btn btn-success btn-lg w-100 shadow"
                               onClick={() => {
                                 setActiveTab('generation');
+                                // Scroll to top when switching tabs
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
                                 // Small delay to ensure tab switch completes before starting generation
                                 setTimeout(() => {
                                   if (!isRunning) {
@@ -2209,7 +2211,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span style={{ color: '#4dd0ff' }}>[{log.timestamp}]</span> {log.message}
+                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2408,7 +2410,7 @@ export default function RunwayAutomationApp() {
                                 
                                 {/* 4K badge for upscaled videos */}
                                 {result.upscaled_video_url && (
-                                  <div className="position-absolute top-0 start-0 m-3">
+                                  <div className="position-absolute top-0 start-0 m-2">
                                     <span className="badge bg-success shadow-sm">
                                       4K ✨
                                     </span>
