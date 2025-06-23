@@ -1629,13 +1629,13 @@ export default function RunwayAutomationApp() {
                               <div className="row g-2">
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" className="text-success">{organizationInfo.creditBalance}</div>
-                                    <small className="text-muted" style={{ display: 'block' }}>Credit Balance</small>
+                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">{organizationInfo.creditBalance}</div>
+                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credit Balance</small>
                                   </div>
                                 </div>
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" className="text-primary">
+                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-primary">
                                       {(() => {
                                         if (!organizationInfo.tierInfo || !organizationInfo.usageInfo) return 'N/A';
                                         
@@ -1650,7 +1650,7 @@ export default function RunwayAutomationApp() {
                                         return `${dailyUsed}/${dailyMax}`;
                                       })()}
                                     </div>
-                                    <small className="text-muted" >Generations Per Day</small>
+                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Generations Per Day</small>
                                   </div>
                                 </div>
                               </div>
@@ -1897,7 +1897,18 @@ export default function RunwayAutomationApp() {
                                     fileInputRef.current.value = '';
                                   }
                                 }}
-                                style={{ borderRadius: '50%', width: '32px', height: '32px', fontSize: '18px', fontWeight: 'bold' }}
+                                style={{ 
+                                  borderRadius: '50%', 
+                                  width: '32px', 
+                                  height: '32px', 
+                                  fontSize: '18px', 
+                                  fontWeight: 'bold',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  lineHeight: '1',
+                                  marginTop: '4px'
+                                }}
                               >
                                 ×
                               </button>
@@ -2187,7 +2198,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
+                        <h5 className="fw-bold mb-0" style={{ color: '#0d6efd' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
                             className="btn btn-sm btn-outline-danger" 
@@ -2527,16 +2538,13 @@ export default function RunwayAutomationApp() {
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <text x="0" y="14" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="400" fill="white" fillOpacity="0.7">Powered by</text>
-                  <g transform="translate(75, 2)">
-                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
-                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
-                    <text x="32" y="12" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
-                  </g>
-                </svg>
+                <img 
+                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
+                  alt="Powered by Runway" 
+                  style={{ height: '24px', opacity: '0.7' }}
+                />
               </a>
             </div>
           </div>
