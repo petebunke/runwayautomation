@@ -1630,7 +1630,7 @@ export default function RunwayAutomationApp() {
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
                                     <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">{organizationInfo.creditBalance}</div>
-                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credit Balance</small>
+                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credits</small>
                                   </div>
                                 </div>
                                 <div className="col-6">
@@ -2053,7 +2053,7 @@ export default function RunwayAutomationApp() {
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             {organizationInfo && (
-                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo.creditBalance} available</span>
+                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo.creditBalance}</span>
                             )}
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
@@ -2198,7 +2198,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="fw-bold mb-0" style={{ color: '#0d6efd' }}>Video Generation Log</h5>
+                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
                             className="btn btn-sm btn-outline-danger" 
