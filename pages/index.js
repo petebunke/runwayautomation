@@ -480,7 +480,7 @@ export default function RunwayAutomationApp() {
       addLog(`📏 Original image: ${width}x${height} (${originalAspectRatio.toFixed(2)} aspect ratio)`, 'info');
       
       if (originalAspectRatio < 0.5 || originalAspectRatio > 2.0) {
-        addLog(`⚠️ Warning: Image aspect ratio ${originalAspectRatio.toFixed(2)} is outside Runway's accepted range (0.5-2.0). This may cause API errors.`, 'warning');
+        addLog(`⚠️ Warning: Image aspect ratio ${originalAspectRatio.toFixed(2)} is outside RunwayML's accepted range (0.5-2.0). This may cause API errors.`, 'warning');
       }
       
       if (width > height) {
@@ -645,7 +645,7 @@ export default function RunwayAutomationApp() {
     
     try {
       if (!imageUrlText || !imageUrlText.trim()) {
-        const errorMsg = 'Image URL is required for video generation. The current Runway API only supports image-to-video generation.';
+        const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
         addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
         
         setGenerationProgress(prev => ({
@@ -836,7 +836,7 @@ export default function RunwayAutomationApp() {
             continue;
           }
           
-          throw new Error('Invalid response from Runway API: ' + responseText.substring(0, 100));
+          throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
         }
 
         if (!response.ok) {
@@ -988,7 +988,7 @@ export default function RunwayAutomationApp() {
             enhancedFailureReason = 'Internal processing error: ' + failureReason + ' (Retryable)';
           }
           
-          addLog('✗ Job ' + (jobIndex + 1) + ' failed on Runway: ' + enhancedFailureReason, 'error');
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + enhancedFailureReason, 'error');
           
           setGenerationProgress(prev => {
             const updated = { ...prev };
@@ -1060,90 +1060,6 @@ export default function RunwayAutomationApp() {
     throw new Error('Generation timeout after ' + totalTime + ' minutes');
   };
 
-  // Credit check function - uses a test generation to detect credit issues
-  const checkCredits = async () => {
-    if (!runwayApiKey.trim()) {
-      return { hasCredits: false, error: 'API key required' };
-    }
-
-    // Skip credit check if we don't have a proper prompt/image yet
-    if (!prompt.trim() || !imageUrl.trim()) {
-      return { hasCredits: true, skipCheck: true };
-    }
-
-    try {
-      addLog('🔍 Performing test generation to verify credits...', 'info');
-      
-      // Make a test generation request to see if credits are available
-      const testPayload = {
-        promptText: prompt.substring(0, 50) + "...", // Use a shortened version
-        promptImage: imageUrl,
-        model: model,
-        ratio: convertAspectRatio(aspectRatio),
-        duration: duration,
-        seed: Math.floor(Math.random() * 1000000)
-      };
-
-      const response = await fetch(API_BASE + '/runway-generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          payload: testPayload
-        })
-      });
-
-      const responseText = await response.text();
-
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = JSON.parse(responseText);
-        } catch (parseError) {
-          return { hasCredits: false, error: `Credit check failed: Could not parse response` };
-        }
-        
-        const errorMessage = errorData.error || errorData.message || 'Unknown error';
-        
-        // Check for insufficient credits specifically
-        if (response.status === 400 && (
-          errorMessage.toLowerCase().includes('insufficient') ||
-          errorMessage.toLowerCase().includes('not have enough') ||
-          errorMessage.toLowerCase().includes('credits') ||
-          errorMessage.toLowerCase().includes('balance')
-        )) {
-          addLog('❌ Credit check failed: Insufficient credits detected', 'error');
-          return { hasCredits: false, error: 'Insufficient credits', isCreditsError: true, fullError: errorMessage };
-        }
-        
-        // If it's a different error, we'll assume credits are OK and let the main generation handle it
-        addLog('⚠️ Credit check inconclusive, proceeding with generation...', 'warning');
-        return { hasCredits: true, error: errorMessage };
-      }
-
-      // If we get here, the test generation started successfully, which means we have credits
-      let task;
-      try {
-        task = JSON.parse(responseText);
-        addLog(`✅ Credit check passed - test generation started (${task.id})`, 'success');
-        
-        // We could optionally cancel this test generation here if the API supports it
-        // For now, we'll let it run since it will use minimal credits
-        
-        return { hasCredits: true, testTaskId: task.id };
-      } catch (parseError) {
-        addLog('✅ Credit check passed - API responding normally', 'success');
-        return { hasCredits: true };
-      }
-      
-    } catch (error) {
-      addLog('⚠️ Credit check failed due to network error, proceeding anyway...', 'warning');
-      return { hasCredits: true, error: error.message };
-    }
-  };
-
   const generateVideos = async () => {
     const requestedJobs = parseInt(concurrency) || 1;
     const MAX_CONCURRENT_JOBS = 20;
@@ -1155,12 +1071,12 @@ export default function RunwayAutomationApp() {
     }
 
     if (!imageUrl.trim()) {
-      addLog('❌ Image URL is required! The current Runway API only supports image-to-video generation. Please add an image URL.', 'error');
+      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
       return;
     }
 
     if (!runwayApiKey.trim()) {
-      addLog('❌ Runway API key is required!', 'error');
+      addLog('❌ RunwayML API key is required!', 'error');
       return;
     }
 
@@ -1172,47 +1088,6 @@ export default function RunwayAutomationApp() {
     if (isNaN(totalJobs) || totalJobs < 1) {
       addLog('❌ SAFETY: Invalid number of videos specified. Using 1 video.', 'error');
       return;
-    }
-    
-    // Check credits before proceeding (only if we have prompt and image)
-    if (prompt.trim() && imageUrl.trim()) {
-      const creditCheck = await checkCredits();
-      
-      if (!creditCheck.hasCredits && creditCheck.isCreditsError) {
-        showModalDialog({
-          title: "Insufficient Credits",
-          type: "warning",
-          confirmText: "Get Credits",
-          cancelText: "Cancel",
-          onConfirm: () => {
-            window.open('https://dev.runwayml.com', '_blank');
-          },
-          content: (
-            <div>
-              <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
-                <div className="d-flex align-items-center mb-2">
-                  <CreditCard size={20} className="text-danger me-2" />
-                  <strong>Insufficient Credits</strong>
-                </div>
-                <p className="mb-0">You don't have enough credits to generate {totalJobs} video{totalJobs !== 1 ? 's' : ''}.</p>
-              </div>
-              
-              <div className="mb-3">
-                <p className="mb-2"><strong>Required:</strong> ~{totalJobs * 25}-{totalJobs * 50} credits</p>
-                <p className="mb-2"><strong>Estimated cost:</strong> ${(totalJobs * 0.25).toFixed(2)}-${(totalJobs * 0.75).toFixed(2)}</p>
-                {creditCheck.fullError && (
-                  <p className="mb-2 small text-muted"><strong>Error details:</strong> {creditCheck.fullError}</p>
-                )}
-              </div>
-              
-              <p className="mb-0 text-muted">
-                Visit the Runway Developer Portal to purchase more credits.
-              </p>
-            </div>
-          )
-        });
-        return;
-      }
     }
     
     const estimatedCostMin = totalJobs * 0.25;
@@ -1255,7 +1130,7 @@ export default function RunwayAutomationApp() {
             </div>
             
             <p className="mb-0 text-muted">
-              This will use credits from your Runway account. Are you sure you want to proceed?
+              This will use credits from your RunwayML account. Are you sure you want to proceed?
             </p>
           </div>
         )
@@ -1278,7 +1153,7 @@ export default function RunwayAutomationApp() {
     addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     addLog('📊 Processing ' + totalJobs + (totalJobs === 1 ? ' video generation' : ' video generations') + ' using the same prompt and image...', 'info');
     addLog('💳 Note: Each generation requires credits from your API account', 'info');
-    addLog('🔄 Jobs will process based on your Runway tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
+    addLog('🔄 Jobs will process based on your RunwayML tier limits (Tier 1: 1 concurrent, Tier 2: 3, Tier 3: 5, Tier 4: 10, Tier 5: 20)', 'info');
 
     const batchResults = [];
     const errors = [];
@@ -1308,7 +1183,7 @@ export default function RunwayAutomationApp() {
     }
 
     addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
-    addLog('⚡ Runway will automatically queue jobs beyond your tier limit', 'info');
+    addLog('⚡ RunwayML will automatically queue jobs beyond your tier limit', 'info');
 
     try {
       const allResults = await Promise.all(allPromises);
@@ -1366,7 +1241,7 @@ export default function RunwayAutomationApp() {
   // 4K Upscaling functionality
   const upscaleVideo = async (taskId, videoUrl, videoName) => {
     if (!runwayApiKey.trim()) {
-      addLog('❌ Runway API key is required for 4K upscaling!', 'error');
+      addLog('❌ RunwayML API key is required for 4K upscaling!', 'error');
       return;
     }
 
@@ -1374,7 +1249,7 @@ export default function RunwayAutomationApp() {
     
     // Show cost warning for upscaling
     showModalDialog({
-      title: "Upscaling Cost Warning",
+      title: "4K Upscaling Cost Warning",
       type: "warning",
       confirmText: "Start 4K Upscaling",
       cancelText: "Cancel",
@@ -1492,7 +1367,7 @@ export default function RunwayAutomationApp() {
             continue;
           }
           
-          throw new Error('Invalid response from Runway upscale API');
+          throw new Error('Invalid response from RunwayML upscale API');
         }
 
         if (!response.ok) {
@@ -2120,28 +1995,28 @@ export default function RunwayAutomationApp() {
   return (
     <>
       <Head>
-        <title>Runway Automation - Batch Video Generation</title>
-        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON." />
+        <title>Runway Automation Pro - AI Video Generation</title>
+        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://runway-automation.vercel.app/" />
-        <meta property="og:title" content="Runway Automation - Batch Video Generation" />
-        <meta property="og:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON." />
+        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
+        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta property="og:image" content="/og-image.png" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
         <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="twitter:description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON." />
+        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
         <meta property="twitter:image" content="/og-image.png" />
 
         {/* Additional SEO tags */}
         <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
-        <meta name="author" content="Runway Automation" />
+        <meta name="author" content="Runway Automation Pro" />
         <meta name="robots" content="index, follow" />
         
         {/* Theme color for mobile browsers */}
@@ -2193,15 +2068,15 @@ export default function RunwayAutomationApp() {
               <button 
                 onClick={() => setActiveTab('setup')}
                 className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
-                style={{ fontSize: '1.95rem', fontWeight: 'bold' }}
+                style={{ fontSize: '1.75rem', fontWeight: 'bold' }}
               >
                 <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
-                Runway Automation
+                Runway Automation Pro
               </button>
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON.
+                A lightweight front end for the Runway API that generates up to 20 videos from one prompt, all at the same time. Download every video you generate with one button.
               </p>
             </div>
           </div>
@@ -2280,7 +2155,7 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">Runway API Key</label>
+                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
                             {runwayApiKey && (
                               <button
                                 type="button"
@@ -2304,7 +2179,7 @@ export default function RunwayAutomationApp() {
                           <div className="form-text">
                             <ExternalLink size={14} className="me-1" />
                             <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from Runway Developer Portal
+                              Get your API key from RunwayML Developer Portal
                             </a>
                           </div>
                         </div>
@@ -2314,7 +2189,7 @@ export default function RunwayAutomationApp() {
                             <CreditCard size={20} className="text-warning me-2" />
                             <strong>Credits Required</strong>
                           </div>
-                          <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
+                          <p className="mb-2 small">The RunwayML API requires credits for all video generations.</p>
                           <ul className="small mb-0 ps-3">
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
@@ -2349,7 +2224,7 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="16:9 for YouTube, TV, and desktop. 9:16 for TikTok, IG Stories, and mobile. 1:1 for IG posts and profile pics. 4:3 for classic TV and monitors. 3:4 for print and documents. 21:9 for ultrawide movies."
+                                title="• 16:9 (Landscape - YouTube, TV, desktop)&#10;• 9:16 (Portrait - TikTok, Instagram Stories, mobile)&#10;• 1:1 (Square - Instagram posts, profile pics)&#10;• 4:3 (Standard - Classic TV, monitors)&#10;• 3:4 (Portrait Standard - Print, documents)&#10;• 21:9 (Cinematic - Ultrawide movies)"
                               ></i>
                             </label>
                             <select
@@ -2537,7 +2412,7 @@ export default function RunwayAutomationApp() {
                               style={{ cursor: 'help' }}
                               data-bs-toggle="tooltip" 
                               data-bs-placement="top" 
-                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by Runway."
+                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by RunwayML."
                             ></i>
                           </label>
                           
@@ -2692,7 +2567,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Video Generation</h3>
+                      <h2 className="mb-0 fw-bold">Video Generation</h2>
                     </div>
                     
                     <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
@@ -2888,7 +2763,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="fw-bold mb-0" style={{ color: '##0d6efd' }}>Video Generation Log</h5>
+                        <h5 className="text-light fw-bold mb-0">Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
                             className="btn btn-sm btn-outline-danger" 
@@ -2916,7 +2791,7 @@ export default function RunwayAutomationApp() {
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span style={{ color: '#4dd0ff' }}>[{log.timestamp}]</span> {log.message}
+                            <span className="text-muted">[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
@@ -2959,7 +2834,7 @@ export default function RunwayAutomationApp() {
                     </div>
                     
                     <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
+                      <h2 className="mb-0 fw-bold">Generated Videos</h2>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
@@ -3018,15 +2893,6 @@ export default function RunwayAutomationApp() {
                               </span>
                             </button>
                           )}
-                          
-                          <button
-                            className="btn btn-outline-light shadow"
-                            onClick={clearGeneratedVideos}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            <Trash2 size={16} className="me-2" />
-                            Clear Videos
-                          </button>
                         </div>
                       </div>
                     )}
@@ -3035,7 +2901,7 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-4">
+                      <div className="text-center py-5">
                         <div className="mb-4">
                           <Film size={80} className="text-muted" />
                         </div>
@@ -3224,7 +3090,7 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center mt-3">
+          <div className="text-center mt-5">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
