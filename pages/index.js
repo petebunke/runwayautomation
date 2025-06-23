@@ -1177,10 +1177,7 @@ export default function RunwayAutomationApp() {
     addLog('🛑 Generation stopped by user', 'warning');
   };
 
-  // Add JSZip import at the top after other imports
-  const JSZip = typeof window !== 'undefined' ? window.JSZip : null;
-
-  // Add the download functions with ZIP support
+  // Add the download functions
   const downloadVideo = async (videoUrl, filename) => {
     try {
       addLog(`📥 Downloading ${filename}...`, 'info');
@@ -1218,87 +1215,6 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  const createZipDownload = async (videos, zipName, folderName) => {
-    if (!JSZip) {
-      addLog('❌ JSZip not available. Downloading files individually...', 'error');
-      return;
-    }
-
-    const zip = new JSZip();
-    const mainFolder = zip.folder(folderName);
-    const videosFolder = mainFolder.folder('Videos');
-    const jsonFolder = mainFolder.folder('JSON');
-
-    try {
-      // Download all videos and add to zip
-      for (let i = 0; i < videos.length; i++) {
-        const result = videos[i];
-        const filename = generateFilename(result.jobId, result.id, !!result.upscaled_video_url);
-        
-        addLog(`📥 Adding ${filename} to ${zipName}... (${i + 1}/${videos.length})`, 'info');
-        
-        try {
-          const response = await fetch(result.upscaled_video_url || result.video_url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const videoBlob = await response.blob();
-          videosFolder.file(filename, videoBlob);
-          
-          // Create JSON file for each video
-          const jsonData = {
-            id: result.id,
-            jobId: result.jobId,
-            prompt: result.prompt,
-            video_url: result.video_url,
-            upscaled_video_url: result.upscaled_video_url || null,
-            thumbnail_url: result.thumbnail_url,
-            image_url: result.image_url,
-            status: result.status,
-            created_at: result.created_at,
-            filename: filename,
-            is_upscaled: !!result.upscaled_video_url,
-            is_favorited: favoriteVideos.has(result.id)
-          };
-          
-          const jsonFilename = filename.replace('.mp4', '.json');
-          jsonFolder.file(jsonFilename, JSON.stringify(jsonData, null, 2));
-          
-        } catch (error) {
-          addLog(`⚠️ Failed to add ${filename}: ${error.message}`, 'warning');
-        }
-      }
-
-      // Generate and download zip
-      addLog(`📦 Creating ${zipName}...`, 'info');
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = zipName;
-      
-      document.body.appendChild(a);
-      a.click();
-      
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      const sizeMB = (zipBlob.size / 1024 / 1024).toFixed(1);
-      addLog(`✅ Downloaded ${zipName} (${sizeMB}MB)`, 'success');
-      
-    } catch (error) {
-      addLog(`❌ Failed to create ${zipName}: ${error.message}`, 'error');
-    }
-  };
-
-  const generateTimestamp = () => {
-    const now = new Date();
-    return now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  };
-
   const generateFilename = (jobId, taskId, isUpscaled = false) => {
     if (!jobId) return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
     
@@ -1323,12 +1239,23 @@ export default function RunwayAutomationApp() {
     }
 
     setIsDownloadingAll(true);
-    const timestamp = generateTimestamp();
-    const zipName = `All Videos (${timestamp}).zip`;
-    const folderName = `All Videos (${timestamp})`;
-    
-    await createZipDownload(videosWithUrls, zipName, folderName);
-    setIsDownloadingAll(false);
+    addLog(`📦 Downloading ${videosWithUrls.length} videos...`, 'info');
+
+    try {
+      for (let i = 0; i < videosWithUrls.length; i++) {
+        const result = videosWithUrls[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        await downloadVideo(result.video_url, filename);
+      }
+      
+      addLog(`✅ Downloaded all ${videosWithUrls.length} videos`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to download all videos: ' + error.message, 'error');
+    } finally {
+      setIsDownloadingAll(false);
+    }
   };
 
   const downloadUpscaledVideos = async () => {
@@ -1343,12 +1270,23 @@ export default function RunwayAutomationApp() {
     }
 
     setIsDownloadingAll(true);
-    const timestamp = generateTimestamp();
-    const zipName = `4K Videos (${timestamp}).zip`;
-    const folderName = `4K Videos (${timestamp})`;
-    
-    await createZipDownload(upscaledVideos, zipName, folderName);
-    setIsDownloadingAll(false);
+    addLog(`📦 Downloading ${upscaledVideos.length} 4K videos...`, 'info');
+
+    try {
+      for (let i = 0; i < upscaledVideos.length; i++) {
+        const result = upscaledVideos[i];
+        const filename = generateFilename(result.jobId, result.id, true);
+        
+        await downloadVideo(result.upscaled_video_url, filename);
+      }
+      
+      addLog(`✅ Downloaded all ${upscaledVideos.length} 4K videos`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to download all 4K videos: ' + error.message, 'error');
+    } finally {
+      setIsDownloadingAll(false);
+    }
   };
 
   const downloadFavoritedVideos = async () => {
@@ -1364,12 +1302,29 @@ export default function RunwayAutomationApp() {
     }
 
     setIsDownloadingAll(true);
-    const timestamp = generateTimestamp();
-    const zipName = `Favorited Videos (${timestamp}).zip`;
-    const folderName = `Favorited Videos (${timestamp})`;
-    
-    await createZipDownload(favoritedVideos, zipName, folderName);
-    setIsDownloadingAll(false);
+    addLog(`📦 Downloading ${favoritedVideos.length} favorited videos...`, 'info');
+
+    try {
+      for (let i = 0; i < favoritedVideos.length; i++) {
+        const result = favoritedVideos[i];
+        const filename = generateFilename(result.jobId, result.id);
+        
+        await downloadVideo(result.video_url, filename);
+        
+        // Also download 4K version if available
+        if (result.upscaled_video_url) {
+          const upscaledFilename = generateFilename(result.jobId, result.id, true);
+          await downloadVideo(result.upscaled_video_url, upscaledFilename);
+        }
+      }
+      
+      addLog(`✅ Downloaded all ${favoritedVideos.length} favorited videos`, 'success');
+      
+    } catch (error) {
+      addLog('❌ Failed to download favorited videos: ' + error.message, 'error');
+    } finally {
+      setIsDownloadingAll(false);
+    }
   };
 
   // Add the upscaling function
@@ -1481,7 +1436,7 @@ export default function RunwayAutomationApp() {
               <AlertCircle size={20} className="text-warning me-2" />
               <strong>4K Upscaling Cost</strong>
             </div>
-            <p className="mb-0">4K upscaling costs <strong>{duration === 5 ? '10 credits' : '20 credits'}</strong> per video.</p>
+            <p className="mb-0">4K upscaling typically costs <strong>~500 credits ($5)</strong> per video.</p>
           </div>
           
           <div className="mb-3">
@@ -1516,9 +1471,6 @@ export default function RunwayAutomationApp() {
         />
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-        />
-        <script 
-          src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
         />
       </Head>
 
@@ -1667,7 +1619,7 @@ export default function RunwayAutomationApp() {
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>~10-20 credits for 4K upscaling</li>
+                            <li>~500 credits for 4K upscaling ($5.00)</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
                           
@@ -1677,13 +1629,13 @@ export default function RunwayAutomationApp() {
                               <div className="row g-2">
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">{organizationInfo.creditBalance}</div>
-                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credits</small>
+                                    <div className="h6 mb-1 text-success">{organizationInfo.creditBalance}</div>
+                                    <small className="text-muted">Credit Balance</small>
                                   </div>
                                 </div>
                                 <div className="col-6">
                                   <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-primary">
+                                    <div className="h6 mb-1 text-primary">
                                       {(() => {
                                         if (!organizationInfo.tierInfo || !organizationInfo.usageInfo) return 'N/A';
                                         
@@ -1698,7 +1650,7 @@ export default function RunwayAutomationApp() {
                                         return `${dailyUsed}/${dailyMax}`;
                                       })()}
                                     </div>
-                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Generations Per Day</small>
+                                    <small className="text-muted">Generations Per Day</small>
                                   </div>
                                 </div>
                               </div>
@@ -1945,18 +1897,7 @@ export default function RunwayAutomationApp() {
                                     fileInputRef.current.value = '';
                                   }
                                 }}
-                                style={{ 
-                                  borderRadius: '50%', 
-                                  width: '32px', 
-                                  height: '32px', 
-                                  fontSize: '18px', 
-                                  fontWeight: 'bold',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  lineHeight: '1',
-                                  marginTop: '8px'
-                                }}
+                                style={{ borderRadius: '50%', width: '32px', height: '32px', fontSize: '18px', fontWeight: 'bold' }}
                               >
                                 ×
                               </button>
@@ -1995,12 +1936,8 @@ export default function RunwayAutomationApp() {
                                 borderRadius: '8px', 
                                 fontWeight: '600',
                                 backgroundColor: '#28a745',
-                                borderColor: '#28a745',
-                                opacity: '1',
-                                transition: 'opacity 0.15s ease-in-out'
+                                borderColor: '#28a745'
                               }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.85'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
                             >
                               <Play size={20} className="me-2" />
                               Generate Video{concurrency > 1 ? 's' : ''}
@@ -2062,11 +1999,11 @@ export default function RunwayAutomationApp() {
                             marginTop: '5px', 
                             marginBottom: '5px',
                             opacity: '1',
-                            transition: 'opacity 0.15s ease-in-out',
+                            transition: 'opacity 0.2s ease-in-out',
                             backgroundColor: '#28a745',
                             borderColor: '#28a745'
                           }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.6'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
                           <Play size={24} className="me-2" />
@@ -2101,7 +2038,7 @@ export default function RunwayAutomationApp() {
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             {organizationInfo && (
-                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo.creditBalance}</span>
+                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo.creditBalance} available</span>
                             )}
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
@@ -2246,7 +2183,7 @@ export default function RunwayAutomationApp() {
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
+                        <h5 className="fw-bold mb-0" style={{ color: '#0d6efd' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
                             className="btn btn-sm btn-outline-danger" 
@@ -2538,7 +2475,7 @@ export default function RunwayAutomationApp() {
                                           className="btn btn-sm"
                                           onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
                                           disabled={upscalingProgress[`upscale_${result.id}`]}
-                                          title="Upscale to 4K resolution"
+                                          title="Upscale to 4K resolution (~$5)"
                                           style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
                                         >
                                           <ArrowUp size={16} className="me-1" />
@@ -2586,13 +2523,16 @@ export default function RunwayAutomationApp() {
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px' }}>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-3">
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <img 
-                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
-                  alt="Powered by Runway" 
-                  style={{ height: '24px', opacity: '0.7' }}
-                />
+                <svg width="160" height="20" viewBox="0 0 160 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <text x="0" y="14" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="400" fill="white" fillOpacity="0.7">Powered by</text>
+                  <g transform="translate(75, 2)">
+                    <path d="M0 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4zM6 0h4v4H6V0zm0 6h4v4H6V6zm0 6h4v4H6v-4zM12 0h4v4h-4V0zm0 6h4v4h-4V6zm0 6h4v4h-4v-4z" fill="white" fillOpacity="0.7"/>
+                    <path d="M20 2h8v2h-8V2zm0 4h8v2h-8V6zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" fill="white" fillOpacity="0.7"/>
+                    <text x="32" y="12" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="white" fillOpacity="0.7">RUNWAY</text>
+                  </g>
+                </svg>
               </a>
             </div>
           </div>
