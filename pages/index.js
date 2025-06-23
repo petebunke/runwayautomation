@@ -1667,7 +1667,7 @@ export default function RunwayAutomationApp() {
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
                             <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
-                            <li>~10-20 credits for 4K upscaling</li>
+                            <li>~10-20 credits for 4K upscaling ($0.10-$0.20)</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
                           
