@@ -485,7 +485,7 @@ export default function RunwayAutomationApp() {
       addLog(`📏 Original image: ${width}x${height} (${originalAspectRatio.toFixed(2)} aspect ratio)`, 'info');
       
       if (originalAspectRatio < 0.5 || originalAspectRatio > 2.0) {
-        addLog(`⚠️ Warning: Image aspect ratio ${originalAspectRatio.toFixed(2)} is outside RunwayML's accepted range (0.5-2.0). This may cause API errors.`, 'warning');
+        addLog(`⚠️ Warning: Image aspect ratio ${originalAspectRatio.toFixed(2)} is outside Runway's accepted range (0.5-2.0). This may cause API errors.`, 'warning');
       }
       
       if (width > height) {
@@ -752,7 +752,7 @@ export default function RunwayAutomationApp() {
     
     try {
       if (!imageUrlText || !imageUrlText.trim()) {
-        const errorMsg = 'Image URL is required for video generation. The current RunwayML API only supports image-to-video generation.';
+        const errorMsg = 'Image URL is required for video generation. The current Runway API only supports image-to-video generation.';
         addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
         
         setGenerationProgress(prev => ({
@@ -857,7 +857,7 @@ export default function RunwayAutomationApp() {
         try {
           task = JSON.parse(responseText);
         } catch (parseError) {
-          throw new Error('Invalid response from RunwayML API: ' + responseText.substring(0, 100));
+          throw new Error('Invalid response from Runway API: ' + responseText.substring(0, 100));
         }
 
         if (!response.ok) {
@@ -910,7 +910,7 @@ export default function RunwayAutomationApp() {
         if (task.status === 'FAILED') {
           const failureReason = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
           
-          addLog('✗ Job ' + (jobIndex + 1) + ' failed on RunwayML: ' + failureReason, 'error');
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on Runway: ' + failureReason, 'error');
           
           setGenerationProgress(prev => {
             const updated = { ...prev };
@@ -943,12 +943,12 @@ export default function RunwayAutomationApp() {
     }
 
     if (!imageUrl.trim()) {
-      addLog('❌ Image URL is required! The current RunwayML API only supports image-to-video generation. Please add an image URL.', 'error');
+      addLog('❌ Image URL is required! The current Runway API only supports image-to-video generation. Please add an image URL.', 'error');
       return;
     }
 
     if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required!', 'error');
+      addLog('❌ Runway API key is required!', 'error');
       return;
     }
 
@@ -980,7 +980,7 @@ export default function RunwayAutomationApp() {
                   <AlertCircle size={20} className="text-danger me-2" />
                   <strong>Authentication Failed</strong>
                 </div>
-                <p className="mb-0">Your RunwayML API key appears to be invalid or expired.</p>
+                <p className="mb-0">Your Runway API key appears to be invalid or expired.</p>
               </div>
               
               <p className="mb-2">Please check your API key and try again.</p>
@@ -1033,7 +1033,7 @@ export default function RunwayAutomationApp() {
               </div>
               
               <p className="mb-0 text-muted">
-                Visit the RunwayML Developer Portal to purchase more credits.
+                Visit the Runway Developer Portal to purchase more credits.
               </p>
             </div>
           )
@@ -1082,7 +1082,7 @@ export default function RunwayAutomationApp() {
             </div>
             
             <p className="mb-0 text-muted">
-              This will use credits from your RunwayML account. Are you sure you want to proceed?
+              This will use credits from your Runway account. Are you sure you want to proceed?
             </p>
           </div>
         )
@@ -1099,7 +1099,7 @@ export default function RunwayAutomationApp() {
     const currentGeneration = generationCounter + 1;
     setGenerationCounter(currentGeneration);
     
-    addLog('🚀 Starting RunwayML video generation...', 'info');
+    addLog('🚀 Starting Runway video generation...', 'info');
     addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
     addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     
@@ -1177,6 +1177,9 @@ export default function RunwayAutomationApp() {
     addLog('🛑 Generation stopped by user', 'warning');
   };
 
+  // Add JSZip import at the top after other imports
+  const JSZip = typeof window !== 'undefined' ? window.JSZip : null;
+
   // Add the download functions with ZIP support
   const downloadVideo = async (videoUrl, filename) => {
     try {
@@ -1216,8 +1219,10 @@ export default function RunwayAutomationApp() {
   };
 
   const createZipDownload = async (videos, zipName, folderName) => {
-    // Dynamic import of JSZip
-    const JSZip = (await import('jszip')).default;
+    if (!JSZip) {
+      addLog('❌ JSZip not available. Downloading files individually...', 'error');
+      return;
+    }
 
     const zip = new JSZip();
     const mainFolder = zip.folder(folderName);
@@ -1228,59 +1233,41 @@ export default function RunwayAutomationApp() {
       // Download all videos and add to zip
       for (let i = 0; i < videos.length; i++) {
         const result = videos[i];
+        const filename = generateFilename(result.jobId, result.id, !!result.upscaled_video_url);
         
-        // Include both original and 4K versions if available
-        const videoVersions = [];
-        if (result.video_url) {
-          videoVersions.push({
-            url: result.video_url,
-            filename: generateFilename(result.jobId, result.id, false),
-            is4K: false
-          });
-        }
-        if (result.upscaled_video_url) {
-          videoVersions.push({
-            url: result.upscaled_video_url,
-            filename: generateFilename(result.jobId, result.id, true),
-            is4K: true
-          });
-        }
+        addLog(`📥 Adding ${filename} to ${zipName}... (${i + 1}/${videos.length})`, 'info');
         
-        for (const version of videoVersions) {
-          addLog(`📥 Adding ${version.filename} to ${zipName}...`, 'info');
-          
-          try {
-            const response = await fetch(version.url);
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const videoBlob = await response.blob();
-            videosFolder.file(version.filename, videoBlob);
-            
-          } catch (error) {
-            addLog(`⚠️ Failed to add ${version.filename}: ${error.message}`, 'warning');
+        try {
+          const response = await fetch(result.upscaled_video_url || result.video_url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
+          
+          const videoBlob = await response.blob();
+          videosFolder.file(filename, videoBlob);
+          
+          // Create JSON file for each video
+          const jsonData = {
+            id: result.id,
+            jobId: result.jobId,
+            prompt: result.prompt,
+            video_url: result.video_url,
+            upscaled_video_url: result.upscaled_video_url || null,
+            thumbnail_url: result.thumbnail_url,
+            image_url: result.image_url,
+            status: result.status,
+            created_at: result.created_at,
+            filename: filename,
+            is_upscaled: !!result.upscaled_video_url,
+            is_favorited: favoriteVideos.has(result.id)
+          };
+          
+          const jsonFilename = filename.replace('.mp4', '.json');
+          jsonFolder.file(jsonFilename, JSON.stringify(jsonData, null, 2));
+          
+        } catch (error) {
+          addLog(`⚠️ Failed to add ${filename}: ${error.message}`, 'warning');
         }
-        
-        // Create JSON file for each video
-        const jsonData = {
-          id: result.id,
-          jobId: result.jobId,
-          prompt: result.prompt,
-          video_url: result.video_url,
-          upscaled_video_url: result.upscaled_video_url || null,
-          thumbnail_url: result.thumbnail_url,
-          image_url: result.image_url,
-          status: result.status,
-          created_at: result.created_at,
-          original_filename: generateFilename(result.jobId, result.id, false),
-          upscaled_filename: result.upscaled_video_url ? generateFilename(result.jobId, result.id, true) : null,
-          is_favorited: favoriteVideos.has(result.id)
-        };
-        
-        const jsonFilename = generateFilename(result.jobId, result.id, false).replace('.mp4', '.json');
-        jsonFolder.file(jsonFilename, JSON.stringify(jsonData, null, 2));
       }
 
       // Generate and download zip
@@ -1309,13 +1296,7 @@ export default function RunwayAutomationApp() {
 
   const generateTimestamp = () => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
+    return now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
   };
 
   const generateFilename = (jobId, taskId, isUpscaled = false) => {
@@ -1394,7 +1375,7 @@ export default function RunwayAutomationApp() {
   // Add the upscaling function
   const upscaleVideo = async (taskId, videoUrl, videoName) => {
     if (!runwayApiKey.trim()) {
-      addLog('❌ RunwayML API key is required for 4K upscaling!', 'error');
+      addLog('❌ Runway API key is required for 4K upscaling!', 'error');
       return;
     }
 
@@ -1500,7 +1481,7 @@ export default function RunwayAutomationApp() {
               <AlertCircle size={20} className="text-warning me-2" />
               <strong>4K Upscaling Cost</strong>
             </div>
-            <p className="mb-0">4K upscaling typically costs <strong>$0.10-20 per video</strong>.</p>
+            <p className="mb-0">4K upscaling costs <strong>{duration === 5 ? '10 credits' : '20 credits'}</strong> per video.</p>
           </div>
           
           <div className="mb-3">
@@ -1517,41 +1498,13 @@ export default function RunwayAutomationApp() {
     });
   };
 
-  if (!mounted) {
-    return null;
-  }
-
   return (
     <>
       <Head>
-        <title>Runway Automation Pro - AI Video Generation</title>
-        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <title>Runway Automation - Batch Video Generation</title>
+        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://runway-automation.vercel.app/" />
-        <meta property="og:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="og:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
-        <meta property="og:image" content="/og-image.png" />
-
-        {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://runway-automation.vercel.app/" />
-        <meta property="twitter:title" content="Runway Automation Pro - AI Video Generation" />
-        <meta property="twitter:description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
-        <meta property="twitter:image" content="/og-image.png" />
-
-        {/* Additional SEO tags */}
-        <meta name="keywords" content="RunwayML, AI video generation, automation, video creation, artificial intelligence, machine learning" />
-        <meta name="author" content="Runway Automation Pro" />
-        <meta name="robots" content="index, follow" />
-        
-        {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#667eea" />
-        <meta name="msapplication-navbutton-color" content="#667eea" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
@@ -1564,18 +1517,9 @@ export default function RunwayAutomationApp() {
         <script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         />
-        <style>{`
-          .tooltip .tooltip-inner {
-            background-color: rgba(0, 0, 0, 1) !important;
-            color: white !important;
-          }
-          .tooltip.bs-tooltip-top .tooltip-arrow::before,
-          .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
-          .tooltip.bs-tooltip-start .tooltip-arrow::before,
-          .tooltip.bs-tooltip-end .tooltip-arrow::before {
-            border-color: rgba(0, 0, 0, 1) transparent !important;
-          }
-        `}</style>
+        <script 
+          src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+        />
       </Head>
 
       <Modal
@@ -1590,28 +1534,34 @@ export default function RunwayAutomationApp() {
         {modalConfig.content}
       </Modal>
 
-      <div className="min-vh-100" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
         <div className="container-fluid py-4">
-          <div className="text-center mb-4">
-            <div className="d-flex align-items-center justify-content-center mb-3">
-              <Clapperboard size={48} className="text-white me-3" />
-              <h1 className="text-white mb-0 fw-bold" style={{ fontSize: '2.5rem' }}>
-                Runway Automation Pro
-              </h1>
+          <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
+            <div className="d-flex align-items-center">
+              <button 
+                onClick={() => setActiveTab('setup')}
+                className="btn btn-link text-white text-decoration-none p-0 d-flex align-items-center"
+                style={{ fontSize: '1.95rem', fontWeight: 'bold' }}
+              >
+                <Clapperboard size={36} className="me-3" style={{ verticalAlign: 'middle' }} />
+                Runway Automation
+              </button>
             </div>
-            <p className="text-white-50 mb-0" style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-              Professional batch video generation for RunwayML. Create up to 20 AI videos simultaneously from a single prompt and image.
-            </p>
+            <div className="text-end">
+              <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download all 4K videos as MP4 and JSON.
+              </p>
+            </div>
           </div>
 
-          <div className="row justify-content-center mb-4">
+          <div className="row justify-content-center mb-3">
             <div className="col-auto">
-              <ul className="nav nav-pills nav-fill glass-effect shadow-lg" style={{ borderRadius: '15px', padding: '8px' }}>
+              <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px' }}>
                 <li className="nav-item">
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'setup' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('setup')}
-                    style={{ borderRadius: '10px', fontWeight: '600', transition: 'all 0.2s ease' }}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
                     <Settings size={20} className="me-2" />
                     Setup
@@ -1621,7 +1571,7 @@ export default function RunwayAutomationApp() {
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'generation' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('generation')}
-                    style={{ borderRadius: '10px', fontWeight: '600', transition: 'all 0.2s ease' }}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
                     <Video size={20} className="me-2" />
                     Generation
@@ -1631,7 +1581,7 @@ export default function RunwayAutomationApp() {
                   <button 
                     className={`nav-link d-flex align-items-center ${activeTab === 'results' ? 'active' : 'text-white'}`}
                     onClick={() => setActiveTab('results')}
-                    style={{ borderRadius: '10px', fontWeight: '600', transition: 'all 0.2s ease' }}
+                    style={{ borderRadius: '6px', fontWeight: '600' }}
                   >
                     <Download size={20} className="me-2" />
                     Results
@@ -1646,16 +1596,39 @@ export default function RunwayAutomationApp() {
               <div className="col-lg-10">
                 <div className="row g-4">
                   <div className="col-lg-6">
-                    <div className="card h-100 shadow-lg border-0" style={{ borderRadius: '15px', overflow: 'hidden' }}>
-                      <div className="card-header bg-primary text-white text-center py-3">
-                        <Key size={32} className="mb-2" />
-                        <h3 className="mb-0 fw-bold">API Configuration</h3>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Key className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
+                        </div>
                       </div>
                       
-                      <div className="card-body p-4">
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label fw-bold mb-0">RunwayML API Key</label>
+                            <label className="form-label fw-bold mb-0">Runway API Key</label>
                             {runwayApiKey && (
                               <button
                                 type="button"
@@ -1673,62 +1646,64 @@ export default function RunwayAutomationApp() {
                             className="form-control form-control-lg"
                             value={runwayApiKey}
                             onChange={(e) => setRunwayApiKey(e.target.value)}
-                            placeholder="rml_xxxxx..."
-                            style={{ borderRadius: '10px' }}
+                            placeholder="key_xxx..."
+                            style={{ borderRadius: '8px' }}
                           />
                           <div className="form-text">
                             <ExternalLink size={14} className="me-1" />
                             <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                              Get your API key from RunwayML Developer Portal
+                              Get your API key from Runway Developer Portal
                             </a>
                           </div>
                         </div>
 
-                        {/* Credit Balance Display */}
-                        {organizationInfo && (
-                          <div className="alert alert-info border-0 shadow-sm mb-4" style={{ borderRadius: '10px' }}>
-                            <div className="d-flex align-items-center justify-content-between">
-                              <div>
-                                <div className="d-flex align-items-center mb-1">
-                                  <CreditCard size={18} className="text-info me-2" />
-                                  <strong>Credit Balance</strong>
-                                </div>
-                                <div className="h4 mb-0 text-primary">{organizationInfo.creditBalance} credits</div>
-                              </div>
-                              <button
-                                className="btn btn-sm btn-outline-info"
-                                onClick={checkOrganizationCredits}
-                                disabled={isCheckingCredits}
-                                style={{ borderRadius: '8px' }}
-                              >
-                                {isCheckingCredits ? (
-                                  <div className="spinner-border spinner-border-sm" role="status">
-                                    <span className="visually-hidden">Loading...</span>
-                                  </div>
-                                ) : (
-                                  'Refresh'
-                                )}
-                              </button>
-                            </div>
-                            {lastCreditCheck && (
-                              <small className="text-muted">
-                                Last updated: {new Date(lastCreditCheck).toLocaleTimeString()}
-                              </small>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '10px' }}>
+                        <div className="alert alert-warning border-0 shadow-sm" style={{ borderRadius: '8px' }}>
                           <div className="d-flex align-items-center mb-2">
                             <CreditCard size={20} className="text-warning me-2" />
                             <strong>Credits Required</strong>
                           </div>
-                          <p className="mb-2 small">Video generation requires credits from your RunwayML account.</p>
+                          <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
                           <ul className="small mb-0 ps-3">
-                            <li>~25-50 credits per video (Gen-3: 25/50, Gen-4: 50/100)</li>
-                            <li>~500 credits for 4K upscaling</li>
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Minimum $10 (1000 credits)</li>
+                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li>~10-20 credits for 4K upscaling ($0.10-$0.20)</li>
+                            <li>Credits are separate from web app credits</li>
                           </ul>
+                          
+                          {/* Credit info integrated into warning card */}
+                          {organizationInfo && (
+                            <div className="mt-3 pt-3 border-top border-warning">
+                              <div className="row g-2">
+                                <div className="col-6">
+                                  <div className="text-center p-2 border rounded bg-white">
+                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">{organizationInfo.creditBalance}</div>
+                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credits</small>
+                                  </div>
+                                </div>
+                                <div className="col-6">
+                                  <div className="text-center p-2 border rounded bg-white">
+                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-primary">
+                                      {(() => {
+                                        if (!organizationInfo.tierInfo || !organizationInfo.usageInfo) return 'N/A';
+                                        
+                                        const isGen4 = model === 'gen4_turbo';
+                                        const dailyUsed = isGen4 ? 
+                                          (organizationInfo.usageInfo.dailyGen4Turbo || 0) :
+                                          (organizationInfo.usageInfo.dailyGen3aTurbo || 0);
+                                        const dailyMax = isGen4 ?
+                                          (organizationInfo.tierInfo.maxDailyGen4Turbo || 0) :
+                                          (organizationInfo.tierInfo.maxDailyGen3aTurbo || 0);
+                                        
+                                        return `${dailyUsed}/${dailyMax}`;
+                                      })()}
+                                    </div>
+                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Generations Per Day</small>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         <div className="row g-3">
@@ -1738,7 +1713,7 @@ export default function RunwayAutomationApp() {
                               className="form-select"
                               value={model}
                               onChange={(e) => setModel(e.target.value)}
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: '8px' }}
                             >
                               {modelOptions.map(option => (
                                 <option key={option.value} value={option.value}>
@@ -1756,14 +1731,14 @@ export default function RunwayAutomationApp() {
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="Choose video dimensions: 16:9 for YouTube/landscape, 9:16 for TikTok/portrait, 1:1 for Instagram square posts"
+                                title="16:9 for YouTube, TV, and desktop. 9:16 for TikTok, IG Stories, and mobile. 1:1 for IG posts and profile pics. 4:3 for classic TV and monitors. 3:4 for print and documents. 21:9 for ultrawide movies."
                               ></i>
                             </label>
                             <select
                               className="form-select"
                               value={aspectRatio}
                               onChange={(e) => setAspectRatio(e.target.value)}
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: '8px' }}
                             >
                               {aspectRatioOptions.map(option => (
                                 <option key={option.value} value={option.value}>
@@ -1779,7 +1754,7 @@ export default function RunwayAutomationApp() {
                               className="form-select"
                               value={duration}
                               onChange={(e) => setDuration(parseInt(e.target.value))}
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: '8px', marginBottom: '2px' }}
                             >
                               <option value={5}>5 seconds</option>
                               <option value={10}>10 seconds</option>
@@ -1788,13 +1763,13 @@ export default function RunwayAutomationApp() {
 
                           <div className="col-6">
                             <label className="form-label fw-bold">
-                              Batch Size
+                              # of Videos Generated
                               <i 
                                 className="bi bi-info-circle ms-1 text-primary" 
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle="tooltip" 
                                 data-bs-placement="top" 
-                                title="Number of videos to generate simultaneously using the same prompt and image (max 20)"
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
                               ></i>
                             </label>
                             <input
@@ -1812,22 +1787,46 @@ export default function RunwayAutomationApp() {
                                   addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
                                 }
                               }}
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: '8px', marginBottom: '2px' }}
                             />
                           </div>
                         </div>
+
                       </div>
                     </div>
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="card h-100 shadow-lg border-0" style={{ borderRadius: '15px', overflow: 'hidden' }}>
-                      <div className="card-header bg-primary text-white text-center py-3">
-                        <Film size={32} className="mb-2" />
-                        <h3 className="mb-0 fw-bold">Content Setup</h3>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Film className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
+                        </div>
                       </div>
                       
-                      <div className="card-body p-4">
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
                           <div className="position-relative">
@@ -1836,8 +1835,8 @@ export default function RunwayAutomationApp() {
                               rows="3"
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
-                              placeholder="Describe your video scene..."
-                              style={{ borderRadius: '10px' }}
+                              placeholder=""
+                              style={{ borderRadius: '8px' }}
                             />
                             {!prompt && (
                               <div 
@@ -1850,7 +1849,7 @@ export default function RunwayAutomationApp() {
                                   fontSize: '16px'
                                 }}
                               >
-                                Describe your video scene...{' '}
+                                Add an image then describe your shot.{' '}
                                 <a 
                                   href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
                                   target="_blank" 
@@ -1861,22 +1860,22 @@ export default function RunwayAutomationApp() {
                                     pointerEvents: 'auto'
                                   }}
                                 >
-                                  View prompting guide
+                                  View guide
                                 </a>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="mb-4">
+                        <div className="mb">
                           <label className="form-label fw-bold">
-                            Source Image
+                            Image
                             <i 
                               className="bi bi-info-circle ms-1 text-primary" 
                               style={{ cursor: 'help' }}
                               data-bs-toggle="tooltip" 
                               data-bs-placement="top" 
-                              title="Upload an image or paste a URL. Image aspect ratio should be between 0.5-2.0 for best results"
+                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by Runway."
                             ></i>
                           </label>
                           
@@ -1897,9 +1896,8 @@ export default function RunwayAutomationApp() {
                                 borderColor: '#dee2e6', 
                                 backgroundColor: '#f8f9fa',
                                 cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                minHeight: '150px',
-                                borderRadius: '15px'
+                                transition: 'all 0.2s ease',
+                                minHeight: '120px'
                               }}
                               onClick={triggerImageUpload}
                               onMouseEnter={(e) => {
@@ -1914,27 +1912,27 @@ export default function RunwayAutomationApp() {
                               <div>
                                 {isUploadingImage ? (
                                   <>
-                                    <div className="spinner-border text-primary mb-3" role="status">
+                                    <div className="spinner-border text-primary mb-2" role="status">
                                       <span className="visually-hidden">Uploading...</span>
                                     </div>
-                                    <div className="text-muted">Processing image...</div>
+                                    <div className="text-muted">Uploading image...</div>
                                   </>
                                 ) : (
                                   <>
-                                    <FolderOpen size={48} className="text-primary mb-3" />
-                                    <div className="text-primary fw-bold mb-2">Click to upload image</div>
-                                    <div className="text-muted">or paste image URL below</div>
+                                    <FolderOpen size={48} className="text-primary mb-2" />
+                                    <div className="text-primary fw-bold mb-1">Click to upload image</div>
+                                    <div className="text-muted small">or paste image URL below</div>
                                   </>
                                 )}
                               </div>
                             </div>
                           ) : (
-                            <div className="position-relative" style={{ borderRadius: '15px', overflow: 'hidden' }}>
+                            <div className="position-relative">
                               <img 
                                 src={imageUrl} 
-                                alt="Source image preview"
-                                className="img-fluid w-100 border"
-                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain', borderRadius: '15px' }}
+                                alt="Uploaded image preview"
+                                className="img-fluid rounded border w-100"
+                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
                                 onLoad={handleImageLoad}
                                 onError={handleImageError}
                               />
@@ -1947,7 +1945,18 @@ export default function RunwayAutomationApp() {
                                     fileInputRef.current.value = '';
                                   }
                                 }}
-                                style={{ borderRadius: '50%', width: '32px', height: '32px' }}
+                                style={{ 
+                                  borderRadius: '50%', 
+                                  width: '32px', 
+                                  height: '32px', 
+                                  fontSize: '18px', 
+                                  fontWeight: 'bold',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  lineHeight: '1',
+                                  marginTop: '8px'
+                                }}
                               >
                                 ×
                               </button>
@@ -1962,16 +1971,19 @@ export default function RunwayAutomationApp() {
                               value={imageUrl}
                               onChange={(e) => setImageUrl(e.target.value)}
                               placeholder="Or paste image URL here..."
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: '8px' }}
                             />
                           </div>
                           
                           {/* Generate Video Button */}
                           <div className="mt-4">
                             <button
-                              className="btn btn-success btn-lg w-100 shadow-lg"
+                              className="btn btn-success btn-lg w-100 shadow"
                               onClick={() => {
                                 setActiveTab('generation');
+                                // Scroll to top when switching tabs
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                // Small delay to ensure tab switch completes before starting generation
                                 setTimeout(() => {
                                   if (!isRunning) {
                                     generateVideos();
@@ -1980,23 +1992,23 @@ export default function RunwayAutomationApp() {
                               }}
                               disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
                               style={{ 
-                                borderRadius: '12px', 
+                                borderRadius: '8px', 
                                 fontWeight: '600',
-                                background: 'linear-gradient(45deg, #28a745, #20c997)',
-                                border: 'none',
-                                transition: 'all 0.3s ease'
+                                backgroundColor: '#28a745',
+                                borderColor: '#28a745',
+                                opacity: '1',
+                                transition: 'opacity 0.15s ease-in-out'
                               }}
-                              onMouseEnter={(e) => {
-                                e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 8px 25px rgba(40, 167, 69, 0.3)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
-                              }}
+                              onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                              onMouseLeave={(e) => e.target.style.opacity = '1'}
                             >
-                              <Play size={24} className="me-2" />
-                              Generate {concurrency > 1 ? `${concurrency} Videos` : 'Video'}
+                              <Play size={20} className="me-2" />
+                              Generate Video{concurrency > 1 ? 's' : ''}
+                              {concurrency > 1 && (
+                                <span className="ms-2 badge bg-light text-dark">
+                                  {concurrency}
+                                </span>
+                              )}
                             </button>
                           </div>
                         </div>
@@ -2011,30 +2023,57 @@ export default function RunwayAutomationApp() {
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '15px', overflow: 'hidden' }}>
-                  <div className="card-header bg-primary text-white text-center py-4 position-relative">
-                    <div className="d-flex align-items-center justify-content-center">
-                      <Video size={36} className="me-3" />
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        backgroundColor: '#4dd0ff'
+                      }}
+                    >
+                      <Video className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
                       <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
-                    <div className="position-absolute top-50 end-0 translate-middle-y me-4">
+                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-light btn-lg shadow"
+                          className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
                           disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
                           style={{ 
-                            borderRadius: '12px', 
-                            fontWeight: '600',
-                            transition: 'all 0.3s ease'
+                            borderRadius: '8px', 
+                            fontWeight: '600', 
+                            marginTop: '5px', 
+                            marginBottom: '5px',
+                            opacity: '1',
+                            transition: 'opacity 0.15s ease-in-out',
+                            backgroundColor: '#28a745',
+                            borderColor: '#28a745'
                           }}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                          onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
-                          <Play size={20} className="me-2" />
+                          <Play size={24} className="me-2" />
                           Start Generation
                           {concurrency > 1 && (
-                            <span className="ms-2 badge bg-primary">
-                              {concurrency}
+                            <span className="ms-2 badge bg-light text-dark">
+                              {concurrency} videos
                             </span>
                           )}
                         </button>
@@ -2042,65 +2081,90 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
                         >
-                          <AlertCircle size={20} className="me-2" />
+                          <AlertCircle size={24} className="me-2" />
                           Stop Generation
                         </button>
                       )}
                     </div>
                   </div>
                   
-                  <div className="card-body p-4">
-                    {/* Status Cards */}
-                    <div className="row g-3 mb-4">
-                      <div className="col-md-3">
-                        <div className="card border-0 bg-light text-center h-100">
-                          <div className="card-body">
-                            <div className="h4 mb-1 text-primary">{runwayApiKey ? '✓' : '✗'}</div>
-                            <small className="text-muted">API Connected</small>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="card border-0 bg-light text-center h-100">
-                          <div className="card-body">
-                            <div className="h4 mb-1 text-success">{results.length}</div>
-                            <small className="text-muted">Videos Generated</small>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="card border-0 bg-light text-center h-100">
-                          <div className="card-body">
-                            <div className="h4 mb-1 text-info">{Object.keys(generationProgress).length}</div>
-                            <small className="text-muted">Currently Running</small>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="card border-0 bg-light text-center h-100">
-                          <div className="card-body">
-                            <div className={`h4 mb-1 ${isRunning ? 'text-warning' : 'text-secondary'}`}>
-                              {isRunning ? '●' : '○'}
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
+                      <div className="card-body p-3">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
+                          <div className="d-flex gap-5 align-items-center text-center">
+                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                            {organizationInfo && (
+                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo.creditBalance}</span>
+                            )}
+                            <div className="d-flex align-items-center">
+                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
+                                {isRunning && (
+                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
+                                )}
+                              </div>
+                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                             </div>
-                            <small className="text-muted">Status</small>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Generation Progress */}
+                    {/* Always show generation status */}
+                    <div className="mb-3" style={{ minHeight: '100px' }}>
+                      <div className="text-center py-3">
+                        <h4 className="fw-bold text-dark mb-2">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              // During generation
+                              return `Generation ${generationCounter || 1} in progress`;
+                            } else if (completedGeneration) {
+                              // After completion
+                              return `Generation ${completedGeneration} completed`;
+                            } else {
+                              // Initial state
+                              return `Generation ${generationCounter || 1}`;
+                            }
+                          })()}
+                        </h4>
+                        <p className="text-muted mb-0">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              // During generation - show active job count
+                              const count = Object.keys(generationProgress).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generating`;
+                            } else if (completedGeneration) {
+                              // After completion - show completed count from that generation
+                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                            } else {
+                              // Initial state
+                              return '0 videos generated';
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+
                     {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-4">
-                        <h5 className="fw-bold mb-3">Generation Progress</h5>
+                      <div className="mb-3">
                         <div className="row g-3">
                           {Object.entries(generationProgress).map(([jobId, progress]) => (
                             <div key={jobId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '10px' }}>
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
                                 <div className="card-body p-3">
                                   <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small text-truncate" style={{ maxWidth: '120px' }}>
+                                    <span className="fw-bold small" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
                                       {jobId}
                                     </span>
                                     <span className={`badge ${
@@ -2112,7 +2176,7 @@ export default function RunwayAutomationApp() {
                                       {progress.status}
                                     </span>
                                   </div>
-                                  <div className="progress mb-2" style={{ height: '6px' }}>
+                                  <div className="progress mb-2" style={{ height: '8px' }}>
                                     <div 
                                       className={`progress-bar ${
                                         progress.status === 'completed' ? 'bg-success' :
@@ -2134,17 +2198,23 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    {/* Upscaling Progress */}
+                    {/* Show upscaling progress if any */}
                     {Object.keys(upscalingProgress).length > 0 && (
-                      <div className="mb-4">
-                        <h5 className="fw-bold mb-3">4K Upscaling Progress</h5>
+                      <div className="mb-3">
+                        <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
                         <div className="row g-3">
                           {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
                             <div key={upscaleId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '10px' }}>
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
                                 <div className="card-body p-3">
                                   <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small">4K Upscale</span>
+                                    <span className="fw-bold small" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
+                                      4K Upscale
+                                    </span>
                                     <span className={`badge ${
                                       progress.status === 'completed' ? 'bg-success' :
                                       progress.status === 'failed' ? 'bg-danger' :
@@ -2153,7 +2223,7 @@ export default function RunwayAutomationApp() {
                                       {progress.status}
                                     </span>
                                   </div>
-                                  <div className="progress mb-2" style={{ height: '6px' }}>
+                                  <div className="progress mb-2" style={{ height: '8px' }}>
                                     <div 
                                       className={`progress-bar ${
                                         progress.status === 'completed' ? 'bg-success' :
@@ -2174,43 +2244,42 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    {/* Generation Log */}
-                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px', backgroundColor: '#1a1a1a' }}>
-                      <div className="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
-                        <h5 className="text-white fw-bold mb-0">Generation Log</h5>
+                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px' }}>
+                      <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
                             className="btn btn-sm btn-outline-danger" 
                             onClick={clearLogs}
                             title="Clear all logs"
-                            style={{ borderRadius: '8px' }}
+                            style={{ borderRadius: '6px' }}
                           >
-                            <Trash2 size={14} />
+                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
                           </button>
                           <button 
                             className="btn btn-sm btn-outline-light" 
                             onClick={copyLogsToClipboard}
-                            title="Copy logs to clipboard"
-                            style={{ borderRadius: '8px' }}
+                            title="Copy all logs to clipboard"
+                            style={{ borderRadius: '6px' }}
                           >
-                            📋
+                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
                           </button>
                         </div>
                       </div>
-                      <div className="card-body p-3" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'Monaco, Consolas, monospace', fontSize: '13px' }}>
+                      <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto', fontFamily: 'monospace' }}>
                         {logs.map((log, index) => (
-                          <div key={index} className={`mb-1 ${
+                          <div key={index} className={`small mb-1 ${
                             log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-success' :
+                            log.type === 'success' ? 'text-light' :
                             log.type === 'warning' ? 'text-warning' :
                             'text-light'
                           }`}>
-                            <span className="text-primary">[{log.timestamp}]</span> {log.message}
+                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
                           </div>
                         ))}
                         {logs.length === 0 && (
-                          <div className="text-muted">
-                            No logs yet. Generation activity will appear here...
+                          <div className="text-muted small">
+                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
                           </div>
                         )}
                       </div>
@@ -2224,21 +2293,41 @@ export default function RunwayAutomationApp() {
           {activeTab === 'results' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '15px', overflow: 'hidden' }}>
-                  <div className="card-header bg-primary text-white py-4 position-relative">
-                    <div className="d-flex align-items-center justify-content-center">
-                      <Download size={36} className="me-3" />
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        backgroundColor: '#4dd0ff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Download className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
                       <h3 className="mb-0 fw-bold">Generated Videos</h3>
                     </div>
                     
                     {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div className="position-absolute top-50 end-0 translate-middle-y me-4">
+                      <div style={{ marginRight: '30px' }}>
                         <div className="d-flex gap-2">
                           <button
                             className="btn btn-light shadow"
                             onClick={downloadAllVideos}
                             disabled={isDownloadingAll}
-                            style={{ borderRadius: '10px', fontWeight: '600' }}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
                           >
                             {isDownloadingAll ? (
                               <>
@@ -2249,7 +2338,7 @@ export default function RunwayAutomationApp() {
                               </>
                             ) : (
                               <>
-                                <Download size={16} className="me-2" />
+                                <Download size={20} className="me-2" />
                                 All Videos
                                 <span className="ms-2 badge bg-primary">
                                   {results.filter(result => result.video_url && result.status === 'completed').length}
@@ -2263,9 +2352,9 @@ export default function RunwayAutomationApp() {
                               className="btn shadow"
                               onClick={downloadUpscaledVideos}
                               disabled={isDownloadingAll}
-                              style={{ borderRadius: '10px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                              style={{ borderRadius: '8px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
                             >
-                              <Download size={14} className="me-2" />
+                              <Download size={16} className="me-2" />
                               4K Videos
                               <span className="ms-2 badge bg-light text-dark">
                                 {results.filter(result => result.upscaled_video_url && result.status === 'completed').length}
@@ -2278,10 +2367,10 @@ export default function RunwayAutomationApp() {
                               className="btn btn-danger shadow"
                               onClick={downloadFavoritedVideos}
                               disabled={isDownloadingAll}
-                              style={{ borderRadius: '10px', fontWeight: '600' }}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
                             >
-                              <Download size={14} className="me-2" />
-                              Favorites
+                              <Download size={16} className="me-2" />
+                              Favorited Videos
                               <span className="ms-2 badge bg-light text-dark">
                                 {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
                               </span>
@@ -2291,28 +2380,29 @@ export default function RunwayAutomationApp() {
                           <button
                             className="btn btn-outline-light shadow"
                             onClick={clearGeneratedVideos}
-                            title="Clear all generated videos from browser storage"
-                            style={{ borderRadius: '10px', fontWeight: '600' }}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} className="me-2" />
+                            Clear Videos
                           </button>
                         </div>
                       </div>
                     )}
                   </div>
                   
-                  <div className="card-body p-4">
+                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
                     {results.length === 0 ? (
-                      <div className="text-center py-5">
+                      <div className="text-center py-4">
                         <div className="mb-4">
                           <Film size={80} className="text-muted" />
                         </div>
                         <h4 className="text-muted mb-3">No videos generated yet</h4>
-                        <p className="text-muted mb-4">Start generating AI videos to see your results here</p>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
                         <button
-                          className="btn btn-primary btn-lg shadow-lg"
+                          className="btn btn-primary btn-lg shadow"
                           onClick={() => setActiveTab('setup')}
-                          style={{ borderRadius: '12px', fontWeight: '600' }}
+                          style={{ borderRadius: '6px' }}
                         >
                           Get Started
                         </button>
@@ -2338,19 +2428,17 @@ export default function RunwayAutomationApp() {
                             const bData = parseJobId(b.jobId);
                             
                             if (aData.generation !== bData.generation) {
-                              return bData.generation - aData.generation;
+                              return aData.generation - bData.generation;
                             }
                             return aData.video - bData.video;
                           })
                           .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow-lg h-100" style={{ borderRadius: '15px', overflow: 'hidden', transition: 'transform 0.3s ease' }}
-                                 onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
-                                 onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
-                              <div className="position-relative" style={{ aspectRatio: '16/9' }}>
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
-                                    src={result.upscaled_video_url || result.video_url}
+                                    src={result.video_url}
                                     poster={result.thumbnail_url}
                                     controls
                                     className="w-100 h-100"
@@ -2362,110 +2450,124 @@ export default function RunwayAutomationApp() {
                                 ) : result.thumbnail_url ? (
                                   <img 
                                     src={result.thumbnail_url}
-                                    alt={`Thumbnail: ${result.prompt}`}
+                                    alt={'Thumbnail for: ' + result.prompt}
                                     className="w-100 h-100"
                                     style={{ objectFit: 'cover' }}
                                   />
                                 ) : (
                                   <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
                                     <div className="text-center">
-                                      <div className="spinner-border text-primary mb-3" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                      </div>
+                                      <Film size={48} className="text-primary mb-3" />
                                       <div className="fw-bold text-muted">Processing...</div>
                                     </div>
                                   </div>
                                 )}
                                 
-                                {/* 4K badge for upscaled videos - positioned at top */}
+                                {result.status !== 'completed' && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-warning shadow-sm">
+                                      ⏳ Processing
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* 4K badge for upscaled videos */}
                                 {result.upscaled_video_url && (
                                   <div className="position-absolute top-0 start-0 m-2">
-                                    <span className="badge bg-success shadow-sm px-2 py-1" style={{ fontSize: '11px', fontWeight: '600' }}>
+                                    <span className="badge bg-success shadow-sm">
                                       4K ✨
                                     </span>
                                   </div>
                                 )}
                                 
-                                {/* Favorite button overlay - positioned at top right */}
+                                {/* Add favorite button overlay */}
                                 <button
                                   className="btn btn-sm position-absolute top-0 end-0 m-2"
                                   onClick={() => toggleFavorite(result.id)}
                                   style={{
                                     border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.95)',
+                                    background: 'rgba(255, 255, 255, 0.9)',
                                     borderRadius: '50%',
-                                    width: '32px',
-                                    height: '32px',
+                                    width: '36px',
+                                    height: '36px',
                                     color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
                                     transition: 'all 0.2s ease',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                    justifyContent: 'center'
                                   }}
                                   title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
                                 >
                                   <Heart 
-                                    size={14} 
+                                    size={16} 
                                     fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
                                   />
                                 </button>
                               </div>
                               
                               <div className="card-body p-3">
-                                <div className="fw-bold text-primary mb-2 small">{result.jobId}</div>
-                                <p className="card-text mb-3 small text-muted line-clamp-2" title={result.prompt}>
+                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
-                                </p>
+                                </h6>
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
                                     <div className="btn-group" role="group">
                                       <button
-                                        className="btn btn-primary btn-sm"
+                                        className="btn btn-primary btn-sm flex-fill"
                                         onClick={() => downloadVideo(
                                           result.upscaled_video_url || result.video_url, 
                                           generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
                                         )}
                                         title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                        style={{ borderRadius: '8px 0 0 8px' }}
                                       >
-                                        <Download size={14} className="me-1" />
-                                        {result.upscaled_video_url ? '4K' : 'Download'}
+                                        <Download size={16} className="me-1" />
+                                        Download{result.upscaled_video_url ? ' 4K' : ''}
                                       </button>
                                       <button
-                                        className="btn btn-outline-primary btn-sm"
+                                        className="btn btn-outline-primary btn-sm flex-fill"
                                         onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank')}
-                                        title="View in new tab"
-                                        style={{ borderRadius: '0' }}
+                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
                                       >
-                                        <ExternalLink size={14} />
+                                        <ExternalLink size={16} className="me-1" />
+                                        View
                                       </button>
                                       {!result.upscaled_video_url && result.video_url && (
                                         <button
                                           className="btn btn-sm"
                                           onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
                                           disabled={upscalingProgress[`upscale_${result.id}`]}
-                                          title="Upscale to 4K (~$0.10-20)"
-                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white', borderRadius: '0 8px 8px 0' }}
+                                          title="Upscale to 4K resolution"
+                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
                                         >
-                                          <ArrowUp size={14} />
+                                          <ArrowUp size={16} className="me-1" />
+                                          4K
                                         </button>
                                       )}
                                     </div>
                                   )}
                                   
-                                  {/* Show original download if 4K exists */}
+                                  {/* Show both original and 4K download options if 4K exists */}
                                   {result.upscaled_video_url && result.video_url && (
-                                    <button
-                                      className="btn btn-outline-secondary btn-sm"
-                                      onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
-                                      title="Download original quality"
-                                      style={{ borderRadius: '8px' }}
-                                    >
-                                      <Download size={12} className="me-1" />
-                                      Original
-                                    </button>
+                                    <div className="btn-group mt-2" role="group">
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                        title="Download original resolution"
+                                      >
+                                        <Download size={14} className="me-1" />
+                                        Original
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        onClick={() => window.open(result.video_url, '_blank')}
+                                        title="View original resolution"
+                                      >
+                                        <ExternalLink size={14} className="me-1" />
+                                        View Original
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -2480,27 +2582,19 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          {/* Footer */}
-          <div className="text-center mt-5 pt-4">
-            <p className="text-white-50 mb-2">
-              Built with ❤️ by{' '}
-              <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white text-decoration-none fw-bold">
-                Pete Bunke
+          <div className="text-center mt-3">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px' }}>
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
+                  alt="Powered by Runway" 
+                  style={{ height: '24px', opacity: '0.7' }}
+                />
               </a>
-              {' '}• Powered by{' '}
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer" className="text-white text-decoration-none fw-bold">
-                RunwayML
-              </a>
-            </p>
-            <p className="text-white-50 small">
-              <a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20Feedback" className="text-white-50 text-decoration-none">
-                Send feedback
-              </a>
-              {' '}•{' '}
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-white-50 text-decoration-none">
-                View source
-              </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
