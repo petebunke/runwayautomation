@@ -808,7 +808,7 @@ export default function RunwayAutomationApp() {
     
     if (missingInputs.length > 0) {
       showModalDialog({
-        title: "Missing Required Inputs",
+        title: "Missing Required Field",
         type: "warning",
         confirmText: "Go to Setup",
         cancelText: "Cancel",
@@ -818,24 +818,21 @@ export default function RunwayAutomationApp() {
         content: (
           <div>
             <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-              <div className="d-flex align-items-center mb-2">
-                <AlertCircle size={20} className="text-warning me-2" />
-                <strong>Required Fields Missing</strong>
-              </div>
+       
               <p className="mb-0">Please fill in all required fields before generating videos.</p>
             </div>
             
             <div className="mb-3">
-              <strong>Missing inputs:</strong>
+              <strong>Missing fields:</strong>
               <ul className="mt-2 mb-0">
                 {missingInputs.map((input, index) => (
-                  <li key={index} className="text-danger">• {input}</li>
+                  <li key={index} className="text-danger">{input}</li>
                 ))}
               </ul>
             </div>
             
             <p className="mb-0 text-muted">
-              Would you like to go to the Setup tab to complete these fields?
+              Go to the Setup tab to complete the missing fields.
             </p>
           </div>
         )
