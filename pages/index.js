@@ -34,6 +34,7 @@ export default function RunwayAutomationApp() {
   const [isCheckingCredits, setIsCheckingCredits] = useState(false);
   const [editingVideoTitle, setEditingVideoTitle] = useState(null);
   const [customTitles, setCustomTitles] = useState({});
+  const [tempEditTitle, setTempEditTitle] = useState('');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -441,13 +442,34 @@ export default function RunwayAutomationApp() {
   };
 
   const handleEditTitle = (videoId, currentTitle) => {
-    const customTitle = window.prompt('Enter a custom title for this video:', customTitles[videoId] || currentTitle);
-    if (customTitle !== null && customTitle.trim()) {
+    setEditingVideoTitle(videoId);
+    setTempEditTitle(customTitles[videoId] || currentTitle);
+  };
+
+  const saveEditTitle = (videoId) => {
+    if (tempEditTitle.trim()) {
       setCustomTitles(prev => ({
         ...prev,
-        [videoId]: customTitle.trim()
+        [videoId]: tempEditTitle.trim()
       }));
-      addLog(`✏️ Video title updated to: "${customTitle.trim()}"`, 'info');
+      addLog(`✏️ Video title updated to: "${tempEditTitle.trim()}"`, 'info');
+    }
+    setEditingVideoTitle(null);
+    setTempEditTitle('');
+  };
+
+  const cancelEditTitle = () => {
+    setEditingVideoTitle(null);
+    setTempEditTitle('');
+  };
+
+  const handleEditKeyPress = (e, videoId) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEditTitle(videoId);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditTitle();
     }
   };
 
@@ -621,6 +643,9 @@ export default function RunwayAutomationApp() {
   ];
 
   const addLog = (message, type = 'info') => {
+    // Sanitize log message to prevent XSS
+    const sanitizedMessage = String(message).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    
     const timestamp = new Date().toLocaleTimeString('en-US', {
       timeZone: 'America/Los_Angeles',
       hour12: true,
@@ -628,7 +653,7 @@ export default function RunwayAutomationApp() {
       minute: '2-digit',
       second: '2-digit'
     });
-    setLogs(prev => [...prev, { message, type, timestamp }]);
+    setLogs(prev => [...prev, { message: sanitizedMessage, type, timestamp }]);
   };
 
   const copyLogsToClipboard = () => {
@@ -1021,7 +1046,7 @@ export default function RunwayAutomationApp() {
           throw new Error(failureReason);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 8000));
+        await new Promise(resolve => setTimeout(resolve, 6000)); // Reduced from 8000ms to 6000ms
         pollCount++;
         
       } catch (error) {
@@ -1207,7 +1232,7 @@ export default function RunwayAutomationApp() {
     for (let i = 0; i < totalJobs; i++) {
       const jobIndex = i;
       const currentVideoNumber = i + 1;
-      const staggerDelay = i * 1000;
+      const staggerDelay = i * 500; // Reduced from 1000ms to 500ms for faster starts
       
       const delayedPromise = new Promise(async (resolve) => {
         if (staggerDelay > 0) {
@@ -1226,7 +1251,7 @@ export default function RunwayAutomationApp() {
       allPromises.push(delayedPromise);
     }
 
-    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
+    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 0.5s stagger...', 'info');
 
     try {
       const allResults = await Promise.all(allPromises);
@@ -2609,36 +2634,72 @@ export default function RunwayAutomationApp() {
                               
                               <div className="card-body p-3">
                                 <div className="d-flex justify-content-between align-items-start mb-2">
-                                  <span className="fw-bold text-primary me-2" style={{ 
-                                    lineHeight: '1.2',
-                                    wordBreak: 'break-word',
-                                    maxWidth: '200px',
-                                    flex: '1'
-                                  }}>
-                                    {getVideoDisplayTitle(result)}
-                                  </span>
-                                  
-                                  {/* Edit button positioned at bottom of first line */}
-                                  <button
-                                    className="btn btn-sm btn-outline-secondary p-1"
-                                    onClick={() => handleEditTitle(result.id, result.jobId)}
-                                    title="Edit video title"
-                                    style={{ 
-                                      border: 'none',
-                                      background: 'transparent',
-                                      borderRadius: '4px',
-                                      width: '24px',
-                                      height: '24px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      alignSelf: 'flex-start',
-                                      marginTop: '0px',
-                                      flexShrink: 0
-                                    }}
-                                  >
-                                    <Edit3 size={12} />
-                                  </button>
+                                  {editingVideoTitle === result.id ? (
+                                    <div className="d-flex align-items-center w-100">
+                                      <input
+                                        type="text"
+                                        value={tempEditTitle}
+                                        onChange={(e) => setTempEditTitle(e.target.value)}
+                                        onKeyDown={(e) => handleEditKeyPress(e, result.id)}
+                                        onBlur={() => saveEditTitle(result.id)}
+                                        className="form-control form-control-sm me-2"
+                                        style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
+                                        autoFocus
+                                        maxLength={100}
+                                        aria-label="Edit video title"
+                                      />
+                                      <button
+                                        className="btn btn-success btn-sm me-1"
+                                        onClick={() => saveEditTitle(result.id)}
+                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                        aria-label="Save title"
+                                      >
+                                        ✓
+                                      </button>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={cancelEditTitle}
+                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                        aria-label="Cancel edit"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="fw-bold text-primary me-2" style={{ 
+                                        lineHeight: '1.2',
+                                        wordBreak: 'break-word',
+                                        maxWidth: '200px',
+                                        flex: '1'
+                                      }}>
+                                        {getVideoDisplayTitle(result)}
+                                      </span>
+                                      
+                                      {/* Edit button positioned at bottom of first line */}
+                                      <button
+                                        className="btn btn-sm btn-outline-secondary p-1"
+                                        onClick={() => handleEditTitle(result.id, result.jobId)}
+                                        title="Edit video title"
+                                        style={{ 
+                                          border: 'none',
+                                          background: 'transparent',
+                                          borderRadius: '4px',
+                                          width: '24px',
+                                          height: '24px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          alignSelf: 'flex-start',
+                                          marginTop: '0px',
+                                          flexShrink: 0
+                                        }}
+                                        aria-label="Edit video title"
+                                      >
+                                        <Edit3 size={12} />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                                 <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
@@ -2646,7 +2707,7 @@ export default function RunwayAutomationApp() {
                                 
                                 <div className="d-grid gap-2">
                                   {result.video_url && (
-                                    <div className="btn-group" role="group">
+                                    <div className="btn-group" role="group" aria-label="Video actions">
                                       <button
                                         className="btn btn-primary btn-sm flex-fill"
                                         onClick={() => downloadVideo(
@@ -2654,16 +2715,18 @@ export default function RunwayAutomationApp() {
                                           generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
                                         )}
                                         title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                        aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
                                       >
-                                        <Download size={16} className="me-1" />
+                                        <Download size={16} className="me-1" aria-hidden="true" />
                                         Download{result.upscaled_video_url ? ' 4K' : ''}
                                       </button>
                                       <button
                                         className="btn btn-outline-primary btn-sm flex-fill"
-                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank')}
+                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
                                         title={result.upscaled_video_url ? "View 4K version" : "View video"}
+                                        aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
                                       >
-                                        <ExternalLink size={16} className="me-1" />
+                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
                                         View
                                       </button>
                                       {!result.upscaled_video_url && result.video_url && (
@@ -2673,8 +2736,9 @@ export default function RunwayAutomationApp() {
                                           disabled={upscalingProgress[`upscale_${result.id}`]}
                                           title="Upscale to 4K resolution"
                                           style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                                          aria-label="Upscale video to 4K resolution"
                                         >
-                                          <ArrowUp size={16} className="me-1" />
+                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
                                           4K
                                         </button>
                                       )}
@@ -2683,21 +2747,23 @@ export default function RunwayAutomationApp() {
                                   
                                   {/* Show both original and 4K download options if 4K exists */}
                                   {result.upscaled_video_url && result.video_url && (
-                                    <div className="btn-group mt-1" role="group">
+                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
                                       <button
                                         className="btn btn-outline-secondary btn-sm flex-fill"
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
                                         title="Download original resolution"
+                                        aria-label="Download original resolution video"
                                       >
-                                        <Download size={14} className="me-1" />
+                                        <Download size={14} className="me-1" aria-hidden="true" />
                                         Original
                                       </button>
                                       <button
                                         className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => window.open(result.video_url, '_blank')}
+                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
                                         title="View original resolution"
+                                        aria-label="View original resolution video in new tab"
                                       >
-                                        <ExternalLink size={14} className="me-1" />
+                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
                                         View Original
                                       </button>
                                     </div>
