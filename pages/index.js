@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3 } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -32,6 +32,8 @@ export default function RunwayAutomationApp() {
   const [organizationInfo, setOrganizationInfo] = useState(null);
   const [lastCreditCheck, setLastCreditCheck] = useState(null);
   const [isCheckingCredits, setIsCheckingCredits] = useState(false);
+  const [editingVideoTitle, setEditingVideoTitle] = useState(null);
+  const [customTitles, setCustomTitles] = useState({});
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -203,6 +205,19 @@ export default function RunwayAutomationApp() {
           localStorage.removeItem('runway-automation-logs');
         }
       }
+
+      // Load custom titles
+      const savedCustomTitles = localStorage.getItem('runway-automation-custom-titles');
+      if (savedCustomTitles && savedCustomTitles.trim()) {
+        try {
+          const parsedTitles = JSON.parse(savedCustomTitles);
+          if (typeof parsedTitles === 'object' && parsedTitles !== null) {
+            setCustomTitles(parsedTitles);
+          }
+        } catch (parseError) {
+          localStorage.removeItem('runway-automation-custom-titles');
+        }
+      }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
     }
@@ -342,6 +357,20 @@ export default function RunwayAutomationApp() {
     }
   }, [logs, mounted]);
 
+  // Save custom titles to localStorage
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      if (Object.keys(customTitles).length > 0) {
+        localStorage.setItem('runway-automation-custom-titles', JSON.stringify(customTitles));
+      } else {
+        localStorage.removeItem('runway-automation-custom-titles');
+      }
+    } catch (error) {
+      console.warn('Failed to save custom titles to localStorage:', error);
+    }
+  }, [customTitles, mounted]);
+
   const clearStoredApiKey = () => {
     try {
       localStorage.removeItem('runway-automation-api-key');
@@ -371,10 +400,12 @@ export default function RunwayAutomationApp() {
           localStorage.removeItem('runway-automation-results');
           localStorage.removeItem('runway-automation-generation-counter');
           localStorage.removeItem('runway-automation-favorites');
+          localStorage.removeItem('runway-automation-custom-titles');
           setResults([]);
           setGenerationCounter(0);
           setCompletedGeneration(null);
           setFavoriteVideos(new Set());
+          setCustomTitles({});
           addLog(`🗑️ Cleared ${videoCount} generated video${videoCount !== 1 ? 's' : ''} from browser storage`, 'info');
         } catch (error) {
           console.warn('Failed to clear videos:', error);
@@ -407,6 +438,21 @@ export default function RunwayAutomationApp() {
       }
       return newFavorites;
     });
+  };
+
+  const handleEditTitle = (videoId, currentTitle) => {
+    const customTitle = prompt('Enter a custom title for this video:', customTitles[videoId] || currentTitle);
+    if (customTitle !== null && customTitle.trim()) {
+      setCustomTitles(prev => ({
+        ...prev,
+        [videoId]: customTitle.trim()
+      }));
+      addLog(`✏️ Video title updated to: "${customTitle.trim()}"`, 'info');
+    }
+  };
+
+  const getVideoDisplayTitle = (result) => {
+    return customTitles[result.id] || result.jobId || `Video ${result.id}`;
   };
 
   const isValidImageUrl = (url) => {
@@ -746,6 +792,60 @@ export default function RunwayAutomationApp() {
     }
   };
 
+  // Check for missing inputs and show modal if needed
+  const checkRequiredInputs = () => {
+    const missingInputs = [];
+    
+    if (!runwayApiKey.trim()) {
+      missingInputs.push('API Key');
+    }
+    if (!prompt.trim()) {
+      missingInputs.push('Video Prompt');
+    }
+    if (!imageUrl.trim()) {
+      missingInputs.push('Image');
+    }
+    
+    if (missingInputs.length > 0) {
+      showModalDialog({
+        title: "Missing Required Inputs",
+        type: "warning",
+        confirmText: "Go to Setup",
+        cancelText: "Cancel",
+        onConfirm: () => {
+          setActiveTab('setup');
+        },
+        content: (
+          <div>
+            <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
+              <div className="d-flex align-items-center mb-2">
+                <AlertCircle size={20} className="text-warning me-2" />
+                <strong>Required Fields Missing</strong>
+              </div>
+              <p className="mb-0">Please fill in all required fields before generating videos.</p>
+            </div>
+            
+            <div className="mb-3">
+              <strong>Missing inputs:</strong>
+              <ul className="mt-2 mb-0">
+                {missingInputs.map((input, index) => (
+                  <li key={index} className="text-danger">• {input}</li>
+                ))}
+              </ul>
+            </div>
+            
+            <p className="mb-0 text-muted">
+              Would you like to go to the Setup tab to complete these fields?
+            </p>
+          </div>
+        )
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
   // Add the generateVideo function
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
@@ -933,25 +1033,15 @@ export default function RunwayAutomationApp() {
   };
 
   const generateVideos = async () => {
+    // Check for required inputs first
+    if (!checkRequiredInputs()) {
+      return;
+    }
+
     const requestedJobs = parseInt(concurrency) || 1;
     const MAX_CONCURRENT_JOBS = 20;
     const totalJobs = Math.min(Math.max(requestedJobs, 1), MAX_CONCURRENT_JOBS);
     
-    if (!prompt.trim()) {
-      addLog('❌ No prompt provided!', 'error');
-      return;
-    }
-
-    if (!imageUrl.trim()) {
-      addLog('❌ Image URL is required! The current Runway API only supports image-to-video generation. Please add an image URL.', 'error');
-      return;
-    }
-
-    if (!runwayApiKey.trim()) {
-      addLog('❌ Runway API key is required!', 'error');
-      return;
-    }
-
     if (requestedJobs > MAX_CONCURRENT_JOBS) {
       addLog(`❌ SAFETY BLOCK: Cannot generate more than ${MAX_CONCURRENT_JOBS} videos at once to prevent excessive costs!`, 'error');
       return;
@@ -1250,6 +1340,7 @@ export default function RunwayAutomationApp() {
           const jsonData = {
             id: result.id,
             jobId: result.jobId,
+            customTitle: customTitles[result.id] || null,
             prompt: result.prompt,
             video_url: result.video_url,
             upscaled_video_url: result.upscaled_video_url || null,
@@ -1300,6 +1391,15 @@ export default function RunwayAutomationApp() {
   };
 
   const generateFilename = (jobId, taskId, isUpscaled = false) => {
+    // Check if there's a custom title for this video
+    const customTitle = customTitles[taskId];
+    if (customTitle) {
+      // Clean the custom title for filename
+      const cleanTitle = customTitle.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '-');
+      return `${cleanTitle}${isUpscaled ? '_4K' : ''}.mp4`;
+    }
+    
+    // Fall back to original logic
     if (!jobId) return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
     
     const genMatch = jobId.match(/Generation (\d+)/);
@@ -1671,39 +1771,39 @@ export default function RunwayAutomationApp() {
                             <li>Credits are separate from web app credits</li>
                           </ul>
                           
-                          {/* Credit info integrated into warning card */}
-                          {organizationInfo && (
-                            <div className="mt-3 pt-3 border-top border-warning">
-                              <div className="row g-2">
-                                <div className="col-6">
-                                  <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">{organizationInfo.creditBalance}</div>
-                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credits</small>
+                          {/* Credit info always visible */}
+                          <div className="mt-3 pt-3 border-top border-warning">
+                            <div className="row g-2">
+                              <div className="col-6">
+                                <div className="text-center p-2 border rounded bg-white">
+                                  <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">
+                                    {organizationInfo ? organizationInfo.creditBalance : 0}
                                   </div>
+                                  <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credits</small>
                                 </div>
-                                <div className="col-6">
-                                  <div className="text-center p-2 border rounded bg-white">
-                                    <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-primary">
-                                      {(() => {
-                                        if (!organizationInfo.tierInfo || !organizationInfo.usageInfo) return 'N/A';
-                                        
-                                        const isGen4 = model === 'gen4_turbo';
-                                        const dailyUsed = isGen4 ? 
-                                          (organizationInfo.usageInfo.dailyGen4Turbo || 0) :
-                                          (organizationInfo.usageInfo.dailyGen3aTurbo || 0);
-                                        const dailyMax = isGen4 ?
-                                          (organizationInfo.tierInfo.maxDailyGen4Turbo || 0) :
-                                          (organizationInfo.tierInfo.maxDailyGen3aTurbo || 0);
-                                        
-                                        return `${dailyUsed}/${dailyMax}`;
-                                      })()}
-                                    </div>
-                                    <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Generations Per Day</small>
+                              </div>
+                              <div className="col-6">
+                                <div className="text-center p-2 border rounded bg-white">
+                                  <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-primary">
+                                    {(() => {
+                                      if (!organizationInfo?.tierInfo || !organizationInfo?.usageInfo) return '0/0';
+                                      
+                                      const isGen4 = model === 'gen4_turbo';
+                                      const dailyUsed = isGen4 ? 
+                                        (organizationInfo.usageInfo.dailyGen4Turbo || 0) :
+                                        (organizationInfo.usageInfo.dailyGen3aTurbo || 0);
+                                      const dailyMax = isGen4 ?
+                                        (organizationInfo.tierInfo.maxDailyGen4Turbo || 0) :
+                                        (organizationInfo.tierInfo.maxDailyGen3aTurbo || 0);
+                                      
+                                      return `${dailyUsed}/${dailyMax}`;
+                                    })()}
                                   </div>
+                                  <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Generations Per Day</small>
                                 </div>
                               </div>
                             </div>
-                          )}
+                          </div>
                         </div>
 
                         <div className="row g-3">
@@ -1937,7 +2037,7 @@ export default function RunwayAutomationApp() {
                                 onError={handleImageError}
                               />
                               <button
-                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                className="btn btn-danger btn-sm position-absolute"
                                 onClick={() => {
                                   setImageUrl('');
                                   setImageError(false);
@@ -1946,6 +2046,8 @@ export default function RunwayAutomationApp() {
                                   }
                                 }}
                                 style={{ 
+                                  border: 'none',
+                                  background: 'rgba(220, 53, 69, 0.9)',
                                   borderRadius: '50%', 
                                   width: '32px', 
                                   height: '32px', 
@@ -1955,7 +2057,9 @@ export default function RunwayAutomationApp() {
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   lineHeight: '1',
-                                  marginTop: '8px'
+                                  top: '8px',
+                                  right: '8px',
+                                  color: 'white'
                                 }}
                               >
                                 ×
@@ -1990,7 +2094,7 @@ export default function RunwayAutomationApp() {
                                   }
                                 }, 100);
                               }}
-                              disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20 || isRunning}
+                              disabled={isRunning}
                               style={{ 
                                 borderRadius: '8px', 
                                 fontWeight: '600',
@@ -2055,7 +2159,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
-                          disabled={!runwayApiKey || !prompt.trim() || !imageUrl.trim() || concurrency < 1 || concurrency > 20}
+                          disabled={isRunning}
                           style={{ 
                             borderRadius: '8px', 
                             fontWeight: '600', 
@@ -2100,9 +2204,7 @@ export default function RunwayAutomationApp() {
                             <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
                             <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            {organizationInfo && (
-                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo.creditBalance}</span>
-                            )}
+                            <span className="text-dark"><strong>Credits:</strong> {organizationInfo ? organizationInfo.creditBalance : 0}</span>
                             <div className="d-flex align-items-center">
                               <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
                                 {isRunning && (
@@ -2479,34 +2581,61 @@ export default function RunwayAutomationApp() {
                                     </span>
                                   </div>
                                 )}
-                                
-                                {/* Add favorite button overlay */}
-                                <button
-                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
-                                  onClick={() => toggleFavorite(result.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.9)',
-                                    borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
-                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                >
-                                  <Heart 
-                                    size={16} 
-                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                  />
-                                </button>
                               </div>
                               
                               <div className="card-body p-3">
-                                <div className="fw-bold text-primary mb-2">{result.jobId}</div>
+                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                  <div className="d-flex align-items-center">
+                                    <span className="fw-bold text-primary me-2" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '120px'
+                                    }}>
+                                      {getVideoDisplayTitle(result)}
+                                    </span>
+                                    <button
+                                      className="btn btn-sm btn-outline-secondary p-1"
+                                      onClick={() => handleEditTitle(result.id, result.jobId)}
+                                      title="Edit video title"
+                                      style={{ 
+                                        border: 'none',
+                                        background: 'transparent',
+                                        borderRadius: '4px',
+                                        width: '24px',
+                                        height: '24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                    >
+                                      <Edit3 size={12} />
+                                    </button>
+                                  </div>
+                                  
+                                  {/* Add favorite button overlay */}
+                                  <button
+                                    className="btn btn-sm"
+                                    onClick={() => toggleFavorite(result.id)}
+                                    style={{
+                                      border: 'none',
+                                      background: 'rgba(255, 255, 255, 0.9)',
+                                      borderRadius: '50%',
+                                      width: '28px',
+                                      height: '28px',
+                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                      transition: 'all 0.2s ease',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Heart 
+                                      size={12} 
+                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                    />
+                                  </button>
+                                </div>
                                 <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
@@ -2601,3 +2730,4 @@ export default function RunwayAutomationApp() {
     </>
   );
 }
+        
