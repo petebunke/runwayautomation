@@ -91,7 +91,7 @@ export default function RunwayAutomationApp() {
               <button
                 className="btn btn-secondary"
                 onClick={onClose}
-                style={{ borderRadius: '8px', fontWeight: '600', width: '60%' }}
+                style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
               >
                 {cancelText}
               </button>
@@ -102,7 +102,7 @@ export default function RunwayAutomationApp() {
                     onConfirm();
                     onClose();
                   }}
-                  style={{ borderRadius: '8px', fontWeight: '600', width: '40%' }}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
                 >
                   {confirmText}
                 </button>
@@ -441,7 +441,7 @@ export default function RunwayAutomationApp() {
   };
 
   const handleEditTitle = (videoId, currentTitle) => {
-    const customTitle = prompt('Enter a custom title for this video:', customTitles[videoId] || currentTitle);
+    const customTitle = window.prompt('Enter a custom title for this video:', customTitles[videoId] || currentTitle);
     if (customTitle !== null && customTitle.trim()) {
       setCustomTitles(prev => ({
         ...prev,
@@ -2612,7 +2612,7 @@ export default function RunwayAutomationApp() {
                                   <span className="fw-bold text-primary me-2" style={{ 
                                     lineHeight: '1.2',
                                     wordBreak: 'break-word',
-                                    maxWidth: '160px',
+                                    maxWidth: '200px',
                                     flex: '1'
                                   }}>
                                     {getVideoDisplayTitle(result)}
@@ -2683,7 +2683,7 @@ export default function RunwayAutomationApp() {
                                   
                                   {/* Show both original and 4K download options if 4K exists */}
                                   {result.upscaled_video_url && result.video_url && (
-                                    <div className="btn-group mt-2" role="group">
+                                    <div className="btn-group mt-1" role="group">
                                       <button
                                         className="btn btn-outline-secondary btn-sm flex-fill"
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
