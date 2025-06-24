@@ -91,7 +91,7 @@ export default function RunwayAutomationApp() {
               <button
                 className="btn btn-secondary"
                 onClick={onClose}
-                style={{ borderRadius: '8px', fontWeight: '600', width: '48%' }}
+                style={{ borderRadius: '8px', fontWeight: '600', width: '60%' }}
               >
                 {cancelText}
               </button>
@@ -102,7 +102,7 @@ export default function RunwayAutomationApp() {
                     onConfirm();
                     onClose();
                   }}
-                  style={{ borderRadius: '8px', fontWeight: '600', width: '48%' }}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: '40%' }}
                 >
                   {confirmText}
                 </button>
@@ -808,7 +808,7 @@ export default function RunwayAutomationApp() {
     
     if (missingInputs.length > 0) {
       showModalDialog({
-        title: "Missing Required Field",
+        title: "Missing Required Inputs",
         type: "warning",
         confirmText: "Go to Setup",
         cancelText: "Cancel",
@@ -818,21 +818,24 @@ export default function RunwayAutomationApp() {
         content: (
           <div>
             <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-       
+              <div className="d-flex align-items-center mb-2">
+                <AlertCircle size={20} className="text-warning me-2" />
+                <strong>Required Fields Missing</strong>
+              </div>
               <p className="mb-0">Please fill in all required fields before generating videos.</p>
             </div>
             
             <div className="mb-3">
-              <strong>Missing fields:</strong>
+              <strong>Missing inputs:</strong>
               <ul className="mt-2 mb-0">
                 {missingInputs.map((input, index) => (
-                  <li key={index} className="text-danger">{input}</li>
+                  <li key={index} className="text-danger">• {input}</li>
                 ))}
               </ul>
             </div>
             
             <p className="mb-0 text-muted">
-              Go to the Setup tab to complete the missing fields.
+              Would you like to go to the Setup tab to complete these fields?
             </p>
           </div>
         )
@@ -2054,8 +2057,8 @@ export default function RunwayAutomationApp() {
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   lineHeight: '1',
-                                  top: '8px',
-                                  right: '8px',
+                                  top: '4px',
+                                  right: '4px',
                                   color: 'white'
                                 }}
                               >
@@ -2578,59 +2581,63 @@ export default function RunwayAutomationApp() {
                                     </span>
                                   </div>
                                 )}
+                                
+                                {/* Favorite button in upper-right corner */}
+                                <button
+                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                  onClick={() => toggleFavorite(result.id)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Heart 
+                                    size={16} 
+                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                  />
+                                </button>
                               </div>
                               
                               <div className="card-body p-3">
                                 <div className="d-flex justify-content-between align-items-start mb-2">
-                                  <div className="d-flex align-items-center">
-                                    <span className="fw-bold text-primary me-2" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '120px'
-                                    }}>
-                                      {getVideoDisplayTitle(result)}
-                                    </span>
-                                    <button
-                                      className="btn btn-sm btn-outline-secondary p-1"
-                                      onClick={() => handleEditTitle(result.id, result.jobId)}
-                                      title="Edit video title"
-                                      style={{ 
-                                        border: 'none',
-                                        background: 'transparent',
-                                        borderRadius: '4px',
-                                        width: '24px',
-                                        height: '24px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                    >
-                                      <Edit3 size={12} />
-                                    </button>
-                                  </div>
+                                  <span className="fw-bold text-primary me-2" style={{ 
+                                    lineHeight: '1.2',
+                                    wordBreak: 'break-word',
+                                    maxWidth: '160px',
+                                    flex: '1'
+                                  }}>
+                                    {getVideoDisplayTitle(result)}
+                                  </span>
                                   
-                                  {/* Add favorite button overlay */}
+                                  {/* Edit button positioned at bottom of first line */}
                                   <button
-                                    className="btn btn-sm"
-                                    onClick={() => toggleFavorite(result.id)}
-                                    style={{
+                                    className="btn btn-sm btn-outline-secondary p-1"
+                                    onClick={() => handleEditTitle(result.id, result.jobId)}
+                                    title="Edit video title"
+                                    style={{ 
                                       border: 'none',
-                                      background: 'rgba(255, 255, 255, 0.9)',
-                                      borderRadius: '50%',
-                                      width: '28px',
-                                      height: '28px',
-                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                      transition: 'all 0.2s ease',
+                                      background: 'transparent',
+                                      borderRadius: '4px',
+                                      width: '24px',
+                                      height: '24px',
                                       display: 'flex',
                                       alignItems: 'center',
-                                      justifyContent: 'center'
+                                      justifyContent: 'center',
+                                      alignSelf: 'flex-start',
+                                      marginTop: '0px',
+                                      flexShrink: 0
                                     }}
-                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
                                   >
-                                    <Heart 
-                                      size={12} 
-                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                    />
+                                    <Edit3 size={12} />
                                   </button>
                                 </div>
                                 <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
