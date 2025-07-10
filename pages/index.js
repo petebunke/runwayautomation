@@ -1731,9 +1731,8 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'setup' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
-                  <div className="row g-4">
+              <div className="col-lg-10" style={{ maxWidth: '1200px' }}>
+                <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
@@ -2096,8 +2095,8 @@ export default function RunwayAutomationApp() {
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   lineHeight: '1',
-                                  top: '-2px',
-                                  right: '-2px',
+                                  top: '8px',
+                                  right: '8px',
                                   color: 'white'
                                 }}
                               >
@@ -2158,9 +2157,6 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
                   </div>
-                  </div>
-                  </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -2168,9 +2164,8 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
-                  <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2437,9 +2432,8 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'results' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10">
-                <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
-                  <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
