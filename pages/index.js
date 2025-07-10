@@ -1732,67 +1732,38 @@ export default function RunwayAutomationApp() {
           {activeTab === 'setup' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-center" 
-                    style={{ 
-                      height: '80px',
-                      borderRadius: '8px 8px 0 0'
-                    }}
-                  >
-                    <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '80px', 
-                        height: '80px',
-                        left: '20px',
-                        top: '40px',
-                        zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        backgroundColor: '#4dd0ff'
-                      }}
-                    >
-                      <Settings className="text-white" size={32} />
-                    </div>
-                    
-                    <div className="text-white text-center">
-                      <h3 className="mb-0 fw-bold">Setup Configuration</h3>
-                    </div>
-                  </div>
-                  
-                  <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-                    <div className="row g-4">
+                <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
+                  <div className="row g-4">
                   <div className="col-lg-6">
-                    <div className="border rounded shadow-sm" style={{ borderRadius: '8px', overflow: 'hidden', backgroundColor: 'white' }}>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="bg-secondary position-relative d-flex align-items-center justify-content-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
+                          height: '80px',
                           borderRadius: '8px 8px 0 0'
                         }}
                       >
                         <div 
                           className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
-                            width: '60px', 
-                            height: '60px',
-                            left: '15px',
-                            top: '30px',
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#6c757d'
+                            backgroundColor: '#4dd0ff'
                           }}
                         >
-                          <Key className="text-white" size={24} />
+                          <Key className="text-white" size={32} />
                         </div>
                         
                         <div className="text-white text-center">
-                          <h5 className="mb-0 fw-bold">API Setup</h5>
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
                         </div>
                       </div>
                       
-                      <div className="p-4" style={{ paddingTop: '20px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1965,35 +1936,35 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="border rounded shadow-sm" style={{ borderRadius: '8px', overflow: 'hidden', backgroundColor: 'white' }}>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
-                        className="bg-secondary position-relative d-flex align-items-center justify-content-center" 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '60px',
+                          height: '80px',
                           borderRadius: '8px 8px 0 0'
                         }}
                       >
                         <div 
                           className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                           style={{ 
-                            width: '60px', 
-                            height: '60px',
-                            left: '15px',
-                            top: '30px',
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
                             zIndex: 10,
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            backgroundColor: '#6c757d'
+                            backgroundColor: '#4dd0ff'
                           }}
                         >
-                          <Film className="text-white" size={24} />
+                          <Film className="text-white" size={32} />
                         </div>
                         
                         <div className="text-white text-center">
-                          <h5 className="mb-0 fw-bold">Video Setup</h5>
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
                         </div>
                       </div>
                       
-                      <div className="p-4" style={{ paddingTop: '20px !important' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
@@ -2187,7 +2158,8 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
                   </div>
-                    </div>
+                  </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -2197,7 +2169,8 @@ export default function RunwayAutomationApp() {
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
+                  <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2465,7 +2438,8 @@ export default function RunwayAutomationApp() {
           {activeTab === 'results' && (
             <div className="row justify-content-center">
               <div className="col-lg-10">
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
+                  <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
