@@ -2095,8 +2095,8 @@ export default function RunwayAutomationApp() {
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   lineHeight: '1',
-                                  top: '8px',
-                                  right: '8px',
+                                  top: '12px',
+                                  right: '12px',
                                   color: 'white'
                                 }}
                               >
