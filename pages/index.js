@@ -893,8 +893,8 @@ export default function RunwayAutomationApp() {
     return true;
   };
 
-  // Add the generateVideo function with retry logic
-  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum, retryCount = 0, originalAspectRatio = null) => {
+  // Add the generateVideo function
+  const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
     
     try {
@@ -922,17 +922,10 @@ export default function RunwayAutomationApp() {
         throw new Error(errorMsg);
       }
 
-      // Use original aspect ratio if this is a retry, otherwise use current selection
-      const currentAspectRatio = originalAspectRatio || aspectRatio;
+      addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
       
-      if (retryCount > 0) {
-        addLog(`🔄 Retrying job ${jobIndex + 1} (attempt ${retryCount + 1})...`, 'warning');
-      } else {
-        addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
-      }
-      
-      const selectedRatio = convertAspectRatio(currentAspectRatio, model);
-      addLog(`Using model: ${model}, aspect ratio: ${currentAspectRatio} → ${selectedRatio}`, 'info');
+      const selectedRatio = convertAspectRatio(aspectRatio, model);
+      addLog(`Using model: ${model}, aspect ratio: ${aspectRatio} → ${selectedRatio}`, 'info');
       
       setGenerationProgress(prev => ({
         ...prev,
@@ -986,7 +979,7 @@ export default function RunwayAutomationApp() {
       
       addLog('✓ Generation started for job ' + (jobIndex + 1) + ' (Task ID: ' + task.id + ') - Initial Status: ' + (task.status || 'unknown'), 'success');
       
-      return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex, retryCount, originalAspectRatio || currentAspectRatio);
+      return await pollTaskCompletion(task.id, jobId, promptText, imageUrlText, jobIndex);
       
     } catch (error) {
       addLog('✗ Job ' + (jobIndex + 1) + ' failed: ' + error.message, 'error');
@@ -998,8 +991,8 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // Add the pollTaskCompletion function with retry logic
-  const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex, retryCount = 0, originalAspectRatio = null) => {
+  // Add the pollTaskCompletion function
+  const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
     const maxPolls = Math.floor(3600 / 12);
     let pollCount = 0;
 
@@ -1071,71 +1064,7 @@ export default function RunwayAutomationApp() {
         if (task.status === 'FAILED') {
           const failureReason = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
           
-          // Handle INTERNAL.BAD_OUTPUT errors with automatic retry
-          if (failureReason.includes('INTERNAL.BAD_OUTPUT') && retryCount < 2) {
-            addLog('⚠️ Job ' + (jobIndex + 1) + ' failed with ' + failureReason + '. Attempting automatic retry...', 'warning');
-            
-            setGenerationProgress(prev => {
-              const updated = { ...prev };
-              delete updated[jobId];
-              return updated;
-            });
-            
-            // Retry with different aspect ratios
-            const retryAspectRatios = ['16:9', '1:1', '9:16', '4:3'];
-            const currentAspectRatio = originalAspectRatio || aspectRatio;
-            let nextAspectRatio = retryAspectRatios.find(ratio => ratio !== currentAspectRatio);
-            
-            if (retryCount === 1) {
-              // On second retry, try a different model
-              addLog('🔄 Switching to Gen-3 Alpha Turbo for retry...', 'info');
-              const originalModel = model;
-              setModel('gen3a_turbo');
-              
-              // Wait a bit before retrying
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
-              try {
-                const result = await generateVideo(promptText, imageUrlText, jobIndex, generationCounter, jobIndex + 1, retryCount + 1, originalAspectRatio);
-                // Restore original model after successful retry
-                setModel(originalModel);
-                return result;
-              } catch (retryError) {
-                // Restore original model even if retry fails
-                setModel(originalModel);
-                throw retryError;
-              }
-            } else {
-              // First retry - try different aspect ratio
-              addLog(`🔄 Retrying with ${nextAspectRatio} aspect ratio...`, 'info');
-              
-              // Wait a bit before retrying
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
-              // Temporarily set different aspect ratio for retry
-              const originalAspectRatioValue = aspectRatio;
-              setAspectRatio(nextAspectRatio);
-              
-              try {
-                const result = await generateVideo(promptText, imageUrlText, jobIndex, generationCounter, jobIndex + 1, retryCount + 1, originalAspectRatio || originalAspectRatioValue);
-                // Restore original aspect ratio after successful retry
-                setAspectRatio(originalAspectRatioValue);
-                return result;
-              } catch (retryError) {
-                // Restore original aspect ratio even if retry fails
-                setAspectRatio(originalAspectRatioValue);
-                throw retryError;
-              }
-            }
-          }
-          
-          // For SAFETY failures or after retry attempts exhausted
-          if (failureReason.includes('SAFETY')) {
-            addLog('🚫 Job ' + (jobIndex + 1) + ' rejected for content moderation: ' + failureReason, 'error');
-            addLog('ℹ️ Credits are not refunded for safety failures. Please adjust your prompt or image.', 'warning');
-          } else {
-            addLog('✗ Job ' + (jobIndex + 1) + ' failed on Runway: ' + failureReason, 'error');
-          }
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on Runway: ' + failureReason, 'error');
           
           setGenerationProgress(prev => {
             const updated = { ...prev };
@@ -2250,7 +2179,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
@@ -2520,7 +2449,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
