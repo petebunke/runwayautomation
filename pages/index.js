@@ -1746,8 +1746,8 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
-              <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 320px)' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="row g-4 h-100">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
@@ -2179,7 +2179,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 320px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
@@ -2449,7 +2449,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 320px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
