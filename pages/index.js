@@ -1688,8 +1688,8 @@ export default function RunwayAutomationApp() {
         {modalConfig.content}
       </Modal>
 
-      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif', padding: '0', margin: '0' }}>
-        <div className="container-fluid py-4" style={{ paddingLeft: '0', paddingRight: '0', background: 'black', maxWidth: '100%' }}>
+      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
+        <div className="py-4" style={{ background: 'black' }}>
           <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
             <div className="d-flex align-items-center">
               <button 
@@ -1746,8 +1746,8 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div className="row justify-content-center mx-0" style={{ background: 'black' }}>
-              <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
+            <div style={{ background: 'black', padding: '0 15px' }}>
+              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', minHeight: '500px' }}>
