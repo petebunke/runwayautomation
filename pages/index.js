@@ -1746,7 +1746,7 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 200px)' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
                 <div className="row g-4 h-100">
                   <div className="col-lg-6">
@@ -2136,43 +2136,39 @@ export default function RunwayAutomationApp() {
                         
                         {/* Generate Video Button */}
                         <div className="mt-auto pt-3">
-                          <div className="d-flex justify-content-center">
-                            <button
-                              className="btn btn-success btn-lg shadow"
-                              onClick={() => {
-                                setActiveTab('generation');
-                                // Scroll to top when switching tabs
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                // Small delay to ensure tab switch completes before starting generation
-                                setTimeout(() => {
-                                  if (!isRunning) {
-                                    generateVideos();
-                                  }
-                                }, 100);
-                              }}
-                              disabled={isRunning}
-                              style={{ 
-                                borderRadius: '8px', 
-                                fontWeight: '600',
-                                backgroundColor: '#28a745',
-                                borderColor: '#28a745',
-                                opacity: '1',
-                                transition: 'opacity 0.15s ease-in-out',
-                                paddingLeft: '2rem',
-                                paddingRight: '2rem'
-                              }}
-                              onMouseEnter={(e) => e.target.style.opacity = '0.85'}
-                              onMouseLeave={(e) => e.target.style.opacity = '1'}
-                            >
-                              <Play size={20} className="me-2" />
-                              Generate Video{concurrency > 1 ? 's' : ''}
-                              {concurrency > 1 && (
-                                <span className="ms-2 badge bg-light text-dark">
-                                  {concurrency}
-                                </span>
-                              )}
-                            </button>
-                          </div>
+                          <button
+                            className="btn btn-success btn-lg w-100 shadow"
+                            onClick={() => {
+                              setActiveTab('generation');
+                              // Scroll to top when switching tabs
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              // Small delay to ensure tab switch completes before starting generation
+                              setTimeout(() => {
+                                if (!isRunning) {
+                                  generateVideos();
+                                }
+                              }, 100);
+                            }}
+                            disabled={isRunning}
+                            style={{ 
+                              borderRadius: '8px', 
+                              fontWeight: '600',
+                              backgroundColor: '#28a745',
+                              borderColor: '#28a745',
+                              opacity: '1',
+                              transition: 'opacity 0.15s ease-in-out'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          >
+                            <Play size={20} className="me-2" />
+                            Generate Video{concurrency > 1 ? 's' : ''}
+                            {concurrency > 1 && (
+                              <span className="ms-2 badge bg-light text-dark">
+                                {concurrency}
+                              </span>
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2183,7 +2179,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 200px)' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
@@ -2453,7 +2449,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 200px)' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
@@ -2552,7 +2548,7 @@ export default function RunwayAutomationApp() {
                     )}
                   </div>
                   
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important', minHeight: '520px' }}>
+                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
                       <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
@@ -2561,13 +2557,15 @@ export default function RunwayAutomationApp() {
                         </div>
                         <h4 className="text-muted mb-3">No videos generated yet</h4>
                         <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
-                        <button
-                          className="btn btn-primary btn-lg shadow"
-                          onClick={() => setActiveTab('setup')}
-                          style={{ borderRadius: '6px' }}
-                        >
-                          Get Started
-                        </button>
+                        <div className="d-flex justify-content-center">
+                          <button
+                            className="btn btn-primary btn-lg shadow"
+                            onClick={() => setActiveTab('setup')}
+                            style={{ borderRadius: '6px', paddingLeft: '2rem', paddingRight: '2rem' }}
+                          >
+                            Get Started
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="row g-4 flex-grow-1">
@@ -2816,7 +2814,7 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center mt-4">
+          <div className="text-center mt-4 mb-4">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
