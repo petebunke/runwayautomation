@@ -1075,7 +1075,7 @@ export default function RunwayAutomationApp() {
           throw new Error(failureReason);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 6000)); // Reduced from 8000ms to 6000ms
+        await new Promise(resolve => setTimeout(resolve, 4000)); // Reduced from 6000ms to 4000ms
         pollCount++;
         
       } catch (error) {
@@ -1689,7 +1689,7 @@ export default function RunwayAutomationApp() {
       </Modal>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4" style={{ paddingRight: '0' }}>
+        <div className="container-fluid py-4" style={{ paddingRight: '0', background: 'black' }}>
           <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
             <div className="d-flex align-items-center">
               <button 
@@ -1746,7 +1746,7 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div className="row justify-content-center mx-0">
+            <div className="row justify-content-center mx-0" style={{ background: 'black' }}>
               <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
                 <div className="row g-4">
                   <div className="col-lg-6">
@@ -2179,7 +2179,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center">
+            <div className="row justify-content-center" style={{ background: 'black' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
@@ -2447,7 +2447,7 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center">
+            <div className="row justify-content-center" style={{ background: 'black' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
