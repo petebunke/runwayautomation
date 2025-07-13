@@ -1731,9 +1731,9 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'setup' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10" style={{ maxWidth: '1200px' }}>
-                <div className="d-flex gap-4">
-                  <div className="flex-fill">
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+                <div className="row g-4">
+                  <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
@@ -1934,7 +1934,7 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
 
-                  <div className="flex-fill">
+                  <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
@@ -2164,7 +2164,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'generation' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '0', paddingRight: '0' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
@@ -2432,7 +2432,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'results' && (
             <div className="row justify-content-center">
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '0', paddingRight: '0' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
