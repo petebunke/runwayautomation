@@ -720,25 +720,16 @@ export default function RunwayAutomationApp() {
 
   const API_BASE = '/api';
 
-  const convertAspectRatio = (ratio, currentModel) => {
-    if (currentModel === 'gen4_turbo') {
-      const gen4RatioMap = {
-        '16:9': '1280:720',
-        '9:16': '720:1280',
-        '1:1': '960:960',
-        '4:3': '1104:832',
-        '3:4': '832:1104',
-        '21:9': '1584:672'
-      };
-      return gen4RatioMap[ratio] || '1280:720';
-    } else {
-      // Gen-3 Alpha Turbo resolutions
-      const gen3RatioMap = {
-        '16:9': '1280:768',
-        '9:16': '768:1280'
-      };
-      return gen3RatioMap[ratio] || '1280:768';
-    }
+  const convertAspectRatio = (ratio) => {
+    const ratioMap = {
+      '16:9': '1280:720',
+      '9:16': '720:1280', 
+      '1:1': '1024:1024',
+      '4:3': '1024:768',
+      '3:4': '768:1024',
+      '21:9': '1344:576'
+    };
+    return ratioMap[ratio] || '1280:720';
   };
 
   // Enhanced credit estimation function
@@ -924,9 +915,6 @@ export default function RunwayAutomationApp() {
 
       addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
       
-      const selectedRatio = convertAspectRatio(aspectRatio, model);
-      addLog(`Using model: ${model}, aspect ratio: ${aspectRatio} → ${selectedRatio}`, 'info');
-      
       setGenerationProgress(prev => ({
         ...prev,
         [jobId]: { status: 'starting', progress: 0 }
@@ -936,7 +924,7 @@ export default function RunwayAutomationApp() {
         promptText: promptText,
         promptImage: imageUrlText.trim(),
         model: model,
-        ratio: selectedRatio,
+        ratio: convertAspectRatio(aspectRatio),
         duration: duration,
         seed: Math.floor(Math.random() * 1000000)
       };
@@ -962,11 +950,7 @@ export default function RunwayAutomationApp() {
           throw new Error(`API Error ${response.status}: Could not parse error response`);
         }
         
-        let errorMessage = errorData.error || errorData.message || 'API Error: ' + response.status;
-        // Add more detailed error information
-        if (errorData.details) {
-          errorMessage += ' - ' + JSON.stringify(errorData.details);
-        }
+        let errorMessage = errorData.error || 'API Error: ' + response.status;
         throw new Error(errorMessage);
       }
 
