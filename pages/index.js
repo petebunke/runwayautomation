@@ -1673,7 +1673,7 @@ export default function RunwayAutomationApp() {
       </Modal>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4">
+        <div className="container-fluid py-4" style={{ paddingRight: '0' }}>
           <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
             <div className="d-flex align-items-center">
               <button 
@@ -1730,10 +1730,10 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div className="row justify-content-center" style={{ marginLeft: '0', marginRight: '0' }}>
-              <div className="col-lg-10 px-0" style={{ maxWidth: '1200px' }}>
-                <div className="row g-4 mx-0">
-                  <div className="col-lg-6 ps-0 pe-2">
+            <div className="row justify-content-center mx-0">
+              <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
+                <div className="row g-4">
+                  <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
@@ -1934,7 +1934,7 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
 
-                  <div className="col-lg-6 ps-2 pe-0">
+                  <div className="col-lg-6">
                     <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
