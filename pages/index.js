@@ -1688,8 +1688,8 @@ export default function RunwayAutomationApp() {
         {modalConfig.content}
       </Modal>
 
-      <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4" style={{ paddingRight: '0' }}>
+      <div className="vh-100 overflow-auto" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
+        <div className="container-fluid py-4 h-100" style={{ paddingRight: '0', paddingLeft: '0' }}>
           <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
             <div className="d-flex align-items-center">
               <button 
@@ -1708,7 +1708,7 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
 
-          <div className="row justify-content-center mb-4">
+          <div className="row justify-content-center mb-4" style={{ margin: '0' }}>
             <div className="col-auto">
               <ul className="nav nav-pills nav-fill shadow-lg" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px' }}>
                 <li className="nav-item">
@@ -1746,11 +1746,11 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div className="row justify-content-center mx-0">
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 200px)' }}>
               <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
-                <div className="row g-4">
+                <div className="row g-4 h-100">
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', minHeight: '600px' }}>
+                    <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
@@ -1778,7 +1778,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       
-                      <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important', minHeight: '520px' }}>
+                      <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1951,7 +1951,7 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', minHeight: '600px' }}>
+                    <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
@@ -1979,7 +1979,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       
-                      <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important', minHeight: '520px' }}>
+                      <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
@@ -2135,40 +2135,44 @@ export default function RunwayAutomationApp() {
                         </div>
                         
                         {/* Generate Video Button */}
-                        <div className="mt-auto">
-                          <button
-                            className="btn btn-success btn-lg w-100 shadow"
-                            onClick={() => {
-                              setActiveTab('generation');
-                              // Scroll to top when switching tabs
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                              // Small delay to ensure tab switch completes before starting generation
-                              setTimeout(() => {
-                                if (!isRunning) {
-                                  generateVideos();
-                                }
-                              }, 100);
-                            }}
-                            disabled={isRunning}
-                            style={{ 
-                              borderRadius: '8px', 
-                              fontWeight: '600',
-                              backgroundColor: '#28a745',
-                              borderColor: '#28a745',
-                              opacity: '1',
-                              transition: 'opacity 0.15s ease-in-out'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.85'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
-                          >
-                            <Play size={20} className="me-2" />
-                            Generate Video{concurrency > 1 ? 's' : ''}
-                            {concurrency > 1 && (
-                              <span className="ms-2 badge bg-light text-dark">
-                                {concurrency}
-                              </span>
-                            )}
-                          </button>
+                        <div className="mt-auto pt-3">
+                          <div className="d-flex justify-content-center">
+                            <button
+                              className="btn btn-success btn-lg shadow"
+                              onClick={() => {
+                                setActiveTab('generation');
+                                // Scroll to top when switching tabs
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                // Small delay to ensure tab switch completes before starting generation
+                                setTimeout(() => {
+                                  if (!isRunning) {
+                                    generateVideos();
+                                  }
+                                }, 100);
+                              }}
+                              disabled={isRunning}
+                              style={{ 
+                                borderRadius: '8px', 
+                                fontWeight: '600',
+                                backgroundColor: '#28a745',
+                                borderColor: '#28a745',
+                                opacity: '1',
+                                transition: 'opacity 0.15s ease-in-out',
+                                paddingLeft: '2rem',
+                                paddingRight: '2rem'
+                              }}
+                              onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                              onMouseLeave={(e) => e.target.style.opacity = '1'}
+                            >
+                              <Play size={20} className="me-2" />
+                              Generate Video{concurrency > 1 ? 's' : ''}
+                              {concurrency > 1 && (
+                                <span className="ms-2 badge bg-light text-dark">
+                                  {concurrency}
+                                </span>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2179,9 +2183,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center">
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 200px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', minHeight: '600px' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2248,7 +2252,7 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
                   
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important', minHeight: '520px' }}>
+                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
                       <div className="card-body p-3">
@@ -2449,9 +2453,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center">
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 200px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', minHeight: '600px' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
