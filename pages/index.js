@@ -1261,7 +1261,7 @@ export default function RunwayAutomationApp() {
     for (let i = 0; i < totalJobs; i++) {
       const jobIndex = i;
       const currentVideoNumber = i + 1;
-      const staggerDelay = i * 500; // Reduced from 1000ms to 500ms for faster starts
+      const staggerDelay = i * 250; // Reduced from 500ms to 250ms for faster starts
       
       const delayedPromise = new Promise(async (resolve) => {
         if (staggerDelay > 0) {
@@ -1280,7 +1280,7 @@ export default function RunwayAutomationApp() {
       allPromises.push(delayedPromise);
     }
 
-    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 0.5s stagger...', 'info');
+    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 0.25s stagger...', 'info');
 
     try {
       const allResults = await Promise.all(allPromises);
