@@ -1075,7 +1075,7 @@ export default function RunwayAutomationApp() {
           throw new Error(failureReason);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 8000)); // 8 second polling interval
+        await new Promise(resolve => setTimeout(resolve, 6000)); // Reduced from 8000ms to 6000ms
         pollCount++;
         
       } catch (error) {
@@ -1261,7 +1261,7 @@ export default function RunwayAutomationApp() {
     for (let i = 0; i < totalJobs; i++) {
       const jobIndex = i;
       const currentVideoNumber = i + 1;
-      const staggerDelay = i * 1000; // 1 second stagger between jobs
+      const staggerDelay = i * 500; // Reduced from 1000ms to 500ms for faster starts
       
       const delayedPromise = new Promise(async (resolve) => {
         if (staggerDelay > 0) {
@@ -1280,7 +1280,7 @@ export default function RunwayAutomationApp() {
       allPromises.push(delayedPromise);
     }
 
-    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 1s stagger...', 'info');
+    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 0.5s stagger...', 'info');
 
     try {
       const allResults = await Promise.all(allPromises);
@@ -1689,7 +1689,7 @@ export default function RunwayAutomationApp() {
       </Modal>
 
       <div className="min-vh-100" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="py-4" style={{ background: 'black' }}>
+        <div className="container-fluid py-4" style={{ paddingRight: '0' }}>
           <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
             <div className="d-flex align-items-center">
               <button 
@@ -1746,11 +1746,11 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div style={{ background: 'black', padding: '0 15px' }}>
-              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="row justify-content-center mx-0">
+              <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
                 <div className="row g-4">
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', minHeight: '500px' }}>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
@@ -1778,7 +1778,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       
-                      <div className="card-body p-4" style={{ paddingTop: '30px !important', minHeight: '400px' }}>
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1951,7 +1951,7 @@ export default function RunwayAutomationApp() {
                   </div>
 
                   <div className="col-lg-6">
-                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', minHeight: '500px' }}>
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
@@ -2179,8 +2179,8 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center mx-0" style={{ background: 'black' }}>
-              <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
+            <div className="row justify-content-center">
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
@@ -2447,8 +2447,8 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center mx-0" style={{ background: 'black' }}>
-              <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
+            <div className="row justify-content-center">
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
