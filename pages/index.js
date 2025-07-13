@@ -924,6 +924,9 @@ export default function RunwayAutomationApp() {
 
       addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
       
+      const selectedRatio = convertAspectRatio(aspectRatio, model);
+      addLog(`Using model: ${model}, aspect ratio: ${aspectRatio} → ${selectedRatio}`, 'info');
+      
       setGenerationProgress(prev => ({
         ...prev,
         [jobId]: { status: 'starting', progress: 0 }
@@ -933,7 +936,7 @@ export default function RunwayAutomationApp() {
         promptText: promptText,
         promptImage: imageUrlText.trim(),
         model: model,
-        ratio: convertAspectRatio(aspectRatio),
+        ratio: selectedRatio,
         duration: duration,
         seed: Math.floor(Math.random() * 1000000)
       };
