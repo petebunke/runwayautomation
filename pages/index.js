@@ -1688,8 +1688,8 @@ export default function RunwayAutomationApp() {
         {modalConfig.content}
       </Modal>
 
-      <div className="min-vh-100 overflow-auto" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
-        <div className="container-fluid py-4" style={{ paddingRight: '0', paddingLeft: '0' }}>
+      <div className="vh-100 overflow-auto" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
+        <div className="container-fluid py-4 h-100" style={{ paddingRight: '0', paddingLeft: '0' }}>
           <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
             <div className="d-flex align-items-center">
               <button 
@@ -1746,9 +1746,9 @@ export default function RunwayAutomationApp() {
           </div>
 
           {activeTab === 'setup' && (
-            <div className="row justify-content-center pb-5" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10 px-3" style={{ maxWidth: '1200px' }}>
-                <div className="row g-4">
+                <div className="row g-4 h-100">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
@@ -2179,9 +2179,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center pb-5" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2449,9 +2449,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center pb-5" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2814,11 +2814,11 @@ export default function RunwayAutomationApp() {
             </div>
           )}
 
-          <div className="text-center pb-4" style={{ marginTop: '3rem' }}>
+          <div className="text-center mt-4 mb-4">
             <div className="d-flex align-items-center justify-content-center text-white-50">
               <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2 mb-4" style={{ marginLeft: '5px' }}>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px' }}>
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
                 <img 
                   src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
