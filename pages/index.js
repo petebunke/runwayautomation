@@ -722,14 +722,14 @@ export default function RunwayAutomationApp() {
 
   const convertAspectRatio = (ratio) => {
     const ratioMap = {
-      '16:9': '1280:720',
-      '9:16': '720:1280', 
+      '16:9': '1280:768',
+      '9:16': '768:1280', 
       '1:1': '1024:1024',
       '4:3': '1024:768',
       '3:4': '768:1024',
-      '21:9': '1344:576'
+      '21:9': '1536:640'
     };
-    return ratioMap[ratio] || '1280:720';
+    return ratioMap[ratio] || '1280:768';
   };
 
   // Enhanced credit estimation function
