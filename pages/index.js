@@ -36,18 +36,10 @@ export default function RunwayAutomationApp() {
   const [customTitles, setCustomTitles] = useState({});
   const [tempEditTitle, setTempEditTitle] = useState('');
   const fileInputRef = useRef(null);
-  const logsEndRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Auto-scroll logs to bottom when new logs are added
-  useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs]);
 
   const Modal = ({ show, onClose, title, children, onConfirm, confirmText = "Confirm", cancelText = "Cancel", type = "confirm" }) => {
     if (!show) return null;
@@ -2187,9 +2179,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2408,7 +2400,7 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    <div className="card bg-dark text-light border-0 shadow flex-grow-1" style={{ borderRadius: '8px', height: '300px', display: 'flex', flexDirection: 'column' }}>
+                    <div className="card bg-dark text-light border-0 shadow flex-grow-1" style={{ borderRadius: '8px' }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
@@ -2430,8 +2422,8 @@ export default function RunwayAutomationApp() {
                           </button>
                         </div>
                       </div>
-                      <div className="card-body d-flex flex-column" style={{ fontFamily: 'monospace', overflow: 'hidden' }}>
-                        <div style={{ overflowY: 'auto', flex: '1' }}>
+                      <div className="card-body d-flex flex-column" style={{ fontFamily: 'monospace', minHeight: '200px' }}>
+                        <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
                           {logs.map((log, index) => (
                             <div key={index} className={`small mb-1 ${
                               log.type === 'error' ? 'text-danger' :
@@ -2442,7 +2434,6 @@ export default function RunwayAutomationApp() {
                               <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
                             </div>
                           ))}
-                          <div ref={logsEndRef} />
                           {logs.length === 0 && (
                             <div className="text-muted small">
                               No logs yet... Logs will appear here during video generation and persist across page refreshes.
@@ -2458,9 +2449,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'results' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2603,7 +2594,7 @@ export default function RunwayAutomationApp() {
                           })
                           .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100 d-flex flex-column" style={{ borderRadius: '8px' }}>
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
                               <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
@@ -2674,7 +2665,7 @@ export default function RunwayAutomationApp() {
                                 </button>
                               </div>
                               
-                              <div className="card-body p-3 d-flex flex-column flex-grow-1">
+                              <div className="card-body p-3">
                                 <div className="d-flex justify-content-between align-items-start mb-2">
                                   {editingVideoTitle === result.id ? (
                                     <div className="d-flex align-items-center w-100">
@@ -2743,11 +2734,11 @@ export default function RunwayAutomationApp() {
                                     </>
                                   )}
                                 </div>
-                                <h6 className="card-title mb-3 flex-grow-1" style={{ fontWeight: '400' }} title={result.prompt}>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
                                 
-                                <div className="d-grid gap-2 mt-auto">
+                                <div className="d-grid gap-2">
                                   {result.video_url && (
                                     <div className="btn-group" role="group" aria-label="Video actions">
                                       <button
