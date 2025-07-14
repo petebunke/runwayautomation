@@ -2847,7 +2847,7 @@ export default function RunwayAutomationApp() {
                   alt="Powered by Runway" 
                   style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
                 />
-              </a>
+              </a>  
             </div>
           </div>
         </div>
