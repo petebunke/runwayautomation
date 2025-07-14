@@ -2219,7 +2219,7 @@ export default function RunwayAutomationApp() {
                     <div style={{ marginRight: '30px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-success btn-lg shadow"
+                          className="btn btn-success shadow"
                           onClick={generateVideos}
                           disabled={isRunning}
                           style={{ 
@@ -2233,7 +2233,7 @@ export default function RunwayAutomationApp() {
                           onMouseEnter={(e) => e.target.style.opacity = '0.85'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
-                          <Play size={24} className="me-2" />
+                          <Play size={20} className="me-2" />
                           Start Generation
                           {concurrency > 1 && (
                             <span className="ms-2 badge bg-light text-dark">
@@ -2243,11 +2243,11 @@ export default function RunwayAutomationApp() {
                         </button>
                       ) : (
                         <button
-                          className="btn btn-danger btn-lg shadow"
+                          className="btn btn-danger shadow"
                           onClick={stopGeneration}
                           style={{ borderRadius: '8px', fontWeight: '600' }}
                         >
-                          <AlertCircle size={24} className="me-2" />
+                          <AlertCircle size={20} className="me-2" />
                           Stop Generation
                         </button>
                       )}
