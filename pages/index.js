@@ -2187,9 +2187,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
