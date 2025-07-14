@@ -36,10 +36,18 @@ export default function RunwayAutomationApp() {
   const [customTitles, setCustomTitles] = useState({});
   const [tempEditTitle, setTempEditTitle] = useState('');
   const fileInputRef = useRef(null);
+  const logContainerRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Auto-scroll logs to bottom when new logs are added
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const Modal = ({ show, onClose, title, children, onConfirm, confirmText = "Confirm", cancelText = "Cancel", type = "confirm" }) => {
     if (!show) return null;
@@ -2179,9 +2187,9 @@ export default function RunwayAutomationApp() {
           )}
 
           {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
+            <div className="row justify-content-center" style={{ margin: '0' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2400,7 +2408,13 @@ export default function RunwayAutomationApp() {
                       </div>
                     )}
 
-                    <div className="card bg-dark text-light border-0 shadow flex-grow-1" style={{ borderRadius: '8px' }}>
+                    <div className="card bg-dark text-light border-0 shadow flex-grow-1" style={{ 
+                      borderRadius: '8px',
+                      minHeight: '250px',
+                      height: '250px',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
                       <div className="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
@@ -2422,24 +2436,31 @@ export default function RunwayAutomationApp() {
                           </button>
                         </div>
                       </div>
-                      <div className="card-body d-flex flex-column" style={{ fontFamily: 'monospace', minHeight: '200px' }}>
-                        <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
-                          {logs.map((log, index) => (
-                            <div key={index} className={`small mb-1 ${
-                              log.type === 'error' ? 'text-danger' :
-                              log.type === 'success' ? 'text-light' :
-                              log.type === 'warning' ? 'text-warning' :
-                              'text-light'
-                            }`}>
-                              <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
-                            </div>
-                          ))}
-                          {logs.length === 0 && (
-                            <div className="text-muted small">
-                              No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                            </div>
-                          )}
-                        </div>
+                      <div 
+                        ref={logContainerRef}
+                        className="card-body" 
+                        style={{ 
+                          fontFamily: 'monospace',
+                          overflowY: 'auto',
+                          flex: '1 1 auto',
+                          minHeight: '0px'
+                        }}
+                      >
+                        {logs.map((log, index) => (
+                          <div key={index} className={`small mb-1 ${
+                            log.type === 'error' ? 'text-danger' :
+                            log.type === 'success' ? 'text-light' :
+                            log.type === 'warning' ? 'text-warning' :
+                            'text-light'
+                          }`}>
+                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                          </div>
+                        ))}
+                        {logs.length === 0 && (
+                          <div className="text-muted small">
+                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
