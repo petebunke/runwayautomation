@@ -116,392 +116,6 @@ export default function RunwayAutomationApp() {
                   {confirmText}
                 </button>
               )}
-
-          {activeTab === 'results' && (
-            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
-                    style={{ 
-                      height: '80px',
-                      borderRadius: '8px 8px 0 0'
-                    }}
-                  >
-                    <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '80px', 
-                        height: '80px',
-                        left: '20px',
-                        top: '40px',
-                        zIndex: 10,
-                        backgroundColor: '#4dd0ff',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Download className="text-white" size={32} />
-                    </div>
-                    
-                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
-                    </div>
-                    
-                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px' }}>
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-light shadow"
-                            onClick={downloadAllVideos}
-                            disabled={isDownloadingAll}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            {isDownloadingAll ? (
-                              <>
-                                <div className="spinner-border spinner-border-sm me-2" role="status">
-                                  <span className="visually-hidden">Loading...</span>
-                                </div>
-                                Downloading...
-                              </>
-                            ) : (
-                              <>
-                                <Download size={20} className="me-2" />
-                                All Videos
-                                <span className="ms-2 badge bg-primary">
-                                  {results.filter(result => result.video_url && result.status === 'completed').length}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                          
-                          {results.filter(result => result.upscaled_video_url && result.status === 'completed').length > 0 && (
-                            <button
-                              className="btn shadow"
-                              onClick={downloadUpscaledVideos}
-                              disabled={isDownloadingAll}
-                              style={{ borderRadius: '8px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
-                            >
-                              <Download size={16} className="me-2" />
-                              4K Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.upscaled_video_url && result.status === 'completed').length}
-                              </span>
-                            </button>
-                          )}
-                          
-                          {favoriteVideos.size > 0 && (
-                            <button
-                              className="btn btn-danger shadow"
-                              onClick={downloadFavoritedVideos}
-                              disabled={isDownloadingAll}
-                              style={{ borderRadius: '8px', fontWeight: '600' }}
-                            >
-                              <Download size={16} className="me-2" />
-                              Favorited Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
-                              </span>
-                            </button>
-                          )}
-                          
-                          <button
-                            className="btn btn-outline-light shadow"
-                            onClick={clearGeneratedVideos}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            <Trash2 size={16} className="me-2" />
-                            Clear Videos
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-                    {results.length === 0 ? (
-                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
-                        <div className="mb-4">
-                          <Film size={80} className="text-muted" />
-                        </div>
-                        <h4 className="text-muted mb-3">No videos generated yet</h4>
-                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
-                        <div className="d-flex justify-content-center">
-                          <button
-                            className="btn btn-primary btn-lg shadow"
-                            onClick={() => setActiveTab('setup')}
-                            style={{ borderRadius: '6px', paddingLeft: '2rem', paddingRight: '2rem' }}
-                          >
-                            Get Started
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="row g-4 flex-grow-1">
-                        {results
-                          .slice()
-                          .sort((a, b) => {
-                            const parseJobId = (jobId) => {
-                              if (!jobId) return { generation: 0, video: 0 };
-                              
-                              const genMatch = jobId.match(/Generation (\d+)/);
-                              const vidMatch = jobId.match(/Video (\d+)/);
-                              
-                              return {
-                                generation: genMatch ? parseInt(genMatch[1]) : 0,
-                                video: vidMatch ? parseInt(vidMatch[1]) : 0
-                              };
-                            };
-                            
-                            const aData = parseJobId(a.jobId);
-                            const bData = parseJobId(b.jobId);
-                            
-                            if (aData.generation !== bData.generation) {
-                              return aData.generation - bData.generation;
-                            }
-                            return aData.video - bData.video;
-                          })
-                          .map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
-                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                {result.video_url ? (
-                                  <video
-                                    src={result.video_url}
-                                    poster={result.thumbnail_url}
-                                    controls
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                    preload="metadata"
-                                  >
-                                    Your browser does not support video playback.
-                                  </video>
-                                ) : result.thumbnail_url ? (
-                                  <img 
-                                    src={result.thumbnail_url}
-                                    alt={'Thumbnail for: ' + result.prompt}
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                  />
-                                ) : (
-                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <div className="text-center">
-                                      <Film size={48} className="text-primary mb-3" />
-                                      <div className="fw-bold text-muted">Processing...</div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {result.status !== 'completed' && (
-                                  <div className="position-absolute top-0 start-0 m-3">
-                                    <span className="badge bg-warning shadow-sm">
-                                      ⏳ Processing
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* 4K badge for upscaled videos */}
-                                {result.upscaled_video_url && (
-                                  <div className="position-absolute top-0 start-0 m-2">
-                                    <span className="badge bg-success shadow-sm">
-                                      4K ✨
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* Favorite button in upper-right corner */}
-                                <button
-                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
-                                  onClick={() => toggleFavorite(result.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.9)',
-                                    borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
-                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                >
-                                  <Heart 
-                                    size={16} 
-                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                  />
-                                </button>
-                              </div>
-                              
-                              <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  {editingVideoTitle === result.id ? (
-                                    <div className="d-flex align-items-center w-100">
-                                      <input
-                                        type="text"
-                                        value={tempEditTitle}
-                                        onChange={(e) => setTempEditTitle(e.target.value)}
-                                        onKeyDown={(e) => handleEditKeyPress(e, result.id)}
-                                        onBlur={() => saveEditTitle(result.id)}
-                                        className="form-control form-control-sm me-2"
-                                        style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
-                                        autoFocus
-                                        maxLength={100}
-                                        aria-label="Edit video title"
-                                      />
-                                      <button
-                                        className="btn btn-success btn-sm me-1"
-                                        onClick={() => saveEditTitle(result.id)}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Save title"
-                                      >
-                                        ✓
-                                      </button>
-                                      <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={cancelEditTitle}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Cancel edit"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <span className="fw-bold text-primary me-2" style={{ 
-                                        lineHeight: '1.2',
-                                        wordBreak: 'break-word',
-                                        maxWidth: '200px',
-                                        flex: '1'
-                                      }}>
-                                        {getVideoDisplayTitle(result)}
-                                      </span>
-                                      
-                                      {/* Edit button positioned at bottom of first line */}
-                                      <button
-                                        className="btn btn-sm btn-outline-secondary p-1"
-                                        onClick={() => handleEditTitle(result.id, result.jobId)}
-                                        title="Edit video title"
-                                        style={{ 
-                                          border: 'none',
-                                          background: 'transparent',
-                                          borderRadius: '4px',
-                                          width: '24px',
-                                          height: '24px',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          alignSelf: 'flex-start',
-                                          marginTop: '0px',
-                                          flexShrink: 0
-                                        }}
-                                        aria-label="Edit video title"
-                                      >
-                                        <Edit3 size={12} />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group" aria-label="Video actions">
-                                      <button
-                                        className="btn btn-primary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(
-                                          result.upscaled_video_url || result.video_url, 
-                                          generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
-                                        )}
-                                        title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                        aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                      >
-                                        <Download size={16} className="me-1" aria-hidden="true" />
-                                        Download{result.upscaled_video_url ? ' 4K' : ''}
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm flex-fill"
-                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
-                                        aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
-                                      >
-                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
-                                        View
-                                      </button>
-                                      {!result.upscaled_video_url && result.video_url && (
-                                        <button
-                                          className="btn btn-sm"
-                                          onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
-                                          disabled={upscalingProgress[`upscale_${result.id}`]}
-                                          title="Upscale to 4K resolution"
-                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
-                                          aria-label="Upscale video to 4K resolution"
-                                        >
-                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
-                                          4K
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Show both original and 4K download options if 4K exists */}
-                                  {result.upscaled_video_url && result.video_url && (
-                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
-                                        title="Download original resolution"
-                                        aria-label="Download original resolution video"
-                                      >
-                                        <Download size={14} className="me-1" aria-hidden="true" />
-                                        Original
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title="View original resolution"
-                                        aria-label="View original resolution video in new tab"
-                                      >
-                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
-                                        View Original
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="text-center mt-4 mb-4">
-            <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
-            </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px'}}>
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <img 
-                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
-                  alt="Powered by Runway" 
-                  style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
-                />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
             </div>
           </div>
         </div>
@@ -2855,3 +2469,389 @@ export default function RunwayAutomationApp() {
               </div>
             </div>
           )}
+
+          {activeTab === 'results' && (
+            <div className="row justify-content-center" style={{ margin: '0', height: 'calc(100vh - 280px)' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+                <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        backgroundColor: '#4dd0ff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Download className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
+                    </div>
+                    
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
+                      <div style={{ marginRight: '30px' }}>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-light shadow"
+                            onClick={downloadAllVideos}
+                            disabled={isDownloadingAll}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            {isDownloadingAll ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={20} className="me-2" />
+                                All Videos
+                                <span className="ms-2 badge bg-primary">
+                                  {results.filter(result => result.video_url && result.status === 'completed').length}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                          
+                          {results.filter(result => result.upscaled_video_url && result.status === 'completed').length > 0 && (
+                            <button
+                              className="btn shadow"
+                              onClick={downloadUpscaledVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                            >
+                              <Download size={16} className="me-2" />
+                              4K Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.upscaled_video_url && result.status === 'completed').length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-danger shadow"
+                              onClick={downloadFavoritedVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Download size={16} className="me-2" />
+                              Favorited Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          <button
+                            className="btn btn-outline-light shadow"
+                            onClick={clearGeneratedVideos}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            <Trash2 size={16} className="me-2" />
+                            Clear Videos
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
+                    {results.length === 0 ? (
+                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
+                        <div className="mb-4">
+                          <Film size={80} className="text-muted" />
+                        </div>
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <div className="d-flex justify-content-center">
+                          <button
+                            className="btn btn-primary btn-lg shadow"
+                            onClick={() => setActiveTab('setup')}
+                            style={{ borderRadius: '6px', paddingLeft: '2rem', paddingRight: '2rem' }}
+                          >
+                            Get Started
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="row g-4 flex-grow-1">
+                        {results
+                          .slice()
+                          .sort((a, b) => {
+                            const parseJobId = (jobId) => {
+                              if (!jobId) return { generation: 0, video: 0 };
+                              
+                              const genMatch = jobId.match(/Generation (\d+)/);
+                              const vidMatch = jobId.match(/Video (\d+)/);
+                              
+                              return {
+                                generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                video: vidMatch ? parseInt(vidMatch[1]) : 0
+                              };
+                            };
+                            
+                            const aData = parseJobId(a.jobId);
+                            const bData = parseJobId(b.jobId);
+                            
+                            if (aData.generation !== bData.generation) {
+                              return aData.generation - bData.generation;
+                            }
+                            return aData.video - bData.video;
+                          })
+                          .map((result, index) => (
+                          <div key={index} className="col-md-6 col-lg-3">
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                {result.video_url ? (
+                                  <video
+                                    src={result.video_url}
+                                    poster={result.thumbnail_url}
+                                    controls
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                    preload="metadata"
+                                  >
+                                    Your browser does not support video playback.
+                                  </video>
+                                ) : result.thumbnail_url ? (
+                                  <img 
+                                    src={result.thumbnail_url}
+                                    alt={'Thumbnail for: ' + result.prompt}
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                    <div className="text-center">
+                                      <Film size={48} className="text-primary mb-3" />
+                                      <div className="fw-bold text-muted">Processing...</div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {result.status !== 'completed' && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-warning shadow-sm">
+                                      ⏳ Processing
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* 4K badge for upscaled videos */}
+                                {result.upscaled_video_url && (
+                                  <div className="position-absolute top-0 start-0 m-2">
+                                    <span className="badge bg-success shadow-sm">
+                                      4K ✨
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Favorite button in upper-right corner */}
+                                <button
+                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                  onClick={() => toggleFavorite(result.id)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Heart 
+                                    size={16} 
+                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                  />
+                                </button>
+                              </div>
+                              
+                              <div className="card-body p-3">
+                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                  {editingVideoTitle === result.id ? (
+                                    <div className="d-flex align-items-center w-100">
+                                      <input
+                                        type="text"
+                                        value={tempEditTitle}
+                                        onChange={(e) => setTempEditTitle(e.target.value)}
+                                        onKeyDown={(e) => handleEditKeyPress(e, result.id)}
+                                        onBlur={() => saveEditTitle(result.id)}
+                                        className="form-control form-control-sm me-2"
+                                        style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
+                                        autoFocus
+                                        maxLength={100}
+                                        aria-label="Edit video title"
+                                      />
+                                      <button
+                                        className="btn btn-success btn-sm me-1"
+                                        onClick={() => saveEditTitle(result.id)}
+                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                        aria-label="Save title"
+                                      >
+                                        ✓
+                                      </button>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={cancelEditTitle}
+                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                        aria-label="Cancel edit"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="fw-bold text-primary me-2" style={{ 
+                                        lineHeight: '1.2',
+                                        wordBreak: 'break-word',
+                                        maxWidth: '200px',
+                                        flex: '1'
+                                      }}>
+                                        {getVideoDisplayTitle(result)}
+                                      </span>
+                                      
+                                      {/* Edit button positioned at bottom of first line */}
+                                      <button
+                                        className="btn btn-sm btn-outline-secondary p-1"
+                                        onClick={() => handleEditTitle(result.id, result.jobId)}
+                                        title="Edit video title"
+                                        style={{ 
+                                          border: 'none',
+                                          background: 'transparent',
+                                          borderRadius: '4px',
+                                          width: '24px',
+                                          height: '24px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          alignSelf: 'flex-start',
+                                          marginTop: '0px',
+                                          flexShrink: 0
+                                        }}
+                                        aria-label="Edit video title"
+                                      >
+                                        <Edit3 size={12} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                  {result.prompt}
+                                </h6>
+                                
+                                <div className="d-grid gap-2">
+                                  {result.video_url && (
+                                    <div className="btn-group" role="group" aria-label="Video actions">
+                                      <button
+                                        className="btn btn-primary btn-sm flex-fill"
+                                        onClick={() => downloadVideo(
+                                          result.upscaled_video_url || result.video_url, 
+                                          generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
+                                        )}
+                                        title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                        aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                      >
+                                        <Download size={16} className="me-1" aria-hidden="true" />
+                                        Download{result.upscaled_video_url ? ' 4K' : ''}
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm flex-fill"
+                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
+                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
+                                        aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
+                                      >
+                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
+                                        View
+                                      </button>
+                                      {!result.upscaled_video_url && result.video_url && (
+                                        <button
+                                          className="btn btn-sm"
+                                          onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
+                                          disabled={upscalingProgress[`upscale_${result.id}`]}
+                                          title="Upscale to 4K resolution"
+                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                                          aria-label="Upscale video to 4K resolution"
+                                        >
+                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
+                                          4K
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show both original and 4K download options if 4K exists */}
+                                  {result.upscaled_video_url && result.video_url && (
+                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                        title="Download original resolution"
+                                        aria-label="Download original resolution video"
+                                      >
+                                        <Download size={14} className="me-1" aria-hidden="true" />
+                                        Original
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
+                                        title="View original resolution"
+                                        aria-label="View original resolution video in new tab"
+                                      >
+                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
+                                        View Original
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mt-4 mb-4">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px'}}>
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
+                  alt="Powered by Runway" 
+                  style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
+                />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
