@@ -2201,7 +2201,7 @@ export default function RunwayAutomationApp() {
                       className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
                       style={{ 
                         width: '80px', 
-                        height: '80px',
+                        height: '84px',
                         left: '20px',
                         top: '40px',
                         zIndex: 10,
