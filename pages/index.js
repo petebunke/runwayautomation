@@ -2216,7 +2216,7 @@ export default function RunwayAutomationApp() {
                       <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
-                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
+                    <div style={{ marginRight: '30px' }}>
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
@@ -2224,9 +2224,7 @@ export default function RunwayAutomationApp() {
                           disabled={isRunning}
                           style={{ 
                             borderRadius: '8px', 
-                            fontWeight: '600', 
-                            marginTop: '5px', 
-                            marginBottom: '5px',
+                            fontWeight: '600',
                             opacity: '1',
                             transition: 'opacity 0.15s ease-in-out',
                             backgroundColor: '#28a745',
@@ -2247,7 +2245,7 @@ export default function RunwayAutomationApp() {
                         <button
                           className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
+                          style={{ borderRadius: '8px', fontWeight: '600' }}
                         >
                           <AlertCircle size={24} className="me-2" />
                           Stop Generation
