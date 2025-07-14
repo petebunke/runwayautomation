@@ -2216,15 +2216,17 @@ export default function RunwayAutomationApp() {
                       <h3 className="mb-0 fw-bold">Video Generation</h3>
                     </div>
                     
-                    <div style={{ marginRight: '30px' }}>
+                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
                       {!isRunning ? (
                         <button
-                          className="btn btn-success shadow"
+                          className="btn btn-success btn-lg shadow"
                           onClick={generateVideos}
                           disabled={isRunning}
                           style={{ 
                             borderRadius: '8px', 
-                            fontWeight: '600',
+                            fontWeight: '600', 
+                            marginTop: '5px', 
+                            marginBottom: '5px',
                             opacity: '1',
                             transition: 'opacity 0.15s ease-in-out',
                             backgroundColor: '#28a745',
@@ -2233,7 +2235,7 @@ export default function RunwayAutomationApp() {
                           onMouseEnter={(e) => e.target.style.opacity = '0.85'}
                           onMouseLeave={(e) => e.target.style.opacity = '1'}
                         >
-                          <Play size={20} className="me-2" />
+                          <Play size={24} className="me-2" />
                           Start Generation
                           {concurrency > 1 && (
                             <span className="ms-2 badge bg-light text-dark">
@@ -2243,11 +2245,11 @@ export default function RunwayAutomationApp() {
                         </button>
                       ) : (
                         <button
-                          className="btn btn-danger shadow"
+                          className="btn btn-danger btn-lg shadow"
                           onClick={stopGeneration}
-                          style={{ borderRadius: '8px', fontWeight: '600' }}
+                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
                         >
-                          <AlertCircle size={20} className="me-2" />
+                          <AlertCircle size={24} className="me-2" />
                           Stop Generation
                         </button>
                       )}
