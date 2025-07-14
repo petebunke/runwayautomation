@@ -1762,7 +1762,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '80px',
+                          height: '120px',
                           borderRadius: '8px 8px 0 0'
                         }}
                       >
@@ -1963,7 +1963,7 @@ export default function RunwayAutomationApp() {
                       <div 
                         className="bg-primary position-relative d-flex align-items-center justify-content-center" 
                         style={{ 
-                          height: '80px',
+                          height: '120px',
                           borderRadius: '8px 8px 0 0'
                         }}
                       >
@@ -2193,7 +2193,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '80px',
+                      height: '120px',
                       borderRadius: '8px 8px 0 0'
                     }}
                   >
@@ -2477,7 +2477,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '80px',
+                      height: '120px',
                       borderRadius: '8px 8px 0 0'
                     }}
                   >
@@ -2590,7 +2590,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     ) : (
-                      <div className="row g-4 flex-grow-1">
+                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
                         {results
                           .slice()
                           .sort((a, b) => {
