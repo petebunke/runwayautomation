@@ -2193,7 +2193,7 @@ export default function RunwayAutomationApp() {
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
-                      height: '84px',
+                      height: '88px',
                       borderRadius: '8px 8px 0 0'
                     }}
                   >
