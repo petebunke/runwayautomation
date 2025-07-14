@@ -496,9 +496,6 @@ export default function RunwayAutomationApp() {
   const isValidImageUrl = (url) => {
     try {
       if (url.startsWith('data:image/')) {
-        if (url.length > 1.5 * 1024 * 1024) {
-          addLog('⚠️ Uploaded image is very large and may cause API errors', 'warning');
-        }
         return true;
       }
       
@@ -514,6 +511,74 @@ export default function RunwayAutomationApp() {
       return isValidProtocol && (hasImageExtension || url.length > 20);
     } catch {
       return false;
+    }
+  };
+
+  const validateImageForGeneration = (url) => {
+    try {
+      if (url.startsWith('data:image/')) {
+        if (url.length > 1.5 * 1024 * 1024) {
+          return { 
+            valid: false, 
+            error: 'Image file too large (>1.5MB)', 
+            suggestion: 'Use a smaller image or compress it further' 
+          };
+        }
+        return { valid: true };
+      }
+      
+      const urlObj = new URL(url);
+      const isValidProtocol = urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      
+      if (!isValidProtocol) {
+        return { 
+          valid: false, 
+          error: 'Invalid image URL protocol', 
+          suggestion: 'Use http:// or https:// URLs only' 
+        };
+      }
+      
+      // Check for potential problematic image sources
+      const problematicSources = [
+        'screenshot', 'screen-shot', 'screencap', 'capture',
+        'watermark', 'logo', 'brand', 'copyright',
+        'overlay', 'text-overlay', 'caption'
+      ];
+      
+      const urlLower = url.toLowerCase();
+      const hasProblematicIndicators = problematicSources.some(term => urlLower.includes(term));
+      
+      if (hasProblematicIndicators) {
+        return { 
+          valid: true, // Don't block, just warn
+          warning: 'Image URL suggests it might contain overlaid text or graphics',
+          suggestion: 'If generation fails, try using a cleaner image without text overlays, watermarks, or graphics'
+        };
+      }
+      
+      const hasImageExtension = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(urlObj.pathname) || 
+                               url.includes('imgur.com') || 
+                               url.includes('googleusercontent.com') ||
+                               url.includes('amazonaws.com') ||
+                               url.includes('cloudinary.com') ||
+                               url.includes('unsplash.com') ||
+                               url.includes('pexels.com');
+      
+      if (!hasImageExtension && url.length < 50) {
+        return { 
+          valid: false, 
+          error: 'URL does not appear to be a valid image', 
+          suggestion: 'Use a direct link to an image file (jpg, png, gif, etc.)' 
+        };
+      }
+      
+      return { valid: true };
+    } catch {
+      return { 
+        valid: false, 
+        error: 'Invalid image URL format', 
+        suggestion: 'Please provide a valid image URL' 
+      };
     }
   };
 
@@ -922,6 +987,24 @@ export default function RunwayAutomationApp() {
         throw new Error(errorMsg);
       }
 
+      // Enhanced image validation
+      const imageValidation = validateImageForGeneration(imageUrlText.trim());
+      if (!imageValidation.valid) {
+        const errorMsg = imageValidation.error + '. ' + imageValidation.suggestion;
+        addLog('❌ Job ' + (jobIndex + 1) + ' failed: ' + errorMsg, 'error');
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [jobId]: { status: 'failed', progress: 0, error: errorMsg }
+        }));
+        
+        throw new Error(errorMsg);
+      }
+      
+      if (imageValidation.warning) {
+        addLog('⚠️ ' + imageValidation.warning + '. ' + imageValidation.suggestion, 'warning');
+      }
+
       addLog('Starting generation for job ' + (jobIndex + 1) + ': "' + promptText.substring(0, 50) + '..." with image', 'info');
       
       const selectedRatio = convertAspectRatio(aspectRatio, model);
@@ -1062,9 +1145,66 @@ export default function RunwayAutomationApp() {
         }
 
         if (task.status === 'FAILED') {
-          const failureReason = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
+          const failureCode = task.failure_reason || task.failureCode || task.error || 'Generation failed - no specific reason provided';
           
-          addLog('✗ Job ' + (jobIndex + 1) + ' failed on Runway: ' + failureReason, 'error');
+          // Provide user-friendly error messages based on Runway's failure codes
+          let userFriendlyMessage = failureCode;
+          let shouldRetry = false;
+          let suggestions = [];
+          
+          if (failureCode.startsWith('SAFETY.')) {
+            if (failureCode.includes('INPUT.TEXT')) {
+              userFriendlyMessage = 'Your prompt text was rejected by content moderation';
+              suggestions = ['Try rephrasing your prompt with less explicit or violent language', 'Avoid references to specific people, brands, or copyrighted content'];
+            } else if (failureCode.includes('INPUT.IMAGE')) {
+              userFriendlyMessage = 'Your input image was rejected by content moderation';
+              suggestions = ['Try using a different image without inappropriate content', 'Ensure your image doesn\'t contain explicit or violent material'];
+            } else if (failureCode.includes('OUTPUT')) {
+              userFriendlyMessage = 'The generated video was rejected by content moderation';
+              suggestions = ['Try a different prompt or image combination', 'This sometimes happens randomly - you may try again with the same inputs'];
+            } else {
+              userFriendlyMessage = 'Content was rejected by safety filters';
+              suggestions = ['Review your prompt and image for potentially inappropriate content'];
+            }
+          } else if (failureCode.startsWith('INTERNAL.BAD_OUTPUT')) {
+            userFriendlyMessage = 'Generation rejected due to image quality or content issues';
+            shouldRetry = false; // API docs say "not likely to succeed"
+            suggestions = [
+              'Remove any overlaid text, graphics, or watermarks from your image',
+              'Try using a cleaner, higher-quality image without text overlays',
+              'Avoid images with complex graphics, logos, or artificial elements',
+              'Use photos of real scenes/objects rather than screenshots or rendered graphics',
+              'Ensure your image has good lighting and isn\'t too dark or blurry'
+            ];
+          } else if (failureCode === 'INPUT_PREPROCESSING.SAFETY.TEXT') {
+            userFriendlyMessage = 'Your prompt text failed content moderation during preprocessing';
+            suggestions = ['Rephrase your prompt to avoid potentially sensitive content'];
+          } else if (failureCode === 'INPUT_PREPROCESSING.INTERNAL') {
+            userFriendlyMessage = 'Content moderation system error - temporary issue';
+            shouldRetry = true;
+            suggestions = ['Wait a few minutes and try again'];
+          } else if (failureCode === 'INTERNAL' || !failureCode || failureCode === 'null') {
+            userFriendlyMessage = 'Internal Runway server error - temporary issue';
+            shouldRetry = true;
+            suggestions = ['Wait a few minutes and try again', 'This is usually a temporary server issue'];
+          }
+          
+          // Log the technical error for debugging
+          addLog('✗ Job ' + (jobIndex + 1) + ' failed on Runway: ' + failureCode, 'error');
+          
+          // Log user-friendly explanation
+          addLog('💡 ' + userFriendlyMessage, 'warning');
+          
+          // Log suggestions
+          if (suggestions.length > 0) {
+            addLog('📝 Suggestions: ' + suggestions.join(' • '), 'info');
+          }
+          
+          if (shouldRetry) {
+            addLog('🔄 This error type can be retried after a short delay', 'info');
+          } else {
+            addLog('⚠️ Retrying with the same inputs is not recommended', 'warning');
+          }
           
           setGenerationProgress(prev => {
             const updated = { ...prev };
@@ -1072,7 +1212,7 @@ export default function RunwayAutomationApp() {
             return updated;
           });
           
-          throw new Error(failureReason);
+          throw new Error(userFriendlyMessage + ' (' + failureCode + ')');
         }
 
         await new Promise(resolve => setTimeout(resolve, 6000)); // Reduced from 8000ms to 6000ms
@@ -2833,6 +2973,6 @@ export default function RunwayAutomationApp() {
           </div>
         </div>
       </div>
-    </> 
+    </>
   );
 }
