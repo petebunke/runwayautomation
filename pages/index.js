@@ -2414,7 +2414,7 @@ export default function RunwayAutomationApp() {
                       height: '300px',
                       display: 'flex',
                       flexDirection: 'column',
-                      overflow: 'hidden'
+                      position: 'relative'
                     }}>
                       <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
@@ -2438,25 +2438,19 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       <div 
+                        ref={logContainerRef}
+                        className="px-3" 
                         style={{ 
-                          flex: '1 1 auto',
+                          fontFamily: 'monospace',
+                          overflowY: 'scroll',
+                          overflowX: 'hidden',
+                          flex: '1',
                           minHeight: 0,
-                          overflow: 'hidden',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          padding: '0 12px 12px 12px'
+                          position: 'relative',
+                          WebkitOverflowScrolling: 'touch'
                         }}
                       >
-                        <div 
-                          ref={logContainerRef}
-                          style={{ 
-                            fontFamily: 'monospace',
-                            overflowY: 'auto',
-                            overflowX: 'hidden',
-                            flex: '1 1 auto',
-                            paddingRight: '4px'
-                          }}
-                        >
+                        <div style={{ paddingTop: '8px', paddingBottom: '16px' }}>
                           {logs.map((log, index) => (
                             <div key={index} className={`small mb-1 ${
                               log.type === 'error' ? 'text-danger' :
