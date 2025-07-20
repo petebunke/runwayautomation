@@ -2418,43 +2418,38 @@ export default function RunwayAutomationApp() {
                     {/* Fixed Generation Log with proper spacing */}
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
                       borderRadius: '8px',
-                      height: '300px',
-                      position: 'relative',
-                      overflow: 'hidden'
+                      height: '300px'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center">
-                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
-                        <div className="d-flex gap-2">
-                          <button 
-                            className="btn btn-sm btn-outline-danger" 
-                            onClick={clearLogs}
-                            title="Clear all logs"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-outline-light" 
-                            onClick={copyLogsToClipboard}
-                            title="Copy all logs to clipboard"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                          </button>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
+                          <div className="d-flex gap-2">
+                            <button 
+                              className="btn btn-sm btn-outline-danger" 
+                              onClick={clearLogs}
+                              title="Clear all logs"
+                              style={{ borderRadius: '6px' }}
+                            >
+                              <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                            </button>
+                            <button 
+                              className="btn btn-sm btn-outline-light" 
+                              onClick={copyLogsToClipboard}
+                              title="Copy all logs to clipboard"
+                              style={{ borderRadius: '6px' }}
+                            >
+                              <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <div 
                         ref={logContainerRef}
-                        className="p-3" 
+                        className="card-body p-3" 
                         style={{ 
                           fontFamily: 'monospace',
-                          position: 'absolute',
-                          top: '60px',
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
                           overflowY: 'auto',
-                          overflowX: 'hidden'
+                          height: 'calc(100% - 70px)'
                         }}
                       >
                         {logs.map((log, index) => (
