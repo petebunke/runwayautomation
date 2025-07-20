@@ -1958,8 +1958,8 @@ export default function RunwayAutomationApp() {
                               style={{ 
                                 borderRadius: '8px', 
                                 fontWeight: '600',
-                                backgroundColor: '#17a2b8',
-                                borderColor: '#17a2b8',
+                                backgroundColor: '#4dd0ff', // Same color as icon circle
+                                borderColor: '#4dd0ff',
                                 color: 'white'
                               }}
                             >
