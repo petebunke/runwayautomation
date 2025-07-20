@@ -2409,12 +2409,13 @@ export default function RunwayAutomationApp() {
                     )}
 
                     {/* Fixed Generation Log with proper spacing */}
-                    <div className="card bg-dark text-light border-0 shadow position-relative" style={{ 
+                    <div className="card bg-dark text-light border-0 shadow" style={{ 
                       borderRadius: '8px',
                       height: '300px',
-                      overflow: 'hidden'
+                      display: 'flex',
+                      flexDirection: 'column'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ height: '56px' }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
@@ -2436,42 +2437,34 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       <div 
+                        ref={logContainerRef}
                         style={{ 
-                          position: 'absolute',
-                          top: '56px',
-                          bottom: '0',
-                          left: '0',
-                          right: '0',
-                          overflow: 'hidden'
+                          fontFamily: 'monospace',
+                          overflowY: 'auto',
+                          overflowX: 'hidden',
+                          flex: 1,
+                          minHeight: 0,
+                          padding: '8px 16px',
+                          scrollBehavior: 'smooth'
                         }}
                       >
-                        <div 
-                          ref={logContainerRef}
-                          style={{ 
-                            fontFamily: 'monospace',
-                            overflowY: 'auto',
-                            overflowX: 'hidden',
-                            height: '100%',
-                            padding: '8px 16px 24px 16px',
-                            boxSizing: 'border-box'
-                          }}
-                        >
-                          {logs.map((log, index) => (
-                            <div key={index} className={`small mb-1 ${
-                              log.type === 'error' ? 'text-danger' :
-                              log.type === 'success' ? 'text-light' :
-                              log.type === 'warning' ? 'text-warning' :
-                              'text-light'
-                            }`}>
-                              <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
-                            </div>
-                          ))}
-                          {logs.length === 0 && (
-                            <div className="text-muted small">
-                              No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                            </div>
-                          )}
-                        </div>
+                        {logs.map((log, index) => (
+                          <div key={index} className={`small ${
+                            log.type === 'error' ? 'text-danger' :
+                            log.type === 'success' ? 'text-light' :
+                            log.type === 'warning' ? 'text-warning' :
+                            'text-light'
+                          }`} style={{ marginBottom: '4px' }}>
+                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                          </div>
+                        ))}
+                        {logs.length === 0 && (
+                          <div className="text-muted small">
+                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                          </div>
+                        )}
+                        {/* Padding div to ensure last item is always visible */}
+                        {logs.length > 0 && <div style={{ minHeight: '20px' }}></div>}
                       </div>
                     </div>
                   </div>
