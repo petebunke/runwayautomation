@@ -2442,9 +2442,10 @@ export default function RunwayAutomationApp() {
                         style={{ 
                           fontFamily: 'monospace',
                           overflowY: 'auto',
+                          overflowX: 'hidden',
                           flex: '1 1 auto',
-                          minHeight: '0px',
-                          maxHeight: 'calc(300px - 60px)'
+                          minHeight: '0',
+                          height: 'calc(100% - 60px)'
                         }}
                       >
                         {logs.map((log, index) => (
