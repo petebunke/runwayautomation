@@ -1933,9 +1933,15 @@ export default function RunwayAutomationApp() {
                           
                           {favoriteVideos.size > 0 && (
                             <button
-                              className="btn btn-warning shadow"
+                              className="btn shadow"
                               onClick={() => addLog('Favorited videos feature coming soon!', 'info')}
-                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                              style={{ 
+                                borderRadius: '8px', 
+                                fontWeight: '600',
+                                backgroundColor: '#dc3545',
+                                borderColor: '#dc3545',
+                                color: 'white'
+                              }}
                             >
                               <Heart size={20} className="me-2" />
                               Favorited Videos
