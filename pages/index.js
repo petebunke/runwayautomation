@@ -2409,13 +2409,11 @@ export default function RunwayAutomationApp() {
                     )}
 
                     {/* Fixed Generation Log with proper spacing */}
-                    <div className="card bg-dark text-light border-0 shadow" style={{ 
+                    <div className="card bg-dark text-light border-0 shadow position-relative" style={{ 
                       borderRadius: '8px',
-                      height: '300px',
-                      display: 'flex',
-                      flexDirection: 'column'
+                      height: '300px'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0, minHeight: '50px' }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ height: '56px' }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
@@ -2438,14 +2436,16 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div 
                         ref={logContainerRef}
-                        className="px-3 py-2" 
+                        className="position-absolute"
                         style={{ 
                           fontFamily: 'monospace',
                           overflowY: 'scroll',
                           overflowX: 'hidden',
-                          height: '250px',
-                          maxHeight: '250px',
-                          position: 'relative'
+                          top: '56px',
+                          bottom: '0',
+                          left: '0',
+                          right: '0',
+                          padding: '8px 16px 16px 16px'
                         }}
                       >
                         {logs.map((log, index) => (
@@ -2463,8 +2463,8 @@ export default function RunwayAutomationApp() {
                             No logs yet... Logs will appear here during video generation and persist across page refreshes.
                           </div>
                         )}
-                        {/* Spacer to ensure last item is visible */}
-                        <div style={{ height: '20px' }}></div>
+                        {/* Extra space at bottom to ensure last line is visible */}
+                        <div style={{ height: '10px' }}></div>
                       </div>
                     </div>
                   </div>
