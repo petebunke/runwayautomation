@@ -191,7 +191,10 @@ export default function RunwayAutomationApp() {
               {cancelText && (
                 <button
                   className="btn btn-secondary"
-                  onClick={onClose}
+                  onClick={() => {
+                    if (modalConfig.onCancel) modalConfig.onCancel();
+                    onClose();
+                  }}
                   style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
                 >
                   {cancelText}
@@ -217,7 +220,13 @@ export default function RunwayAutomationApp() {
   };
 
   const showModalDialog = (config) => {
-    setModalConfig(config);
+    setModalConfig({
+      ...config,
+      onCancel: () => {
+        if (config.onCancel) config.onCancel();
+        setShowModal(false);
+      }
+    });
     setShowModal(true);
   };
 
@@ -1319,13 +1328,21 @@ export default function RunwayAutomationApp() {
     const estimatedCredits = estimateCreditsNeeded(concurrency, model, duration);
     
     if (!hasShownCostWarning) {
-      const confirmed = await new Promise((resolve) => {
+      setHasShownCostWarning(true);
+      try {
+        localStorage.setItem('runway-automation-cost-warning-shown', 'true');
+      } catch (error) {
+        console.warn('Failed to save cost warning state:', error);
+      }
+      
+      const shouldContinue = await new Promise((resolve) => {
         showModalDialog({
           title: "Confirm Video Generation",
           type: "warning",
           confirmText: "Generate Videos",
           cancelText: "Cancel",
           onConfirm: () => resolve(true),
+          onCancel: () => resolve(false),
           content: (
             <div>
               <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
@@ -1353,15 +1370,9 @@ export default function RunwayAutomationApp() {
         });
       });
 
-      if (!confirmed) {
+      if (!shouldContinue) {
+        addLog('🚫 Generation cancelled by user', 'info');
         return;
-      }
-      
-      setHasShownCostWarning(true);
-      try {
-        localStorage.setItem('runway-automation-cost-warning-shown', 'true');
-      } catch (error) {
-        console.warn('Failed to save cost warning state:', error);
       }
     }
 
@@ -1373,24 +1384,32 @@ export default function RunwayAutomationApp() {
     addLog(`🚀 Starting Generation ${currentGeneration} with ${concurrency} video${concurrency > 1 ? 's' : ''}`, 'info');
     addLog(`📋 Model: ${model}, Duration: ${duration}s, Ratio: ${aspectRatio}`, 'info');
 
-    const promises = [];
-    for (let i = 0; i < concurrency; i++) {
-      const videoNum = i + 1;
-      
-      // Add delay between requests to avoid rate limiting
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-      }
-      
-      if (!isRunning) {
-        addLog('🛑 Generation stopped by user', 'warning');
-        break;
-      }
-      
-      promises.push(generateVideo(prompt, imageUrl, i, currentGeneration, videoNum));
-    }
-
     try {
+      const promises = [];
+      
+      for (let i = 0; i < concurrency; i++) {
+        const videoNum = i + 1;
+        
+        // Add delay between requests to avoid rate limiting
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+        }
+        
+        // Check if generation was stopped
+        if (!isRunning) {
+          addLog('🛑 Generation stopped by user', 'warning');
+          break;
+        }
+        
+        promises.push(generateVideo(prompt, imageUrl, i, currentGeneration, videoNum));
+      }
+
+      if (promises.length === 0) {
+        addLog('❌ No videos to generate', 'error');
+        setIsRunning(false);
+        return;
+      }
+
       const results = await Promise.allSettled(promises);
       const successful = results.filter(r => r.status === 'fulfilled' && r.value).length;
       const failed = results.length - successful;
