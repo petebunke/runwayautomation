@@ -46,17 +46,18 @@ export default function RunwayAutomationApp() {
   // Comprehensive profanity filter
   const profanityWords = [
     'fuck', 'fucking', 'fucked', 'fucker', 'fucks', 'shit', 'shitting', 'shits', 'damn', 'damned',
-    'bitch', 'bitches', 'bastard', 'bastards', 'asshole', 'assholes', 'crap', 'piss',
-    'whore', 'slut', 'sluts', 'cock', 'cocks', 'dick', 'dicks', 'pussy', 'cunt', 'cunts', 
+    'hell', 'bitch', 'bitches', 'bastard', 'bastards', 'asshole', 'assholes', 'crap', 'piss',
+    'whore', 'slut', 'sluts', 'cock', 'cocks', 'dick', 'dicks', 'pussy', 'cunt', 'cunts',
     'tits', 'boobs', 'nipples', 'penis', 'vagina', 'anus', 'rape', 'raping', 'raped',
     'nigger', 'nigga', 'chink', 'gook', 'spic', 'wetback', 'kike', 'faggot', 'fag', 'dyke',
     'retard', 'retarded', 'mongoloid', 'cripple', 'midget',
     'kill', 'murder', 'suicide', 'death', 'torture', 'abuse', 'violence', 'shoot', 'shooting',
-    'terrorist', 'terrorism', 'blood', 'gore',
-    'harm', 'hurt', 'bleeding', 'drugs', 'overdose', 'addiction',
+    'bomb', 'explosion', 'terrorist', 'terrorism', 'weapon', 'gun', 'knife', 'blood', 'gore',
+    'brutal', 'savage', 'attack', 'assault', 'harm', 'hurt', 'pain', 'suffer', 'bleeding',
     'cocaine', 'heroin', 'meth', 'methamphetamine', 'crack', 'weed', 'marijuana', 'cannabis',
-    'sex', 'sexual', 'naked', 'nude', 'porn', 'pornography', 'masturbate', 'orgasm', 'cum',
-    'erotic', 'aroused', 'horny', 'seduce', 'seduction', 'fetish', 'kinky', 'bondage', 
+    'drugs', 'overdose', 'addiction', 'needle', 'inject', 'snort', 'smoke', 'high', 'stoned',
+    'sex', 'sexual', 'naked', 'nude', 'porn', 'pornography', 'masturbate', 'orgasm', 'climax',
+    'erotic', 'aroused', 'horny', 'seduce', 'seduction', 'fetish', 'kinky', 'bondage',
     'prostitute', 'escort', 'brothel', 'strip', 'stripper', 'underwear', 'lingerie',
     'f*ck', 'f**k', 'sh*t', 'sh!t', 'b*tch', 'a**hole', 'a$$hole', 'n*gger', 'f@g',
     'fuk', 'fack', 'phuck', 'shyt', 'byatch', 'azz', 'azzhole', 'biatch'
@@ -191,10 +192,7 @@ export default function RunwayAutomationApp() {
               {cancelText && (
                 <button
                   className="btn btn-secondary"
-                  onClick={() => {
-                    if (modalConfig.onCancel) modalConfig.onCancel();
-                    onClose();
-                  }}
+                  onClick={onClose}
                   style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
                 >
                   {cancelText}
@@ -220,13 +218,7 @@ export default function RunwayAutomationApp() {
   };
 
   const showModalDialog = (config) => {
-    setModalConfig({
-      ...config,
-      onCancel: () => {
-        if (config.onCancel) config.onCancel();
-        setShowModal(false);
-      }
-    });
+    setModalConfig(config);
     setShowModal(true);
   };
 
@@ -991,458 +983,24 @@ export default function RunwayAutomationApp() {
     return true;
   };
 
-  // 4K upscale functionality
-  const upscaleVideo = async (result) => {
-    if (!result.video_url) {
-      addLog('❌ Cannot upscale: Video URL not available', 'error');
-      return;
-    }
-
-    if (upscalingProgress[result.id]) {
-      addLog('⚠️ Video is already being upscaled', 'warning');
-      return;
-    }
-
-    const estimatedCredits = 10; // Estimate for upscaling
-    if (organizationInfo && organizationInfo.creditBalance < estimatedCredits) {
-      showModalDialog({
-        title: "Insufficient Credits",
-        type: "warning",
-        confirmText: "Continue Anyway",
-        cancelText: "Cancel",
-        onConfirm: () => {
-          startUpscale(result);
-        },
-        content: (
-          <div>
-            <p className="mb-3">
-              <strong>You may not have enough credits for 4K upscaling.</strong>
-            </p>
-            <p className="mb-3">
-              Current balance: {organizationInfo.creditBalance} credits<br />
-              Estimated cost: ~{estimatedCredits} credits
-            </p>
-            <p className="mb-0 text-muted">
-              Would you like to continue anyway?
-            </p>
-          </div>
-        )
-      });
-      return;
-    }
-
-    startUpscale(result);
-  };
-
-  const startUpscale = async (result) => {
-    setUpscalingProgress(prev => ({
-      ...prev,
-      [result.id]: { status: 'starting', taskId: null }
-    }));
-
-    addLog(`🚀 Starting 4K upscale for ${getVideoDisplayTitle(result)}...`, 'info');
-
-    try {
-      const response = await fetch(API_BASE + '/runway-upscale', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          videoUrl: result.video_url,
-          taskId: result.taskId
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upscale request failed');
-      }
-
-      const upscaleData = await response.json();
-      
-      setUpscalingProgress(prev => ({
-        ...prev,
-        [result.id]: { status: 'processing', taskId: upscaleData.id }
-      }));
-
-      addLog(`✅ 4K upscale started for ${getVideoDisplayTitle(result)} (Task: ${upscaleData.id})`, 'success');
-      
-      // Start polling for upscale status
-      pollUpscaleStatus(result.id, upscaleData.id);
-      
-    } catch (error) {
-      addLog(`❌ Failed to start 4K upscale: ${error.message}`, 'error');
-      setUpscalingProgress(prev => {
-        const newProgress = { ...prev };
-        delete newProgress[result.id];
-        return newProgress;
-      });
-    }
-  };
-
-  const pollUpscaleStatus = async (videoId, taskId) => {
-    const maxAttempts = 120; // 10 minutes max
-    let attempts = 0;
-
-    const poll = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/runway-status?taskId=${taskId}&apiKey=${runwayApiKey}`);
-        
-        if (!response.ok) {
-          throw new Error('Status check failed');
-        }
-
-        const statusData = await response.json();
-        
-        setUpscalingProgress(prev => ({
-          ...prev,
-          [videoId]: { ...prev[videoId], status: statusData.status }
-        }));
-
-        if (statusData.status === 'SUCCEEDED') {
-          const upscaledVideoUrl = statusData.output?.[0];
-          if (upscaledVideoUrl) {
-            // Update the result with 4K version
-            setResults(prev => prev.map(result => 
-              result.id === videoId 
-                ? { ...result, upscaled_video_url: upscaledVideoUrl, is_4k: true }
-                : result
-            ));
-            
-            addLog(`✅ 4K upscale completed for video ${videoId}`, 'success');
-          }
-          
-          setUpscalingProgress(prev => {
-            const newProgress = { ...prev };
-            delete newProgress[videoId];
-            return newProgress;
-          });
-          
-          updateCreditsAfterGeneration();
-          return;
-        }
-
-        if (statusData.status === 'FAILED') {
-          addLog(`❌ 4K upscale failed for video ${videoId}`, 'error');
-          setUpscalingProgress(prev => {
-            const newProgress = { ...prev };
-            delete newProgress[videoId];
-            return newProgress;
-          });
-          return;
-        }
-
-        attempts++;
-        if (attempts < maxAttempts && (statusData.status === 'PENDING' || statusData.status === 'RUNNING')) {
-          setTimeout(poll, 5000); // Check every 5 seconds
-        } else if (attempts >= maxAttempts) {
-          addLog(`⏰ 4K upscale timeout for video ${videoId}`, 'warning');
-          setUpscalingProgress(prev => {
-            const newProgress = { ...prev };
-            delete newProgress[videoId];
-            return newProgress;
-          });
-        }
-      } catch (error) {
-        addLog(`❌ Error checking 4K upscale status: ${error.message}`, 'error');
-        setUpscalingProgress(prev => {
-          const newProgress = { ...prev };
-          delete newProgress[videoId];
-          return newProgress;
-        });
-      }
-    };
-
-    poll();
-  };
-
-  // Filter videos based on current filter
-  const getFilteredVideos = () => {
-    return results; // Just return all results since we removed filtering
-  };
-
   // Simplified video generation functions for space
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
-    const jobId = `Generation ${generationNum} - Video ${videoNum}`;
-    const taskId = `task_${Date.now()}_${jobIndex}`;
-    
-    addLog(`🎬 Starting ${jobId}...`, 'info');
-    
-    setGenerationProgress(prev => ({
-      ...prev,
-      [taskId]: { status: 'starting', jobId, progress: 0 }
-    }));
-
-    try {
-      // Prepare the request payload
-      const payload = {
-        promptText: promptText.trim(),
-        promptImage: imageUrlText.trim(),
-        model: model,
-        ratio: convertAspectRatio(aspectRatio, model),
-        duration: duration
-      };
-
-      addLog(`📤 Sending request to Runway API for ${jobId}...`, 'info');
-
-      // Make the generation request
-      const response = await fetch(API_BASE + '/runway-generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: runwayApiKey,
-          payload: payload
-        })
-      });
-
-      addLog(`📨 Received response from API (${response.status}) for ${jobId}`, 'info');
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Generation failed: ${response.status}`);
-      }
-
-      const taskData = await response.json();
-      const runwayTaskId = taskData.id;
-
-      addLog(`✅ ${jobId} started successfully (Runway Task: ${runwayTaskId})`, 'success');
-      
-      setGenerationProgress(prev => ({
-        ...prev,
-        [taskId]: { ...prev[taskId], status: 'processing', runwayTaskId, progress: 25 }
-      }));
-
-      // Start polling for status
-      const result = await pollVideoStatus(taskId, runwayTaskId, jobId, promptText);
-      return result;
-
-    } catch (error) {
-      addLog(`❌ ${jobId} failed: ${error.message}`, 'error');
-      setGenerationProgress(prev => {
-        const newProgress = { ...prev };
-        delete newProgress[taskId];
-        return newProgress;
-      });
-      return null;
-    }
-  };
-
-  const pollVideoStatus = async (taskId, runwayTaskId, jobId, promptText) => {
-    const maxAttempts = 120; // 10 minutes max
-    let attempts = 0;
-
-    const poll = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/runway-status?taskId=${runwayTaskId}&apiKey=${runwayApiKey}`);
-        
-        if (!response.ok) {
-          throw new Error('Status check failed');
-        }
-
-        const statusData = await response.json();
-        const progress = Math.min(25 + (attempts * 0.6), 95);
-        
-        setGenerationProgress(prev => ({
-          ...prev,
-          [taskId]: { ...prev[taskId], status: statusData.status, progress }
-        }));
-
-        if (statusData.status === 'SUCCEEDED') {
-          const videoUrl = statusData.output?.[0];
-          const thumbnailUrl = statusData.thumbnailUrl;
-          
-          if (videoUrl) {
-            const newResult = {
-              id: taskId,
-              taskId: runwayTaskId,
-              jobId: jobId,
-              prompt: promptText,
-              video_url: videoUrl,
-              thumbnail_url: thumbnailUrl,
-              status: 'completed',
-              model: model,
-              duration: duration,
-              aspectRatio: aspectRatio,
-              createdAt: new Date().toISOString()
-            };
-
-            setResults(prev => [...prev, newResult]);
-            addLog(`✅ ${jobId} completed successfully`, 'success');
-            
-            setGenerationProgress(prev => {
-              const newProgress = { ...prev };
-              delete newProgress[taskId];
-              return newProgress;
-            });
-
-            updateCreditsAfterGeneration();
-            return newResult;
-          }
-        }
-
-        if (statusData.status === 'FAILED') {
-          addLog(`❌ ${jobId} failed during processing`, 'error');
-          setGenerationProgress(prev => {
-            const newProgress = { ...prev };
-            delete newProgress[taskId];
-            return newProgress;
-          });
-          return null;
-        }
-
-        attempts++;
-        if (attempts < maxAttempts && (statusData.status === 'PENDING' || statusData.status === 'RUNNING')) {
-          setTimeout(poll, 5000); // Check every 5 seconds
-        } else if (attempts >= maxAttempts) {
-          addLog(`⏰ ${jobId} timeout after 10 minutes`, 'warning');
-          setGenerationProgress(prev => {
-            const newProgress = { ...prev };
-            delete newProgress[taskId];
-            return newProgress;
-          });
-          return null;
-        }
-      } catch (error) {
-        addLog(`❌ Error checking ${jobId} status: ${error.message}`, 'error');
-        setGenerationProgress(prev => {
-          const newProgress = { ...prev };
-          delete newProgress[taskId];
-          return newProgress;
-        });
-        return null;
-      }
-    };
-
-    poll();
+    const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
+    addLog('Starting generation for job ' + (jobIndex + 1), 'info');
+    // Placeholder for actual implementation
+    return null;
   };
 
   const generateVideos = async () => {
     if (!checkRequiredInputs()) return;
-
-    if (isRunning) {
-      addLog('⚠️ Generation already in progress', 'warning');
-      return;
-    }
-
-    // Cost warning
-    const estimatedCredits = estimateCreditsNeeded(concurrency, model, duration);
-    
-    if (!hasShownCostWarning) {
-      setHasShownCostWarning(true);
-      try {
-        localStorage.setItem('runway-automation-cost-warning-shown', 'true');
-      } catch (error) {
-        console.warn('Failed to save cost warning state:', error);
-      }
-      
-      const shouldContinue = await new Promise((resolve) => {
-        showModalDialog({
-          title: "Confirm Video Generation",
-          type: "warning",
-          confirmText: "Generate Videos",
-          cancelText: "Cancel",
-          onConfirm: () => resolve(true),
-          onCancel: () => resolve(false),
-          content: (
-            <div>
-              <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-                <div className="d-flex align-items-center mb-2">
-                  <CreditCard size={20} className="text-warning me-2" />
-                  <strong>Generation Cost Estimate</strong>
-                </div>
-                <p className="mb-0">You are about to generate {concurrency} video{concurrency > 1 ? 's' : ''} using {model}.</p>
-              </div>
-              
-              <div className="mb-3">
-                <p className="mb-2"><strong>Estimated costs:</strong></p>
-                <ul className="mb-0 ps-3">
-                  <li>{concurrency} × {model === 'gen4_turbo' ? (duration === 10 ? '100' : '50') : (duration === 10 ? '50' : '25')} credits = ~{estimatedCredits} credits</li>
-                  <li>Approximate cost: ${(estimatedCredits * 0.01).toFixed(2)} USD</li>
-                  <li>Generation time: ~{Math.ceil(concurrency * duration / 4)}-{Math.ceil(concurrency * duration / 2)} minutes</li>
-                </ul>
-              </div>
-              
-              <p className="mb-0 text-muted">
-                Current balance: {organizationInfo ? organizationInfo.creditBalance : 'Unknown'} credits
-              </p>
-            </div>
-          )
-        });
-      });
-
-      if (!shouldContinue) {
-        addLog('🚫 Generation cancelled by user', 'info');
-        return;
-      }
-    }
-
-    setIsRunning(true);
-    const currentGeneration = generationCounter + 1;
-    setGenerationCounter(currentGeneration);
-    setCompletedGeneration(null);
-
-    addLog(`🚀 Starting Generation ${currentGeneration} with ${concurrency} video${concurrency > 1 ? 's' : ''}`, 'info');
-    addLog(`📋 Model: ${model}, Duration: ${duration}s, Ratio: ${aspectRatio}`, 'info');
-
-    try {
-      const promises = [];
-      let generationActive = true; // Use local variable instead of state
-      
-      for (let i = 0; i < concurrency; i++) {
-        const videoNum = i + 1;
-        
-        // Add delay between requests to avoid rate limiting
-        if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-        }
-        
-        // Check if generation was stopped (but don't rely on state that might be stale)
-        if (!generationActive) {
-          addLog('🛑 Generation stopped by user', 'warning');
-          break;
-        }
-        
-        addLog(`🎬 Starting Generation ${currentGeneration} - Video ${videoNum}...`, 'info');
-        promises.push(generateVideo(prompt, imageUrl, i, currentGeneration, videoNum));
-      }
-
-      if (promises.length === 0) {
-        addLog('❌ No videos were started', 'error');
-        setIsRunning(false);
-        return;
-      }
-
-      addLog(`📡 ${promises.length} video generation${promises.length > 1 ? 's' : ''} started, waiting for completion...`, 'info');
-
-      const results = await Promise.allSettled(promises);
-      const successful = results.filter(r => r.status === 'fulfilled' && r.value).length;
-      const failed = results.length - successful;
-
-      if (successful > 0) {
-        addLog(`✅ Generation ${currentGeneration} completed: ${successful} successful, ${failed} failed`, 'success');
-        setCompletedGeneration(currentGeneration);
-      } else {
-        addLog(`❌ Generation ${currentGeneration} failed: All videos failed to generate`, 'error');
-      }
-    } catch (error) {
-      addLog(`❌ Generation ${currentGeneration} error: ${error.message}`, 'error');
-    } finally {
-      setIsRunning(false);
-      setGenerationProgress({});
-    }
+    addLog('🚀 Starting video generation...', 'info');
   };
-
-  const filteredVideos = results;
 
   return (
     <>
       <Head>
         <title>Runway Automation - Batch Video Generation</title>
-        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download videos in 4K as MP4 and JSON." />
+        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
@@ -1487,7 +1045,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download videos in 4K as MP4 and JSON.
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones.
               </p>
             </div>
           </div>
@@ -2063,84 +1621,33 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
-                    <div className="mb-4" style={{ minHeight: '200px' }}>
-                      {Object.keys(generationProgress).length > 0 ? (
-                        <div>
-                          <div className="text-center py-3">
-                            <h4 className="fw-bold text-dark mb-2">
-                              Generation {generationCounter || 1} in progress
-                            </h4>
-                            <p className="text-muted mb-4">
-                              {Object.keys(generationProgress).length} video{Object.keys(generationProgress).length !== 1 ? 's' : ''} generating
-                            </p>
-                          </div>
-                          
-                          <div className="row g-3">
-                            {Object.entries(generationProgress).map(([taskId, progress]) => (
-                              <div key={taskId} className="col-md-6 col-lg-4">
-                                <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                  <div className="card-body p-3">
-                                    <div className="d-flex align-items-center mb-2">
-                                      <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                      </div>
-                                      <h6 className="mb-0 fw-bold text-primary">{progress.jobId}</h6>
-                                    </div>
-                                    
-                                    <div className="progress mb-2" style={{ height: '6px' }}>
-                                      <div 
-                                        className="progress-bar bg-primary" 
-                                        role="progressbar" 
-                                        style={{ width: `${progress.progress || 0}%` }}
-                                      ></div>
-                                    </div>
-                                    
-                                    <div className="d-flex justify-content-between align-items-center">
-                                      <small className="text-muted">
-                                        {progress.status === 'starting' ? 'Starting...' :
-                                         progress.status === 'processing' ? 'Processing...' :
-                                         progress.status === 'PENDING' ? 'Queued...' :
-                                         progress.status === 'RUNNING' ? 'Generating...' :
-                                         'Processing...'}
-                                      </small>
-                                      <small className="text-primary fw-bold">
-                                        {Math.round(progress.progress || 0)}%
-                                      </small>
-                                    </div>
-                                    
-                                    {progress.runwayTaskId && (
-                                      <small className="text-muted d-block mt-1" style={{ fontSize: '10px' }}>
-                                        Task: {progress.runwayTaskId.substring(0, 12)}...
-                                      </small>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : completedGeneration ? (
-                        <div className="text-center py-3">
-                          <h4 className="fw-bold text-success mb-2">
-                            Generation {completedGeneration} completed
-                          </h4>
-                          <p className="text-muted mb-0">
-                            {(() => {
+                    <div className="mb-4" style={{ minHeight: '100px' }}>
+                      <div className="text-center py-3">
+                        <h4 className="fw-bold text-dark mb-2">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              return `Generation ${generationCounter || 1} in progress`;
+                            } else if (completedGeneration) {
+                              return `Generation ${completedGeneration} completed`;
+                            } else {
+                              return `Generation ${generationCounter || 1}`;
+                            }
+                          })()}
+                        </h4>
+                        <p className="text-muted mb-0">
+                          {(() => {
+                            if (Object.keys(generationProgress).length > 0) {
+                              const count = Object.keys(generationProgress).length;
+                              return `${count} video${count !== 1 ? 's' : ''} generating`;
+                            } else if (completedGeneration) {
                               const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
                               return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            })()}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="text-center py-3">
-                          <h4 className="fw-bold text-dark mb-2">
-                            Generation {generationCounter || 1}
-                          </h4>
-                          <p className="text-muted mb-0">
-                            Ready to generate {concurrency} video{concurrency > 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      )}
+                            } else {
+                              return '0 videos generated';
+                            }
+                          })()}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
@@ -2236,7 +1743,7 @@ export default function RunwayAutomationApp() {
                       <h3 className="mb-0 fw-bold">Generated Videos</h3>
                     </div>
                     
-                    {results.length > 0 && (
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
                       <div style={{ marginRight: '30px' }}>
                         <div className="d-flex gap-2">
                           <button
@@ -2250,46 +1757,6 @@ export default function RunwayAutomationApp() {
                               {results.filter(result => result.video_url && result.status === 'completed').length}
                             </span>
                           </button>
-                          
-                          {favoriteVideos.size > 0 && (
-                            <button
-                              className="btn shadow"
-                              onClick={() => addLog('Favorited videos feature coming soon!', 'info')}
-                              style={{ 
-                                borderRadius: '8px', 
-                                fontWeight: '600',
-                                backgroundColor: '#dc3545',
-                                borderColor: '#dc3545',
-                                color: 'white'
-                              }}
-                            >
-                              <Heart size={20} className="me-2" />
-                              Favorited Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {favoriteVideos.size}
-                              </span>
-                            </button>
-                          )}
-                          
-                          {results.filter(result => result.is_4k || result.upscaled_video_url).length > 0 && (
-                            <button
-                              className="btn shadow"
-                              onClick={() => addLog('4K videos feature coming soon!', 'info')}
-                              style={{ 
-                                borderRadius: '8px', 
-                                fontWeight: '600',
-                                backgroundColor: '#4dd0ff', // Same color as icon circle
-                                borderColor: '#4dd0ff',
-                                color: 'white'
-                              }}
-                            >
-                              <ArrowUp size={20} className="me-2" />
-                              4K Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.is_4k || result.upscaled_video_url).length}
-                              </span>
-                            </button>
-                          )}
                           
                           <button
                             className="btn btn-outline-light shadow"
@@ -2306,10 +1773,7 @@ export default function RunwayAutomationApp() {
                   
                   <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
-                    
-
-                    
-                    {filteredVideos.length === 0 ? (
+                    {results.length === 0 ? (
                       <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
                         <div className="mb-4">
                           <Film size={80} className="text-muted" />
@@ -2327,148 +1791,94 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
-                        <div className="row g-4">
-                          {results.map((result, index) => (
-                            <div key={index} className="col-md-6 col-lg-3">
-                              <div className="card border-0 shadow h-100 d-flex flex-column" style={{ borderRadius: '8px' }}>
-                                <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                  {result.video_url || result.upscaled_video_url ? (
-                                    <video
-                                      src={result.upscaled_video_url || result.video_url}
-                                      poster={result.thumbnail_url}
-                                      controls
-                                      className="w-100 h-100"
-                                      style={{ objectFit: 'cover' }}
-                                      preload="metadata"
-                                    >
-                                      Your browser does not support video playback.
-                                    </video>
-                                  ) : (
-                                    <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                      <div className="text-center">
-                                        <Film size={48} className="text-primary mb-3" />
-                                        <div className="fw-bold text-muted">Processing...</div>
-                                      </div>
+                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
+                        {results.map((result, index) => (
+                          <div key={index} className="col-md-6 col-lg-3">
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                {result.video_url ? (
+                                  <video
+                                    src={result.video_url}
+                                    poster={result.thumbnail_url}
+                                    controls
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                    preload="metadata"
+                                  >
+                                    Your browser does not support video playback.
+                                  </video>
+                                ) : (
+                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                    <div className="text-center">
+                                      <Film size={48} className="text-primary mb-3" />
+                                      <div className="fw-bold text-muted">Processing...</div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                <button
+                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                  onClick={() => toggleFavorite(result.id)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Heart 
+                                    size={16} 
+                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                  />
+                                </button>
+                              </div>
+                              
+                              <div className="card-body p-3">
+                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                  <span className="fw-bold text-primary me-2" style={{ 
+                                    lineHeight: '1.2',
+                                    wordBreak: 'break-word',
+                                    maxWidth: '200px',
+                                    flex: '1'
+                                  }}>
+                                    {getVideoDisplayTitle(result)}
+                                  </span>
+                                </div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                  {result.prompt}
+                                </h6>
+                                
+                                <div className="d-grid gap-2">
+                                  {result.video_url && (
+                                    <div className="btn-group" role="group">
+                                      <button
+                                        className="btn btn-primary btn-sm flex-fill"
+                                        onClick={() => addLog('Download feature coming soon!', 'info')}
+                                      >
+                                        <Download size={16} className="me-1" />
+                                        Download
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm flex-fill"
+                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
+                                      >
+                                        <ExternalLink size={16} className="me-1" />
+                                        View
+                                      </button>
                                     </div>
                                   )}
-                                  
-                                  <div className="position-absolute top-0 end-0 m-2 d-flex gap-1">
-                                    {(result.is_4k || result.upscaled_video_url) && (
-                                      <span
-                                        className="badge bg-success d-flex align-items-center"
-                                        style={{ borderRadius: '12px', fontSize: '10px', padding: '4px 8px' }}
-                                        title="4K Quality"
-                                      >
-                                        4K
-                                      </span>
-                                    )}
-                                    <button
-                                      className="btn btn-sm"
-                                      onClick={() => toggleFavorite(result.id)}
-                                      style={{
-                                        border: 'none',
-                                        background: 'rgba(255, 255, 255, 0.9)',
-                                        borderRadius: '50%',
-                                        width: '32px',
-                                        height: '32px',
-                                        color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                      title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                    >
-                                      <Heart 
-                                        size={14} 
-                                        fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                      />
-                                    </button>
-                                  </div>
-                                </div>
-                                
-                                <div className="card-body p-3 d-flex flex-column flex-grow-1">
-                                  <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold text-primary me-2" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '200px',
-                                      flex: '1'
-                                    }}>
-                                      {getVideoDisplayTitle(result)}
-                                    </span>
-                                  </div>
-                                  <h6 className="card-title mb-3 flex-grow-1" style={{ fontWeight: '400', fontSize: '14px', lineHeight: '1.3' }} title={result.prompt}>
-                                    {result.prompt}
-                                  </h6>
-                                  
-                                  <div className="mt-auto">
-                                    <div className="d-grid gap-2">
-                                      {result.video_url && (
-                                        <>
-                                          <div className="btn-group" role="group">
-                                            <button
-                                              className="btn btn-primary btn-sm flex-fill"
-                                              onClick={() => addLog('Download feature coming soon!', 'info')}
-                                              style={{ fontSize: '12px' }}
-                                            >
-                                              <Download size={14} className="me-1" />
-                                              Download
-                                            </button>
-                                            <button
-                                              className="btn btn-outline-primary btn-sm flex-fill"
-                                              onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
-                                              style={{ fontSize: '12px' }}
-                                            >
-                                              <ExternalLink size={14} className="me-1" />
-                                              View
-                                            </button>
-                                            <button
-                                              className="btn btn-sm flex-fill"
-                                              onClick={() => upscaleVideo(result)}
-                                              disabled={upscalingProgress[result.id] || (result.is_4k || result.upscaled_video_url)}
-                                              style={{ 
-                                                fontSize: '12px',
-                                                backgroundColor: (result.is_4k || result.upscaled_video_url) ? '#17a2b8' : '#6c757d',
-                                                borderColor: (result.is_4k || result.upscaled_video_url) ? '#17a2b8' : '#6c757d',
-                                                color: 'white'
-                                              }}
-                                              title={
-                                                (result.is_4k || result.upscaled_video_url) ? '4K Quality' :
-                                                upscalingProgress[result.id] ? 'Upscaling in progress...' :
-                                                'Upscale to 4K (~10-20 credits)'
-                                              }
-                                            >
-                                              {upscalingProgress[result.id] ? (
-                                                <>
-                                                  <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
-                                                    <span className="visually-hidden">Upscaling...</span>
-                                                  </div>
-                                                  4K
-                                                </>
-                                              ) : (result.is_4k || result.upscaled_video_url) ? (
-                                                <>
-                                                  <ArrowUp size={14} className="me-1" />
-                                                  4K
-                                                </>
-                                              ) : (
-                                                <>
-                                                  <ArrowUp size={14} className="me-1" />
-                                                  4K
-                                                </>
-                                              )}
-                                            </button>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
                                 </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
