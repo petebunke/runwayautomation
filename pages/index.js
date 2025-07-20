@@ -2590,244 +2590,259 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     ) : (
-                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
-                        {results
-                          .slice()
-                          .sort((a, b) => {
-                            const parseJobId = (jobId) => {
-                              if (!jobId) return { generation: 0, video: 0 };
-                              
-                              const genMatch = jobId.match(/Generation (\d+)/);
-                              const vidMatch = jobId.match(/Video (\d+)/);
-                              
-                              return {
-                                generation: genMatch ? parseInt(genMatch[1]) : 0,
-                                video: vidMatch ? parseInt(vidMatch[1]) : 0
+                      <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
+                        <div className="row g-3">
+                          {results
+                            .slice()
+                            .sort((a, b) => {
+                              const parseJobId = (jobId) => {
+                                if (!jobId) return { generation: 0, video: 0 };
+                                
+                                const genMatch = jobId.match(/Generation (\d+)/);
+                                const vidMatch = jobId.match(/Video (\d+)/);
+                                
+                                return {
+                                  generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                  video: vidMatch ? parseInt(vidMatch[1]) : 0
+                                };
                               };
-                            };
-                            
-                            const aData = parseJobId(a.jobId);
-                            const bData = parseJobId(b.jobId);
-                            
-                            if (aData.generation !== bData.generation) {
-                              return aData.generation - bData.generation;
-                            }
-                            return aData.video - bData.video;
-                          })
-                          .map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
-                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                {result.video_url ? (
-                                  <video
-                                    src={result.video_url}
-                                    poster={result.thumbnail_url}
-                                    controls
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                    preload="metadata"
-                                  >
-                                    Your browser does not support video playback.
-                                  </video>
-                                ) : result.thumbnail_url ? (
-                                  <img 
-                                    src={result.thumbnail_url}
-                                    alt={'Thumbnail for: ' + result.prompt}
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                  />
-                                ) : (
-                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <div className="text-center">
-                                      <Film size={48} className="text-primary mb-3" />
-                                      <div className="fw-bold text-muted">Processing...</div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {result.status !== 'completed' && (
-                                  <div className="position-absolute top-0 start-0 m-3">
-                                    <span className="badge bg-warning shadow-sm">
-                                      ⏳ Processing
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* 4K badge for upscaled videos */}
-                                {result.upscaled_video_url && (
-                                  <div className="position-absolute top-0 start-0 m-2">
-                                    <span className="badge bg-success shadow-sm">
-                                      4K ✨
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* Favorite button in upper-right corner */}
-                                <button
-                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
-                                  onClick={() => toggleFavorite(result.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.9)',
-                                    borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
-                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                >
-                                  <Heart 
-                                    size={16} 
-                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                  />
-                                </button>
-                              </div>
                               
-                              <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  {editingVideoTitle === result.id ? (
-                                    <div className="d-flex align-items-center w-100">
-                                      <input
-                                        type="text"
-                                        value={tempEditTitle}
-                                        onChange={(e) => setTempEditTitle(e.target.value)}
-                                        onKeyDown={(e) => handleEditKeyPress(e, result.id)}
-                                        onBlur={() => saveEditTitle(result.id)}
-                                        className="form-control form-control-sm me-2"
-                                        style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
-                                        autoFocus
-                                        maxLength={100}
-                                        aria-label="Edit video title"
-                                      />
-                                      <button
-                                        className="btn btn-success btn-sm me-1"
-                                        onClick={() => saveEditTitle(result.id)}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Save title"
-                                      >
-                                        ✓
-                                      </button>
-                                      <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={cancelEditTitle}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Cancel edit"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
+                              const aData = parseJobId(a.jobId);
+                              const bData = parseJobId(b.jobId);
+                              
+                              if (aData.generation !== bData.generation) {
+                                return aData.generation - bData.generation;
+                              }
+                              return aData.video - bData.video;
+                            })
+                            .map((result, index) => (
+                            <div key={index} className="col-md-6 col-lg-3">
+                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px', minHeight: '280px' }}>
+                                <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                  {result.video_url ? (
+                                    <video
+                                      src={result.video_url}
+                                      poster={result.thumbnail_url}
+                                      controls
+                                      className="w-100 h-100"
+                                      style={{ objectFit: 'cover' }}
+                                      preload="metadata"
+                                    >
+                                      Your browser does not support video playback.
+                                    </video>
+                                  ) : result.thumbnail_url ? (
+                                    <img 
+                                      src={result.thumbnail_url}
+                                      alt={'Thumbnail for: ' + result.prompt}
+                                      className="w-100 h-100"
+                                      style={{ objectFit: 'cover' }}
+                                    />
                                   ) : (
-                                    <>
-                                      <span className="fw-bold text-primary me-2" style={{ 
-                                        lineHeight: '1.2',
-                                        wordBreak: 'break-word',
-                                        maxWidth: '200px',
-                                        flex: '1'
-                                      }}>
-                                        {getVideoDisplayTitle(result)}
-                                      </span>
-                                      
-                                      {/* Edit button positioned at bottom of first line */}
-                                      <button
-                                        className="btn btn-sm btn-outline-secondary p-1"
-                                        onClick={() => handleEditTitle(result.id, result.jobId)}
-                                        title="Edit video title"
-                                        style={{ 
-                                          border: 'none',
-                                          background: 'transparent',
-                                          borderRadius: '4px',
-                                          width: '24px',
-                                          height: '24px',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          alignSelf: 'flex-start',
-                                          marginTop: '0px',
-                                          flexShrink: 0
-                                        }}
-                                        aria-label="Edit video title"
-                                      >
-                                        <Edit3 size={12} />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group" aria-label="Video actions">
-                                      <button
-                                        className="btn btn-primary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(
-                                          result.upscaled_video_url || result.video_url, 
-                                          generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
-                                        )}
-                                        title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                        aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                      >
-                                        <Download size={16} className="me-1" aria-hidden="true" />
-                                        Download{result.upscaled_video_url ? ' 4K' : ''}
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm flex-fill"
-                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
-                                        aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
-                                      >
-                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
-                                        View
-                                      </button>
-                                      {!result.upscaled_video_url && result.video_url && (
-                                        <button
-                                          className="btn btn-sm"
-                                          onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
-                                          disabled={upscalingProgress[`upscale_${result.id}`]}
-                                          title="Upscale to 4K resolution"
-                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
-                                          aria-label="Upscale video to 4K resolution"
-                                        >
-                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
-                                          4K
-                                        </button>
-                                      )}
+                                    <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                      <div className="text-center">
+                                        <Film size={48} className="text-primary mb-3" />
+                                        <div className="fw-bold text-muted">Processing...</div>
+                                      </div>
                                     </div>
                                   )}
                                   
-                                  {/* Show both original and 4K download options if 4K exists */}
-                                  {result.upscaled_video_url && result.video_url && (
-                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
-                                        title="Download original resolution"
-                                        aria-label="Download original resolution video"
-                                      >
-                                        <Download size={14} className="me-1" aria-hidden="true" />
-                                        Original
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title="View original resolution"
-                                        aria-label="View original resolution video in new tab"
-                                      >
-                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
-                                        View Original
-                                      </button>
+                                  {result.status !== 'completed' && (
+                                    <div className="position-absolute top-0 start-0 m-3">
+                                      <span className="badge bg-warning shadow-sm">
+                                        ⏳ Processing
+                                      </span>
                                     </div>
                                   )}
+                                  
+                                  {/* 4K badge for upscaled videos */}
+                                  {result.upscaled_video_url && (
+                                    <div className="position-absolute top-0 start-0 m-2">
+                                      <span className="badge bg-success shadow-sm">
+                                        4K ✨
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Favorite button in upper-right corner */}
+                                  <button
+                                    className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                    onClick={() => toggleFavorite(result.id)}
+                                    style={{
+                                      border: 'none',
+                                      background: 'rgba(255, 255, 255, 0.9)',
+                                      borderRadius: '50%',
+                                      width: '32px',
+                                      height: '32px',
+                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                      transition: 'all 0.2s ease',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Heart 
+                                      size={14} 
+                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                    />
+                                  </button>
+                                </div>
+                                
+                                <div className="card-body p-2 d-flex flex-column">
+                                  <div className="d-flex justify-content-between align-items-start mb-1">
+                                    {editingVideoTitle === result.id ? (
+                                      <div className="d-flex align-items-center w-100">
+                                        <input
+                                          type="text"
+                                          value={tempEditTitle}
+                                          onChange={(e) => setTempEditTitle(e.target.value)}
+                                          onKeyDown={(e) => handleEditKeyPress(e, result.id)}
+                                          onBlur={() => saveEditTitle(result.id)}
+                                          className="form-control form-control-sm me-1"
+                                          style={{ fontSize: '12px', fontWeight: 'bold', color: '#0d6efd' }}
+                                          autoFocus
+                                          maxLength={100}
+                                          aria-label="Edit video title"
+                                        />
+                                        <button
+                                          className="btn btn-success btn-sm me-1"
+                                          onClick={() => saveEditTitle(result.id)}
+                                          style={{ width: '20px', height: '20px', padding: '0', fontSize: '10px' }}
+                                          aria-label="Save title"
+                                        >
+                                          ✓
+                                        </button>
+                                        <button
+                                          className="btn btn-secondary btn-sm"
+                                          onClick={cancelEditTitle}
+                                          style={{ width: '20px', height: '20px', padding: '0', fontSize: '10px' }}
+                                          aria-label="Cancel edit"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <span className="fw-bold text-primary me-1" style={{ 
+                                          lineHeight: '1.2',
+                                          wordBreak: 'break-word',
+                                          fontSize: '12px',
+                                          flex: '1'
+                                        }}>
+                                          {getVideoDisplayTitle(result)}
+                                        </span>
+                                        
+                                        {/* Edit button positioned at bottom of first line */}
+                                        <button
+                                          className="btn btn-sm btn-outline-secondary p-1"
+                                          onClick={() => handleEditTitle(result.id, result.jobId)}
+                                          title="Edit video title"
+                                          style={{ 
+                                            border: 'none',
+                                            background: 'transparent',
+                                            borderRadius: '4px',
+                                            width: '20px',
+                                            height: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            alignSelf: 'flex-start',
+                                            marginTop: '0px',
+                                            flexShrink: 0
+                                          }}
+                                          aria-label="Edit video title"
+                                        >
+                                          <Edit3 size={10} />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                  <p className="card-text mb-2" style={{ 
+                                    fontWeight: '400', 
+                                    fontSize: '11px',
+                                    color: '#6c757d',
+                                    lineHeight: '1.3',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                  }} title={result.prompt}>
+                                    {result.prompt}
+                                  </p>
+                                  
+                                  <div className="mt-auto">
+                                    {result.video_url && (
+                                      <div className="btn-group w-100 mb-1" role="group" aria-label="Video actions">
+                                        <button
+                                          className="btn btn-primary btn-sm"
+                                          onClick={() => downloadVideo(
+                                            result.upscaled_video_url || result.video_url, 
+                                            generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
+                                          )}
+                                          title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                          aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                          style={{ fontSize: '11px' }}
+                                        >
+                                          <Download size={12} className="me-1" aria-hidden="true" />
+                                          Download{result.upscaled_video_url ? ' 4K' : ''}
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-primary btn-sm"
+                                          onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title={result.upscaled_video_url ? "View 4K version" : "View video"}
+                                          aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
+                                          style={{ fontSize: '11px' }}
+                                        >
+                                          <ExternalLink size={12} className="me-1" aria-hidden="true" />
+                                          View
+                                        </button>
+                                        {!result.upscaled_video_url && result.video_url && (
+                                          <button
+                                            className="btn btn-sm"
+                                            onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
+                                            disabled={upscalingProgress[`upscale_${result.id}`]}
+                                            title="Upscale to 4K resolution"
+                                            style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white', fontSize: '11px' }}
+                                            aria-label="Upscale video to 4K resolution"
+                                          >
+                                            <ArrowUp size={12} className="me-1" aria-hidden="true" />
+                                            4K
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Show both original and 4K download options if 4K exists */}
+                                    {result.upscaled_video_url && result.video_url && (
+                                      <div className="btn-group w-100" role="group" aria-label="Original video actions">
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm"
+                                          onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                          title="Download original resolution"
+                                          aria-label="Download original resolution video"
+                                          style={{ fontSize: '10px' }}
+                                        >
+                                          <Download size={10} className="me-1" aria-hidden="true" />
+                                          Original
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm"
+                                          onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title="View original resolution"
+                                          aria-label="View original resolution video in new tab"
+                                          style={{ fontSize: '10px' }}
+                                        >
+                                          <ExternalLink size={10} className="me-1" aria-hidden="true" />
+                                          View Original
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
