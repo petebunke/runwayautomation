@@ -2416,34 +2416,43 @@ export default function RunwayAutomationApp() {
                     )}
 
                     {/* Fixed Generation Log with proper spacing */}
-                    <div className="card bg-dark text-light border-0 shadow" style={{ borderRadius: '8px', height: '300px' }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <h5 className="fw-bold mb-0 text-white">Video Generation Log</h5>
-                          <div className="d-flex gap-2">
-                            <button 
-                              className="btn btn-sm btn-outline-danger" 
-                              onClick={clearLogs}
-                              title="Clear all logs"
-                              style={{ borderRadius: '6px' }}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                            <button 
-                              className="btn btn-sm btn-outline-light" 
-                              onClick={copyLogsToClipboard}
-                              title="Copy all logs to clipboard"
-                              style={{ borderRadius: '6px' }}
-                            >
-                              <i className="bi bi-clipboard"></i>
-                            </button>
-                          </div>
+                    <div className="card bg-dark text-light border-0 shadow" style={{ 
+                      borderRadius: '8px',
+                      height: '300px',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
+                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
+                        <div className="d-flex gap-2">
+                          <button 
+                            className="btn btn-sm btn-outline-danger" 
+                            onClick={clearLogs}
+                            title="Clear all logs"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-outline-light" 
+                            onClick={copyLogsToClipboard}
+                            title="Copy all logs to clipboard"
+                            style={{ borderRadius: '6px' }}
+                          >
+                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                          </button>
                         </div>
                       </div>
                       <div 
                         ref={logContainerRef}
-                        className="card-body p-3" 
-                        style={{ fontFamily: 'monospace', overflowY: 'auto', height: 'calc(100% - 70px)' }}
+                        className="px-3 pb-3" 
+                        style={{ 
+                          fontFamily: 'monospace',
+                          overflowY: 'auto',
+                          flex: '1 1 auto',
+                          minHeight: '0px',
+                          maxHeight: 'calc(300px - 60px)'
+                        }}
                       >
                         {logs.map((log, index) => (
                           <div key={index} className={`small mb-1 ${
@@ -2460,7 +2469,6 @@ export default function RunwayAutomationApp() {
                             No logs yet... Logs will appear here during video generation and persist across page refreshes.
                           </div>
                         )}
-                        <div style={{ height: '20px' }}></div>
                       </div>
                     </div>
                   </div>
