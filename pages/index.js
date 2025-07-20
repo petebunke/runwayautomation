@@ -2438,14 +2438,14 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div 
                         ref={logContainerRef}
-                        className="px-3 pb-3" 
+                        className="px-3 py-3" 
                         style={{ 
                           fontFamily: 'monospace',
                           overflowY: 'auto',
                           overflowX: 'hidden',
                           flex: '1 1 auto',
                           minHeight: '0',
-                          height: 'calc(100% - 60px)'
+                          maxHeight: '240px'
                         }}
                       >
                         {logs.map((log, index) => (
