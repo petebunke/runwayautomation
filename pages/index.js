@@ -2256,9 +2256,9 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
                   
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important', height: 'calc(100vh - 400px)', minHeight: '500px' }}>
+                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px', flexShrink: 0 }}>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
                           <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
@@ -2411,14 +2411,19 @@ export default function RunwayAutomationApp() {
                     {/* Fixed Generation Log with proper spacing */}
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
                       borderRadius: '8px',
-                      flex: '1 1 auto',
-                      minHeight: '200px',
-                      maxHeight: '400px',
-                      display: 'flex',
-                      flexDirection: 'column',
+                      height: '280px',
+                      position: 'relative',
                       overflow: 'hidden'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ 
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '56px',
+                        zIndex: 10,
+                        backgroundColor: '#212529'
+                      }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
@@ -2442,13 +2447,15 @@ export default function RunwayAutomationApp() {
                       <div 
                         ref={logContainerRef}
                         style={{ 
+                          position: 'absolute',
+                          top: '56px',
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
                           fontFamily: 'monospace',
                           overflowY: 'auto',
                           overflowX: 'hidden',
-                          flex: '1 1 auto',
-                          minHeight: 0,
-                          padding: '8px 16px',
-                          scrollBehavior: 'smooth'
+                          padding: '8px 16px 20px 16px'
                         }}
                       >
                         {logs.map((log, index) => (
@@ -2466,8 +2473,6 @@ export default function RunwayAutomationApp() {
                             No logs yet... Logs will appear here during video generation and persist across page refreshes.
                           </div>
                         )}
-                        {/* Padding div to ensure last item is always visible */}
-                        {logs.length > 0 && <div style={{ minHeight: '20px' }}></div>}
                       </div>
                     </div>
                   </div>
