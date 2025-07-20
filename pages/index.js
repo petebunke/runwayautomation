@@ -2619,7 +2619,7 @@ export default function RunwayAutomationApp() {
                           })
                           .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                            <div className="card border-0 shadow d-flex flex-column" style={{ borderRadius: '8px' }}>
                               <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
@@ -2690,7 +2690,7 @@ export default function RunwayAutomationApp() {
                                 </button>
                               </div>
                               
-                              <div className="card-body p-3">
+                              <div className="card-body p-3 d-flex flex-column flex-grow-1">
                                 <div className="d-flex justify-content-between align-items-start mb-2">
                                   {editingVideoTitle === result.id ? (
                                     <div className="d-flex align-items-center w-100">
@@ -2759,15 +2759,23 @@ export default function RunwayAutomationApp() {
                                     </>
                                   )}
                                 </div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                <h6 className="card-title mb-3 flex-grow-1" style={{ 
+                                  fontWeight: '400',
+                                  fontSize: '0.875rem',
+                                  lineHeight: '1.3',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 3,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden'
+                                }} title={result.prompt}>
                                   {result.prompt}
                                 </h6>
                                 
-                                <div className="d-grid gap-2">
+                                <div className="mt-auto">
                                   {result.video_url && (
-                                    <div className="btn-group" role="group" aria-label="Video actions">
+                                    <div className="btn-group w-100 mb-2" role="group" aria-label="Video actions">
                                       <button
-                                        className="btn btn-primary btn-sm flex-fill"
+                                        className="btn btn-primary btn-sm"
                                         onClick={() => downloadVideo(
                                           result.upscaled_video_url || result.video_url, 
                                           generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
@@ -2775,16 +2783,16 @@ export default function RunwayAutomationApp() {
                                         title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
                                         aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
                                       >
-                                        <Download size={16} className="me-1" aria-hidden="true" />
+                                        <Download size={14} className="me-1" aria-hidden="true" />
                                         Download{result.upscaled_video_url ? ' 4K' : ''}
                                       </button>
                                       <button
-                                        className="btn btn-outline-primary btn-sm flex-fill"
+                                        className="btn btn-outline-primary btn-sm"
                                         onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
                                         title={result.upscaled_video_url ? "View 4K version" : "View video"}
                                         aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
                                       >
-                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
+                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
                                         View
                                       </button>
                                       {!result.upscaled_video_url && result.video_url && (
@@ -2796,7 +2804,7 @@ export default function RunwayAutomationApp() {
                                           style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
                                           aria-label="Upscale video to 4K resolution"
                                         >
-                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
+                                          <ArrowUp size={14} className="me-1" aria-hidden="true" />
                                           4K
                                         </button>
                                       )}
@@ -2805,23 +2813,23 @@ export default function RunwayAutomationApp() {
                                   
                                   {/* Show both original and 4K download options if 4K exists */}
                                   {result.upscaled_video_url && result.video_url && (
-                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
+                                    <div className="btn-group w-100" role="group" aria-label="Original video actions">
                                       <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        className="btn btn-outline-secondary btn-sm"
                                         onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
                                         title="Download original resolution"
                                         aria-label="Download original resolution video"
                                       >
-                                        <Download size={14} className="me-1" aria-hidden="true" />
+                                        <Download size={12} className="me-1" aria-hidden="true" />
                                         Original
                                       </button>
                                       <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        className="btn btn-outline-secondary btn-sm"
                                         onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
                                         title="View original resolution"
                                         aria-label="View original resolution video in new tab"
                                       >
-                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
+                                        <ExternalLink size={12} className="me-1" aria-hidden="true" />
                                         View Original
                                       </button>
                                     </div>
