@@ -999,7 +999,7 @@ export default function RunwayAutomationApp() {
     <>
       <Head>
         <title>Runway Automation - Batch Video Generation</title>
-        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones." />
+        <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download videos in 4K as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
@@ -1044,7 +1044,7 @@ export default function RunwayAutomationApp() {
             </div>
             <div className="text-end">
               <p className="lead text-white-50 mb-0" style={{ maxWidth: '420px', fontSize: '1rem', lineHeight: '1.4' }}>
-                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones.
+                A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download videos in 4K as MP4 and JSON.
               </p>
             </div>
           </div>
