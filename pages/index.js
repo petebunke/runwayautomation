@@ -1185,6 +1185,8 @@ export default function RunwayAutomationApp() {
         duration: duration
       };
 
+      addLog(`📤 Sending request to Runway API for ${jobId}...`, 'info');
+
       // Make the generation request
       const response = await fetch(API_BASE + '/runway-generate', {
         method: 'POST',
@@ -1197,6 +1199,8 @@ export default function RunwayAutomationApp() {
         })
       });
 
+      addLog(`📨 Received response from API (${response.status}) for ${jobId}`, 'info');
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || `Generation failed: ${response.status}`);
@@ -1205,7 +1209,7 @@ export default function RunwayAutomationApp() {
       const taskData = await response.json();
       const runwayTaskId = taskData.id;
 
-      addLog(`✅ ${jobId} started (Task: ${runwayTaskId})`, 'success');
+      addLog(`✅ ${jobId} started successfully (Runway Task: ${runwayTaskId})`, 'success');
       
       setGenerationProgress(prev => ({
         ...prev,
@@ -1386,6 +1390,7 @@ export default function RunwayAutomationApp() {
 
     try {
       const promises = [];
+      let generationActive = true; // Use local variable instead of state
       
       for (let i = 0; i < concurrency; i++) {
         const videoNum = i + 1;
@@ -1395,20 +1400,23 @@ export default function RunwayAutomationApp() {
           await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
         }
         
-        // Check if generation was stopped
-        if (!isRunning) {
+        // Check if generation was stopped (but don't rely on state that might be stale)
+        if (!generationActive) {
           addLog('🛑 Generation stopped by user', 'warning');
           break;
         }
         
+        addLog(`🎬 Starting Generation ${currentGeneration} - Video ${videoNum}...`, 'info');
         promises.push(generateVideo(prompt, imageUrl, i, currentGeneration, videoNum));
       }
 
       if (promises.length === 0) {
-        addLog('❌ No videos to generate', 'error');
+        addLog('❌ No videos were started', 'error');
         setIsRunning(false);
         return;
       }
+
+      addLog(`📡 ${promises.length} video generation${promises.length > 1 ? 's' : ''} started, waiting for completion...`, 'info');
 
       const results = await Promise.allSettled(promises);
       const successful = results.filter(r => r.status === 'fulfilled' && r.value).length;
