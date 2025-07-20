@@ -1,5 +1,390 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3 } from 'lucide-react';
+{activeTab === 'results' && (
+            <div className="row justify-content-center" style={{ margin: '0' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', height: 'calc(100vh - 320px)' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        backgroundColor: '#4dd0ff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Download className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
+                    </div>
+                    
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
+                      <div style={{ marginRight: '30px' }}>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-light shadow"
+                            onClick={downloadAllVideos}
+                            disabled={isDownloadingAll}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            {isDownloadingAll ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={20} className="me-2" />
+                                All Videos
+                                <span className="ms-2 badge bg-primary">
+                                  {results.filter(result => result.video_url && result.status === 'completed').length}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                          
+                          {results.filter(result => result.upscaled_video_url && result.status === 'completed').length > 0 && (
+                            <button
+                              className="btn shadow"
+                              onClick={downloadUpscaledVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                            >
+                              <Download size={16} className="me-2" />
+                              4K Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.upscaled_video_url && result.status === 'completed').length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-danger shadow"
+                              onClick={downloadFavoritedVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Download size={16} className="me-2" />
+                              Favorited Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          <button
+                            className="btn btn-outline-light shadow"
+                            onClick={clearGeneratedVideos}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            <Trash2 size={16} className="me-2" />
+                            Clear Videos
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
+                    <div className="mb-4"></div>
+                    {results.length === 0 ? (
+                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
+                        <div className="mb-4">
+                          <Film size={80} className="text-muted" />
+                        </div>
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <div className="d-flex justify-content-center">
+                          <button
+                            className="btn btn-primary btn-lg shadow"
+                            onClick={() => setActiveTab('setup')}
+                            style={{ borderRadius: '6px', paddingLeft: '2rem', paddingRight: '2rem' }}
+                          >
+                            Get Started
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
+                        {results
+                          .slice()
+                          .sort((a, b) => {
+                            const parseJobId = (jobId) => {
+                              if (!jobId) return { generation: 0, video: 0 };
+                              
+                              const genMatch = jobId.match(/Generation (\d+)/);
+                              const vidMatch = jobId.match(/Video (\d+)/);
+                              
+                              return {
+                                generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                video: vidMatch ? parseInt(vidMatch[1]) : 0
+                              };
+                            };
+                            
+                            const aData = parseJobId(a.jobId);
+                            const bData = parseJobId(b.jobId);
+                            
+                            if (aData.generation !== bData.generation) {
+                              return aData.generation - bData.generation;
+                            }
+                            return aData.video - bData.video;
+                          })
+                          .map((result, index) => (
+                          <div key={index} className="col-md-6 col-lg-3">
+                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
+                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                {result.video_url ? (
+                                  <video
+                                    src={result.video_url}
+                                    poster={result.thumbnail_url}
+                                    controls
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                    preload="metadata"
+                                  >
+                                    Your browser does not support video playback.
+                                  </video>
+                                ) : result.thumbnail_url ? (
+                                  <img 
+                                    src={result.thumbnail_url}
+                                    alt={'Thumbnail for: ' + result.prompt}
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                    <div className="text-center">
+                                      <Film size={48} className="text-primary mb-3" />
+                                      <div className="fw-bold text-muted">Processing...</div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {result.status !== 'completed' && (
+                                  <div className="position-absolute top-0 start-0 m-3">
+                                    <span className="badge bg-warning shadow-sm">
+                                      ⏳ Processing
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* 4K badge for upscaled videos */}
+                                {result.upscaled_video_url && (
+                                  <div className="position-absolute top-0 start-0 m-2">
+                                    <span className="badge bg-success shadow-sm">
+                                      4K ✨
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Favorite button in upper-right corner */}
+                                <button
+                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                  onClick={() => toggleFavorite(result.id)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Heart 
+                                    size={16} 
+                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                  />
+                                </button>
+                              </div>
+                              
+                              <div className="card-body p-3">
+                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                  {editingVideoTitle === result.id ? (
+                                    <div className="d-flex align-items-center w-100">
+                                      <input
+                                        type="text"
+                                        value={tempEditTitle}
+                                        onChange={(e) => setTempEditTitle(e.target.value)}
+                                        onKeyDown={(e) => handleEditKeyPress(e, result.id)}
+                                        onBlur={() => saveEditTitle(result.id)}
+                                        className="form-control form-control-sm me-2"
+                                        style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
+                                        autoFocus
+                                        maxLength={100}
+                                        aria-label="Edit video title"
+                                      />
+                                      <button
+                                        className="btn btn-success btn-sm me-1"
+                                        onClick={() => saveEditTitle(result.id)}
+                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                        aria-label="Save title"
+                                      >
+                                        ✓
+                                      </button>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={cancelEditTitle}
+                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                        aria-label="Cancel edit"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="fw-bold text-primary me-2" style={{ 
+                                        lineHeight: '1.2',
+                                        wordBreak: 'break-word',
+                                        maxWidth: '200px',
+                                        flex: '1'
+                                      }}>
+                                        {getVideoDisplayTitle(result)}
+                                      </span>
+                                      
+                                      {/* Edit button positioned at bottom of first line */}
+                                      <button
+                                        className="btn btn-sm btn-outline-secondary p-1"
+                                        onClick={() => handleEditTitle(result.id, result.jobId)}
+                                        title="Edit video title"
+                                        style={{ 
+                                          border: 'none',
+                                          background: 'transparent',
+                                          borderRadius: '4px',
+                                          width: '24px',
+                                          height: '24px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          alignSelf: 'flex-start',
+                                          marginTop: '0px',
+                                          flexShrink: 0
+                                        }}
+                                        aria-label="Edit video title"
+                                      >
+                                        <Edit3 size={12} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                  {result.prompt}
+                                </h6>
+                                
+                                <div className="d-grid gap-2">
+                                  {result.video_url && (
+                                    <div className="btn-group" role="group" aria-label="Video actions">
+                                      <button
+                                        className="btn btn-primary btn-sm flex-fill"
+                                        onClick={() => downloadVideo(
+                                          result.upscaled_video_url || result.video_url, 
+                                          generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
+                                        )}
+                                        title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                        aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                      >
+                                        <Download size={16} className="me-1" aria-hidden="true" />
+                                        Download{result.upscaled_video_url ? ' 4K' : ''}
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-primary btn-sm flex-fill"
+                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
+                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
+                                        aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
+                                      >
+                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
+                                        View
+                                      </button>
+                                      {!result.upscaled_video_url && result.video_url && (
+                                        <button
+                                          className="btn btn-sm"
+                                          onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
+                                          disabled={upscalingProgress[`upscale_${result.id}`]}
+                                          title="Upscale to 4K resolution"
+                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                                          aria-label="Upscale video to 4K resolution"
+                                        >
+                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
+                                          4K
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show both original and 4K download options if 4K exists */}
+                                  {result.upscaled_video_url && result.video_url && (
+                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                        title="Download original resolution"
+                                        aria-label="Download original resolution video"
+                                      >
+                                        <Download size={14} className="me-1" aria-hidden="true" />
+                                        Original
+                                      </button>
+                                      <button
+                                        className="btn btn-outline-secondary btn-sm flex-fill"
+                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
+                                        title="View original resolution"
+                                        aria-label="View original resolution video in new tab"
+                                      >
+                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
+                                        View Original
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mt-4 mb-4">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px'}}>
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
+                  alt="Powered by Runway" 
+                  style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
+                />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+                                import React, { useState, useEffect, useRef } from 'react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -35,12 +420,121 @@ export default function RunwayAutomationApp() {
   const [editingVideoTitle, setEditingVideoTitle] = useState(null);
   const [customTitles, setCustomTitles] = useState({});
   const [tempEditTitle, setTempEditTitle] = useState('');
+  const [promptContainsProfanity, setPromptContainsProfanity] = useState(false);
   const fileInputRef = useRef(null);
   const logContainerRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Comprehensive profanity filter
+  const profanityWords = [
+    // Explicit profanity
+    'fuck', 'fucking', 'fucked', 'fucker', 'fucks', 'shit', 'shitting', 'shits', 'damn', 'damned',
+    'hell', 'bitch', 'bitches', 'bastard', 'bastards', 'asshole', 'assholes', 'crap', 'piss',
+    'whore', 'slut', 'sluts', 'cock', 'cocks', 'dick', 'dicks', 'pussy', 'cunt', 'cunts',
+    'tits', 'boobs', 'nipples', 'penis', 'vagina', 'anus', 'rape', 'raping', 'raped',
+    
+    // Racial slurs and hate speech
+    'nigger', 'nigga', 'chink', 'gook', 'spic', 'wetback', 'kike', 'faggot', 'fag', 'dyke',
+    'retard', 'retarded', 'mongoloid', 'cripple', 'midget',
+    
+    // Violence and harmful content
+    'kill', 'murder', 'suicide', 'death', 'torture', 'abuse', 'violence', 'shoot', 'shooting',
+    'bomb', 'explosion', 'terrorist', 'terrorism', 'weapon', 'gun', 'knife', 'blood', 'gore',
+    'brutal', 'savage', 'attack', 'assault', 'harm', 'hurt', 'pain', 'suffer', 'bleeding',
+    
+    // Drug references
+    'cocaine', 'heroin', 'meth', 'methamphetamine', 'crack', 'weed', 'marijuana', 'cannabis',
+    'drugs', 'overdose', 'addiction', 'needle', 'inject', 'snort', 'smoke', 'high', 'stoned',
+    
+    // Sexual content
+    'sex', 'sexual', 'naked', 'nude', 'porn', 'pornography', 'masturbate', 'orgasm', 'climax',
+    'erotic', 'aroused', 'horny', 'seduce', 'seduction', 'fetish', 'kinky', 'bondage',
+    'prostitute', 'escort', 'brothel', 'strip', 'stripper', 'underwear', 'lingerie',
+    
+    // Common variations and leetspeak
+    'f*ck', 'f**k', 'sh*t', 'sh!t', 'b*tch', 'a**hole', 'a$$hole', 'n*gger', 'f@g',
+    'fuk', 'fack', 'phuck', 'shyt', 'byatch', 'azz', 'azzhole', 'biatch'
+  ];
+
+  const checkForProfanity = (text) => {
+    if (!text || typeof text !== 'string') return false;
+    
+    const lowerText = text.toLowerCase();
+    const words = lowerText.split(/\s+/);
+    
+    // Check individual words
+    for (const word of words) {
+      // Remove common punctuation for checking
+      const cleanWord = word.replace(/[^\w]/g, '');
+      if (profanityWords.includes(cleanWord)) {
+        return true;
+      }
+    }
+    
+    // Check for profanity within the full text (handles concatenated words)
+    for (const profaneWord of profanityWords) {
+      if (lowerText.includes(profaneWord)) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  const handlePromptChange = (e) => {
+    const newPrompt = e.target.value;
+    const containsProfanity = checkForProfanity(newPrompt);
+    
+    if (containsProfanity && !promptContainsProfanity) {
+      // Show profanity warning modal
+      showModalDialog({
+        title: "Content Warning",
+        type: "warning",
+        confirmText: "I Understand",
+        cancelText: null,
+        onConfirm: () => {
+          setPromptContainsProfanity(true);
+          setPrompt(newPrompt);
+        },
+        content: (
+          <div>
+            <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
+              <div className="d-flex align-items-center mb-2">
+                <Shield size={20} className="text-warning me-2" />
+                <strong>Inappropriate Content Detected</strong>
+              </div>
+              <p className="mb-0">Your video prompt contains potentially inappropriate or offensive language.</p>
+            </div>
+            
+            <div className="mb-3">
+              <p className="mb-2"><strong>Please note:</strong></p>
+              <ul className="mb-0 ps-3">
+                <li>Runway AI has content policies that may reject inappropriate prompts</li>
+                <li>Videos with offensive content may be automatically flagged or removed</li>
+                <li>Consider rephrasing your prompt to avoid policy violations</li>
+                <li>This could result in wasted credits or API restrictions</li>
+              </ul>
+            </div>
+            
+            <p className="mb-0 text-muted">
+              We recommend using professional, appropriate language for better results and compliance with Runway's terms of service.
+            </p>
+          </div>
+        )
+      });
+      return; // Don't update the prompt until user acknowledges
+    }
+    
+    setPrompt(newPrompt);
+    
+    // Reset profanity flag if content is now clean
+    if (!containsProfanity && promptContainsProfanity) {
+      setPromptContainsProfanity(false);
+    }
+  };
 
   // Auto-scroll logs to bottom when new logs are added
   useEffect(() => {
@@ -97,13 +591,15 @@ export default function RunwayAutomationApp() {
             {children}
             
             <div className="d-flex gap-2 justify-content-end mt-4">
-              <button
-                className="btn btn-secondary"
-                onClick={onClose}
-                style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
-              >
-                {cancelText}
-              </button>
+              {cancelText && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={onClose}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
+                >
+                  {cancelText}
+                </button>
+              )}
               {onConfirm && (
                 <button
                   className={`btn ${type === 'warning' ? 'btn-danger' : 'btn-primary'} shadow`}
@@ -111,7 +607,7 @@ export default function RunwayAutomationApp() {
                     onConfirm();
                     onClose();
                   }}
-                  style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: cancelText ? '50%' : '100%' }}
                 >
                   {confirmText}
                 </button>
@@ -141,6 +637,8 @@ export default function RunwayAutomationApp() {
       const savedPrompt = localStorage.getItem('runway-automation-prompt');
       if (savedPrompt && savedPrompt.trim()) {
         setPrompt(savedPrompt);
+        // Check for profanity in saved prompt without showing modal
+        setPromptContainsProfanity(checkForProfanity(savedPrompt));
       }
       
       const savedImageUrl = localStorage.getItem('runway-automation-image-url');
@@ -1990,13 +2488,21 @@ export default function RunwayAutomationApp() {
                       <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                         <div className="mb-4"></div>
                         <div className="mb-4">
-                          <label className="form-label fw-bold">Video Prompt</label>
+                          <label className="form-label fw-bold">
+                            Video Prompt
+                            {promptContainsProfanity && (
+                              <span className="badge bg-warning text-dark ms-2" title="Content warning detected">
+                                <Shield size={12} className="me-1" />
+                                Warning
+                              </span>
+                            )}
+                          </label>
                           <div className="position-relative">
                             <textarea
-                              className="form-control"
+                              className={`form-control ${promptContainsProfanity ? 'border-warning' : ''}`}
                               rows="3"
                               value={prompt}
-                              onChange={(e) => setPrompt(e.target.value)}
+                              onChange={handlePromptChange}
                               placeholder=""
                               style={{ borderRadius: '8px' }}
                             />
@@ -2027,6 +2533,12 @@ export default function RunwayAutomationApp() {
                               </div>
                             )}
                           </div>
+                          {promptContainsProfanity && (
+                            <div className="form-text text-warning">
+                              <Shield size={14} className="me-1" />
+                              Content warning: This prompt may violate Runway's content policies
+                            </div>
+                          )}
                         </div>
 
                         <div className="mb-4 flex-grow-1 d-flex flex-column">
@@ -2185,676 +2697,3 @@ export default function RunwayAutomationApp() {
               </div>
             </div>
           )}
-
-          {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', height: 'calc(100vh - 320px)' }}>
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
-                    style={{ 
-                      height: '80px',
-                      borderRadius: '8px 8px 0 0'
-                    }}
-                  >
-                    <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '80px', 
-                        height: '80px',
-                        left: '20px',
-                        top: '40px',
-                        zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        backgroundColor: '#4dd0ff'
-                      }}
-                    >
-                      <Video className="text-white" size={32} />
-                    </div>
-                    
-                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Video Generation</h3>
-                    </div>
-                    
-                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
-                      {!isRunning ? (
-                        <button
-                          className="btn btn-success btn-lg shadow"
-                          onClick={generateVideos}
-                          disabled={isRunning}
-                          style={{ 
-                            borderRadius: '8px', 
-                            fontWeight: '600', 
-                            marginTop: '6px', 
-                            marginBottom: '6px',
-                            opacity: '1',
-                            transition: 'opacity 0.15s ease-in-out',
-                            backgroundColor: '#28a745',
-                            borderColor: '#28a745'
-                          }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.85'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        >
-                          <Play size={24} className="me-2" />
-                          Start Generation
-                          {concurrency > 1 && (
-                            <span className="ms-2 badge bg-light text-dark">
-                              {concurrency} videos
-                            </span>
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-danger btn-lg shadow"
-                          onClick={stopGeneration}
-                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
-                        >
-                          <AlertCircle size={24} className="me-2" />
-                          Stop Generation
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
-                      <div className="card-body p-3">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
-                          <div className="d-flex gap-5 align-items-center text-center">
-                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Credits:</strong> {organizationInfo ? organizationInfo.creditBalance : 0}</span>
-                            <div className="d-flex align-items-center">
-                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
-                                {isRunning && (
-                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
-                                )}
-                              </div>
-                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Always show generation status */}
-                    <div className="mb-4" style={{ minHeight: '100px' }}>
-                      <div className="text-center py-3">
-                        <h4 className="fw-bold text-dark mb-2">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              // During generation
-                              return `Generation ${generationCounter || 1} in progress`;
-                            } else if (completedGeneration) {
-                              // After completion
-                              return `Generation ${completedGeneration} completed`;
-                            } else {
-                              // Initial state
-                              return `Generation ${generationCounter || 1}`;
-                            }
-                          })()}
-                        </h4>
-                        <p className="text-muted mb-0">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              // During generation - show active job count
-                              const count = Object.keys(generationProgress).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generating`;
-                            } else if (completedGeneration) {
-                              // After completion - show completed count from that generation
-                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            } else {
-                              // Initial state
-                              return '0 videos generated';
-                            }
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-4">
-                        <div className="row g-3">
-                          {Object.entries(generationProgress).map(([jobId, progress]) => (
-                            <div key={jobId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '120px'
-                                    }}>
-                                      {jobId}
-                                    </span>
-                                    <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-success' :
-                                      progress.status === 'failed' ? 'bg-danger' :
-                                      progress.status === 'throttled' ? 'bg-warning' :
-                                      'bg-primary'
-                                    }`}>
-                                      {progress.status}
-                                    </span>
-                                  </div>
-                                  <div className="progress mb-2" style={{ height: '8px' }}>
-                                    <div 
-                                      className={`progress-bar ${
-                                        progress.status === 'completed' ? 'bg-success' :
-                                        progress.status === 'failed' ? 'bg-danger' :
-                                        progress.status === 'throttled' ? 'bg-warning' :
-                                        'bg-primary'
-                                      }`}
-                                      style={{ width: progress.progress + '%' }}
-                                    ></div>
-                                  </div>
-                                  <small className="text-muted">
-                                    {progress.message || progress.status}
-                                  </small>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Show upscaling progress if any */}
-                    {Object.keys(upscalingProgress).length > 0 && (
-                      <div className="mb-4">
-                        <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
-                        <div className="row g-3">
-                          {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
-                            <div key={upscaleId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '120px'
-                                    }}>
-                                      4K Upscale
-                                    </span>
-                                    <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-success' :
-                                      progress.status === 'failed' ? 'bg-danger' :
-                                      'bg-info'
-                                    }`}>
-                                      {progress.status}
-                                    </span>
-                                  </div>
-                                  <div className="progress mb-2" style={{ height: '8px' }}>
-                                    <div 
-                                      className={`progress-bar ${
-                                        progress.status === 'completed' ? 'bg-success' :
-                                        progress.status === 'failed' ? 'bg-danger' :
-                                        'bg-info'
-                                      }`}
-                                      style={{ width: progress.progress + '%' }}
-                                    ></div>
-                                  </div>
-                                  <small className="text-muted">
-                                    {progress.message || progress.status}
-                                  </small>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Fixed Generation Log with proper spacing */}
-                    <div className="card bg-dark text-light border-0 shadow" style={{ 
-                      borderRadius: '8px',
-                      height: '300px',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
-                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
-                        <div className="d-flex gap-2">
-                          <button 
-                            className="btn btn-sm btn-outline-danger" 
-                            onClick={clearLogs}
-                            title="Clear all logs"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-outline-light" 
-                            onClick={copyLogsToClipboard}
-                            title="Copy all logs to clipboard"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                          </button>
-                        </div>
-                      </div>
-                      <div 
-                        ref={logContainerRef}
-                        style={{ 
-                          fontFamily: 'monospace',
-                          overflowY: 'auto',
-                          overflowX: 'hidden',
-                          flex: 1,
-                          minHeight: 0,
-                          padding: '8px 16px',
-                          scrollBehavior: 'smooth'
-                        }}
-                      >
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`} style={{ marginBottom: '4px' }}>
-                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">
-                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                          </div>
-                        )}
-                        {/* Padding div to ensure last item is always visible */}
-                        {logs.length > 0 && <div style={{ minHeight: '20px' }}></div>}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'results' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', height: 'calc(100vh - 320px)' }}>
-                  <div 
-                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
-                    style={{ 
-                      height: '80px',
-                      borderRadius: '8px 8px 0 0'
-                    }}
-                  >
-                    <div 
-                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ 
-                        width: '80px', 
-                        height: '80px',
-                        left: '20px',
-                        top: '40px',
-                        zIndex: 10,
-                        backgroundColor: '#4dd0ff',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Download className="text-white" size={32} />
-                    </div>
-                    
-                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
-                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
-                    </div>
-                    
-                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
-                      <div style={{ marginRight: '30px' }}>
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-light shadow"
-                            onClick={downloadAllVideos}
-                            disabled={isDownloadingAll}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            {isDownloadingAll ? (
-                              <>
-                                <div className="spinner-border spinner-border-sm me-2" role="status">
-                                  <span className="visually-hidden">Loading...</span>
-                                </div>
-                                Downloading...
-                              </>
-                            ) : (
-                              <>
-                                <Download size={20} className="me-2" />
-                                All Videos
-                                <span className="ms-2 badge bg-primary">
-                                  {results.filter(result => result.video_url && result.status === 'completed').length}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                          
-                          {results.filter(result => result.upscaled_video_url && result.status === 'completed').length > 0 && (
-                            <button
-                              className="btn shadow"
-                              onClick={downloadUpscaledVideos}
-                              disabled={isDownloadingAll}
-                              style={{ borderRadius: '8px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
-                            >
-                              <Download size={16} className="me-2" />
-                              4K Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.upscaled_video_url && result.status === 'completed').length}
-                              </span>
-                            </button>
-                          )}
-                          
-                          {favoriteVideos.size > 0 && (
-                            <button
-                              className="btn btn-danger shadow"
-                              onClick={downloadFavoritedVideos}
-                              disabled={isDownloadingAll}
-                              style={{ borderRadius: '8px', fontWeight: '600' }}
-                            >
-                              <Download size={16} className="me-2" />
-                              Favorited Videos
-                              <span className="ms-2 badge bg-light text-dark">
-                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
-                              </span>
-                            </button>
-                          )}
-                          
-                          <button
-                            className="btn btn-outline-light shadow"
-                            onClick={clearGeneratedVideos}
-                            style={{ borderRadius: '8px', fontWeight: '600' }}
-                          >
-                            <Trash2 size={16} className="me-2" />
-                            Clear Videos
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-                    {results.length === 0 ? (
-                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
-                        <div className="mb-4">
-                          <Film size={80} className="text-muted" />
-                        </div>
-                        <h4 className="text-muted mb-3">No videos generated yet</h4>
-                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
-                        <div className="d-flex justify-content-center">
-                          <button
-                            className="btn btn-primary btn-lg shadow"
-                            onClick={() => setActiveTab('setup')}
-                            style={{ borderRadius: '6px', paddingLeft: '2rem', paddingRight: '2rem' }}
-                          >
-                            Get Started
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
-                        {results
-                          .slice()
-                          .sort((a, b) => {
-                            const parseJobId = (jobId) => {
-                              if (!jobId) return { generation: 0, video: 0 };
-                              
-                              const genMatch = jobId.match(/Generation (\d+)/);
-                              const vidMatch = jobId.match(/Video (\d+)/);
-                              
-                              return {
-                                generation: genMatch ? parseInt(genMatch[1]) : 0,
-                                video: vidMatch ? parseInt(vidMatch[1]) : 0
-                              };
-                            };
-                            
-                            const aData = parseJobId(a.jobId);
-                            const bData = parseJobId(b.jobId);
-                            
-                            if (aData.generation !== bData.generation) {
-                              return aData.generation - bData.generation;
-                            }
-                            return aData.video - bData.video;
-                          })
-                          .map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
-                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                {result.video_url ? (
-                                  <video
-                                    src={result.video_url}
-                                    poster={result.thumbnail_url}
-                                    controls
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                    preload="metadata"
-                                  >
-                                    Your browser does not support video playback.
-                                  </video>
-                                ) : result.thumbnail_url ? (
-                                  <img 
-                                    src={result.thumbnail_url}
-                                    alt={'Thumbnail for: ' + result.prompt}
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                  />
-                                ) : (
-                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <div className="text-center">
-                                      <Film size={48} className="text-primary mb-3" />
-                                      <div className="fw-bold text-muted">Processing...</div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {result.status !== 'completed' && (
-                                  <div className="position-absolute top-0 start-0 m-3">
-                                    <span className="badge bg-warning shadow-sm">
-                                      ⏳ Processing
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* 4K badge for upscaled videos */}
-                                {result.upscaled_video_url && (
-                                  <div className="position-absolute top-0 start-0 m-2">
-                                    <span className="badge bg-success shadow-sm">
-                                      4K ✨
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* Favorite button in upper-right corner */}
-                                <button
-                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
-                                  onClick={() => toggleFavorite(result.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.9)',
-                                    borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
-                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                >
-                                  <Heart 
-                                    size={16} 
-                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                  />
-                                </button>
-                              </div>
-                              
-                              <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  {editingVideoTitle === result.id ? (
-                                    <div className="d-flex align-items-center w-100">
-                                      <input
-                                        type="text"
-                                        value={tempEditTitle}
-                                        onChange={(e) => setTempEditTitle(e.target.value)}
-                                        onKeyDown={(e) => handleEditKeyPress(e, result.id)}
-                                        onBlur={() => saveEditTitle(result.id)}
-                                        className="form-control form-control-sm me-2"
-                                        style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
-                                        autoFocus
-                                        maxLength={100}
-                                        aria-label="Edit video title"
-                                      />
-                                      <button
-                                        className="btn btn-success btn-sm me-1"
-                                        onClick={() => saveEditTitle(result.id)}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Save title"
-                                      >
-                                        ✓
-                                      </button>
-                                      <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={cancelEditTitle}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Cancel edit"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <span className="fw-bold text-primary me-2" style={{ 
-                                        lineHeight: '1.2',
-                                        wordBreak: 'break-word',
-                                        maxWidth: '200px',
-                                        flex: '1'
-                                      }}>
-                                        {getVideoDisplayTitle(result)}
-                                      </span>
-                                      
-                                      {/* Edit button positioned at bottom of first line */}
-                                      <button
-                                        className="btn btn-sm btn-outline-secondary p-1"
-                                        onClick={() => handleEditTitle(result.id, result.jobId)}
-                                        title="Edit video title"
-                                        style={{ 
-                                          border: 'none',
-                                          background: 'transparent',
-                                          borderRadius: '4px',
-                                          width: '24px',
-                                          height: '24px',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          alignSelf: 'flex-start',
-                                          marginTop: '0px',
-                                          flexShrink: 0
-                                        }}
-                                        aria-label="Edit video title"
-                                      >
-                                        <Edit3 size={12} />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group" aria-label="Video actions">
-                                      <button
-                                        className="btn btn-primary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(
-                                          result.upscaled_video_url || result.video_url, 
-                                          generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
-                                        )}
-                                        title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                        aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                      >
-                                        <Download size={16} className="me-1" aria-hidden="true" />
-                                        Download{result.upscaled_video_url ? ' 4K' : ''}
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm flex-fill"
-                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
-                                        aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
-                                      >
-                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
-                                        View
-                                      </button>
-                                      {!result.upscaled_video_url && result.video_url && (
-                                        <button
-                                          className="btn btn-sm"
-                                          onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
-                                          disabled={upscalingProgress[`upscale_${result.id}`]}
-                                          title="Upscale to 4K resolution"
-                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
-                                          aria-label="Upscale video to 4K resolution"
-                                        >
-                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
-                                          4K
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Show both original and 4K download options if 4K exists */}
-                                  {result.upscaled_video_url && result.video_url && (
-                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
-                                        title="Download original resolution"
-                                        aria-label="Download original resolution video"
-                                      >
-                                        <Download size={14} className="me-1" aria-hidden="true" />
-                                        Original
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title="View original resolution"
-                                        aria-label="View original resolution video in new tab"
-                                      >
-                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
-                                        View Original
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="text-center mt-4 mb-4">
-            <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
-            </div>
-            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px'}}>
-              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
-                <img 
-                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
-                  alt="Powered by Runway" 
-                  style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
-                />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
