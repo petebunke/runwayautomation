@@ -1534,6 +1534,120 @@ export default function RunwayAutomationApp() {
     setIsDownloadingAll(false);
   };
 
+  // Add the pollUpscaleCompletion function
+  const pollUpscaleCompletion = async (upscaleTaskId, upscaleId, originalTaskId, videoName) => {
+    const maxPolls = Math.floor(1800 / 15); // 30 minutes max, check every 15 seconds
+    let pollCount = 0;
+
+    while (pollCount < maxPolls) {
+      try {
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + upscaleTaskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error('Invalid response from Runway API: ' + responseText.substring(0, 100));
+        }
+
+        if (!response.ok) {
+          throw new Error(task.error || 'Upscaling polling failed: ' + response.status);
+        }
+        
+        let progress = 10;
+        
+        if (task.status === 'PENDING') {
+          progress = 25;
+          setUpscalingProgress(prev => ({
+            ...prev,
+            [upscaleId]: { status: 'pending', progress: progress, message: 'Queued for 4K upscaling...' }
+          }));
+        } else if (task.status === 'RUNNING') {
+          progress = 30 + (pollCount * 3);
+          setUpscalingProgress(prev => ({
+            ...prev,
+            [upscaleId]: { status: 'running', progress: Math.min(progress, 90), message: 'Upscaling to 4K resolution...' }
+          }));
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+          
+          // Update progress to completed
+          setUpscalingProgress(prev => ({
+            ...prev,
+            [upscaleId]: { status: 'completed', progress: progress, message: '4K upscaling completed!' }
+          }));
+
+          // Add the upscaled video URL to results
+          setResults(prev => prev.map(result => 
+            result.id === originalTaskId 
+              ? { 
+                  ...result, 
+                  upscaled_video_url: task.output && task.output[0] ? task.output[0] : null
+                }
+              : result
+          ));
+
+          addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
+          
+          // Remove from progress after a short delay to show completion
+          setTimeout(() => {
+            setUpscalingProgress(prev => {
+              const updated = { ...prev };
+              delete updated[upscaleId];
+              return updated;
+            });
+          }, 3000);
+          
+          // Update credits after upscaling
+          updateCreditsAfterGeneration();
+          return;
+        }
+
+        if (task.status === 'FAILED') {
+          const failureReason = task.failure_reason || task.failureCode || task.error || '4K upscaling failed - no specific reason provided';
+          
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${failureReason}`, 'error');
+          
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          
+          throw new Error(failureReason);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 15000)); // Wait 15 seconds before next poll
+        pollCount++;
+        
+      } catch (error) {
+        addLog(`❌ 4K upscaling failed for ${videoName}: ${error.message}`, 'error');
+        setUpscalingProgress(prev => {
+          const updated = { ...prev };
+          delete updated[upscaleId];
+          return updated;
+        });
+        throw error;
+      }
+    }
+
+    // Timeout case
+    addLog(`⏰ 4K upscaling timeout for ${videoName} after 30 minutes`, 'warning');
+    setUpscalingProgress(prev => {
+      const updated = { ...prev };
+      delete updated[upscaleId];
+      return updated;
+    });
+    throw new Error('4K upscaling timeout after polling limit reached');
+  };
+
   // Add the upscaling function
   const upscaleVideo = async (taskId, videoUrl, videoName) => {
     if (!runwayApiKey.trim()) {
@@ -1603,29 +1717,8 @@ export default function RunwayAutomationApp() {
               : result
           ));
           
-          // For demo purposes, simulate upscaling completion
-          setTimeout(() => {
-            setUpscalingProgress(prev => {
-              const updated = { ...prev };
-              delete updated[upscaleId];
-              return updated;
-            });
-            
-            // Simulate adding upscaled URL
-            setResults(prev => prev.map(result => 
-              result.id === taskId 
-                ? { 
-                    ...result, 
-                    upscaled_video_url: result.video_url // Using original URL as placeholder
-                  }
-                : result
-            ));
-            
-            addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
-            
-            // Update credits after upscaling
-            updateCreditsAfterGeneration();
-          }, 5000);
+          // Start polling for upscaling completion
+          await pollUpscaleCompletion(upscaleTask.id, upscaleId, taskId, videoName);
           
         } catch (error) {
           addLog(`❌ 4K upscaling failed for ${videoName}: ${error.message}`, 'error');
