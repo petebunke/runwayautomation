@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield, Filter, Star } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -36,7 +36,6 @@ export default function RunwayAutomationApp() {
   const [customTitles, setCustomTitles] = useState({});
   const [tempEditTitle, setTempEditTitle] = useState('');
   const [promptContainsProfanity, setPromptContainsProfanity] = useState(false);
-  const [videoFilter, setVideoFilter] = useState('all'); // 'all', 'favorites', '4k'
   const fileInputRef = useRef(null);
   const logContainerRef = useRef(null);
 
@@ -325,11 +324,6 @@ export default function RunwayAutomationApp() {
       if (savedActiveTab && ['setup', 'generation', 'results'].includes(savedActiveTab)) {
         setActiveTab(savedActiveTab);
       }
-
-      const savedVideoFilter = localStorage.getItem('runway-automation-video-filter');
-      if (savedVideoFilter && ['all', 'favorites', '4k'].includes(savedVideoFilter)) {
-        setVideoFilter(savedVideoFilter);
-      }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
     }
@@ -490,15 +484,6 @@ export default function RunwayAutomationApp() {
       console.warn('Failed to save active tab to localStorage:', error);
     }
   }, [activeTab, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem('runway-automation-video-filter', videoFilter);
-    } catch (error) {
-      console.warn('Failed to save video filter to localStorage:', error);
-    }
-  }, [videoFilter, mounted]);
 
   // Helper functions
   const clearStoredApiKey = () => {
@@ -1166,14 +1151,7 @@ export default function RunwayAutomationApp() {
 
   // Filter videos based on current filter
   const getFilteredVideos = () => {
-    switch (videoFilter) {
-      case 'favorites':
-        return results.filter(result => favoriteVideos.has(result.id));
-      case '4k':
-        return results.filter(result => result.is_4k || result.upscaled_video_url);
-      default:
-        return results;
-    }
+    return results; // Just return all results since we removed filtering
   };
 
   // Simplified video generation functions for space
@@ -1189,7 +1167,7 @@ export default function RunwayAutomationApp() {
     addLog('🚀 Starting video generation...', 'info');
   };
 
-  const filteredVideos = getFilteredVideos();
+  const filteredVideos = results;
 
   return (
     <>
@@ -1938,7 +1916,7 @@ export default function RunwayAutomationApp() {
                       <h3 className="mb-0 fw-bold">Generated Videos</h3>
                     </div>
                     
-                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
+                    {results.length > 0 && (
                       <div style={{ marginRight: '30px' }}>
                         <div className="d-flex gap-2">
                           <button
@@ -1952,6 +1930,40 @@ export default function RunwayAutomationApp() {
                               {results.filter(result => result.video_url && result.status === 'completed').length}
                             </span>
                           </button>
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-warning shadow"
+                              onClick={() => addLog('Favorited videos feature coming soon!', 'info')}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Heart size={20} className="me-2" />
+                              Favorited Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {favoriteVideos.size}
+                              </span>
+                            </button>
+                          )}
+                          
+                          {results.filter(result => result.is_4k || result.upscaled_video_url).length > 0 && (
+                            <button
+                              className="btn shadow"
+                              onClick={() => addLog('4K videos feature coming soon!', 'info')}
+                              style={{ 
+                                borderRadius: '8px', 
+                                fontWeight: '600',
+                                backgroundColor: '#17a2b8',
+                                borderColor: '#17a2b8',
+                                color: 'white'
+                              }}
+                            >
+                              <ArrowUp size={20} className="me-2" />
+                              4K Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.is_4k || result.upscaled_video_url).length}
+                              </span>
+                            </button>
+                          )}
                           
                           <button
                             className="btn btn-outline-light shadow"
@@ -2086,30 +2098,42 @@ export default function RunwayAutomationApp() {
                                               <ExternalLink size={14} className="me-1" />
                                               View
                                             </button>
-                                          </div>
-                                          
-                                          {!result.is_4k && !result.upscaled_video_url && (
                                             <button
-                                              className="btn btn-success btn-sm w-100"
+                                              className="btn btn-sm flex-fill"
                                               onClick={() => upscaleVideo(result)}
-                                              disabled={upscalingProgress[result.id]}
-                                              style={{ fontSize: '12px' }}
+                                              disabled={upscalingProgress[result.id] || (result.is_4k || result.upscaled_video_url)}
+                                              style={{ 
+                                                fontSize: '12px',
+                                                backgroundColor: (result.is_4k || result.upscaled_video_url) ? '#17a2b8' : '#6c757d',
+                                                borderColor: (result.is_4k || result.upscaled_video_url) ? '#17a2b8' : '#6c757d',
+                                                color: 'white'
+                                              }}
+                                              title={
+                                                (result.is_4k || result.upscaled_video_url) ? '4K Quality' :
+                                                upscalingProgress[result.id] ? 'Upscaling in progress...' :
+                                                'Upscale to 4K (~10-20 credits)'
+                                              }
                                             >
                                               {upscalingProgress[result.id] ? (
                                                 <>
-                                                  <div className="spinner-border spinner-border-sm me-1" role="status">
+                                                  <div className="spinner-border spinner-border-sm me-1" role="status" style={{ width: '12px', height: '12px' }}>
                                                     <span className="visually-hidden">Upscaling...</span>
                                                   </div>
-                                                  {upscalingProgress[result.id].status === 'starting' ? 'Starting...' : 'Upscaling...'}
+                                                  4K
+                                                </>
+                                              ) : (result.is_4k || result.upscaled_video_url) ? (
+                                                <>
+                                                  <ArrowUp size={14} className="me-1" />
+                                                  4K
                                                 </>
                                               ) : (
                                                 <>
                                                   <ArrowUp size={14} className="me-1" />
-                                                  Upscale to 4K
+                                                  4K
                                                 </>
                                               )}
                                             </button>
-                                          )}
+                                          </div>
                                         </>
                                       )}
                                     </div>
