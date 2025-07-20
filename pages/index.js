@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+{/* Fixed Generation Log with proper spacing */}
+                    <div className="card bg-dark text-light border-0 shadow overflow-hidden" style={{ 
+                      borderRadius: '8px',
+                      height: '300px'
+                    }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
+                        <div className="d-fleximport React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3 } from 'lucide-react';
 import Head from 'next/head';
 
@@ -2412,10 +2419,10 @@ export default function RunwayAutomationApp() {
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
                       borderRadius: '8px',
                       height: '300px',
-                      display: 'flex',
-                      flexDirection: 'column'
+                      display: 'table',
+                      width: '100%'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ display: 'table-row' }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
@@ -2436,31 +2443,39 @@ export default function RunwayAutomationApp() {
                           </button>
                         </div>
                       </div>
-                      <div 
-                        ref={logContainerRef}
-                        className="px-3 pb-3" 
-                        style={{ 
-                          fontFamily: 'monospace',
-                          overflowY: 'scroll',
-                          flex: 1,
-                          paddingTop: '8px'
-                        }}
-                      >
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`} style={{ marginBottom: '4px' }}>
-                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                      <div style={{ display: 'table-row', height: '100%' }}>
+                        <div style={{ display: 'table-cell', height: '100%', position: 'relative' }}>
+                          <div 
+                            ref={logContainerRef}
+                            style={{ 
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              fontFamily: 'monospace',
+                              overflowY: 'auto',
+                              overflowX: 'hidden',
+                              padding: '12px 16px 24px 16px'
+                            }}
+                          >
+                            {logs.map((log, index) => (
+                              <div key={index} className={`small ${
+                                log.type === 'error' ? 'text-danger' :
+                                log.type === 'success' ? 'text-light' :
+                                log.type === 'warning' ? 'text-warning' :
+                                'text-light'
+                              }`} style={{ marginBottom: '4px' }}>
+                                <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                              </div>
+                            ))}
+                            {logs.length === 0 && (
+                              <div className="text-muted small">
+                                No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                              </div>
+                            )}
                           </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">
-                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                          </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
