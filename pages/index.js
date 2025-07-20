@@ -2411,9 +2411,11 @@ export default function RunwayAutomationApp() {
                     {/* Fixed Generation Log with proper spacing */}
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
                       borderRadius: '8px',
-                      height: '300px'
+                      height: '300px',
+                      display: 'flex',
+                      flexDirection: 'column'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center">
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
@@ -2435,24 +2437,27 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       <div 
-                        ref={logContainerRef}
-                        className="px-3" 
                         style={{ 
-                          fontFamily: 'monospace',
-                          overflowY: 'auto',
-                          height: 'calc(100% - 60px)',
-                          paddingTop: '8px',
-                          paddingBottom: '8px'
+                          flex: 1,
+                          overflow: 'auto',
+                          minHeight: 0
                         }}
                       >
-                        <div style={{ minHeight: '100%' }}>
+                        <div 
+                          ref={logContainerRef}
+                          style={{ 
+                            fontFamily: 'monospace',
+                            padding: '8px 16px 16px 16px',
+                            minHeight: '100%'
+                          }}
+                        >
                           {logs.map((log, index) => (
                             <div key={index} className={`small ${
                               log.type === 'error' ? 'text-danger' :
                               log.type === 'success' ? 'text-light' :
                               log.type === 'warning' ? 'text-warning' :
                               'text-light'
-                            }`} style={{ marginBottom: '4px' }}>
+                            }`} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
                               <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
                             </div>
                           ))}
@@ -2461,7 +2466,6 @@ export default function RunwayAutomationApp() {
                               No logs yet... Logs will appear here during video generation and persist across page refreshes.
                             </div>
                           )}
-                          <div style={{ height: '20px' }}></div>
                         </div>
                       </div>
                     </div>
