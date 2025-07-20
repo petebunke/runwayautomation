@@ -2411,7 +2411,8 @@ export default function RunwayAutomationApp() {
                     {/* Fixed Generation Log with proper spacing */}
                     <div className="card bg-dark text-light border-0 shadow position-relative" style={{ 
                       borderRadius: '8px',
-                      height: '300px'
+                      height: '300px',
+                      overflow: 'hidden'
                     }}>
                       <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ height: '56px' }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
@@ -2435,36 +2436,42 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       <div 
-                        ref={logContainerRef}
-                        className="position-absolute"
                         style={{ 
-                          fontFamily: 'monospace',
-                          overflowY: 'scroll',
-                          overflowX: 'hidden',
+                          position: 'absolute',
                           top: '56px',
                           bottom: '0',
                           left: '0',
                           right: '0',
-                          padding: '8px 16px 16px 16px'
+                          overflow: 'hidden'
                         }}
                       >
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`}>
-                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">
-                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                          </div>
-                        )}
-                        {/* Extra space at bottom to ensure last line is visible */}
-                        <div style={{ height: '10px' }}></div>
+                        <div 
+                          ref={logContainerRef}
+                          style={{ 
+                            fontFamily: 'monospace',
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            height: '100%',
+                            padding: '8px 16px 24px 16px',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          {logs.map((log, index) => (
+                            <div key={index} className={`small mb-1 ${
+                              log.type === 'error' ? 'text-danger' :
+                              log.type === 'success' ? 'text-light' :
+                              log.type === 'warning' ? 'text-warning' :
+                              'text-light'
+                            }`}>
+                              <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                            </div>
+                          ))}
+                          {logs.length === 0 && (
+                            <div className="text-muted small">
+                              No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
