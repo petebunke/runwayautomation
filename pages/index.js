@@ -2036,33 +2036,84 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
 
-                    <div className="mb-4" style={{ minHeight: '100px' }}>
-                      <div className="text-center py-3">
-                        <h4 className="fw-bold text-dark mb-2">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              return `Generation ${generationCounter || 1} in progress`;
-                            } else if (completedGeneration) {
-                              return `Generation ${completedGeneration} completed`;
-                            } else {
-                              return `Generation ${generationCounter || 1}`;
-                            }
-                          })()}
-                        </h4>
-                        <p className="text-muted mb-0">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              const count = Object.keys(generationProgress).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generating`;
-                            } else if (completedGeneration) {
+                    <div className="mb-4" style={{ minHeight: '200px' }}>
+                      {Object.keys(generationProgress).length > 0 ? (
+                        <div>
+                          <div className="text-center py-3">
+                            <h4 className="fw-bold text-dark mb-2">
+                              Generation {generationCounter || 1} in progress
+                            </h4>
+                            <p className="text-muted mb-4">
+                              {Object.keys(generationProgress).length} video{Object.keys(generationProgress).length !== 1 ? 's' : ''} generating
+                            </p>
+                          </div>
+                          
+                          <div className="row g-3">
+                            {Object.entries(generationProgress).map(([taskId, progress]) => (
+                              <div key={taskId} className="col-md-6 col-lg-4">
+                                <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                  <div className="card-body p-3">
+                                    <div className="d-flex align-items-center mb-2">
+                                      <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                        <span className="visually-hidden">Loading...</span>
+                                      </div>
+                                      <h6 className="mb-0 fw-bold text-primary">{progress.jobId}</h6>
+                                    </div>
+                                    
+                                    <div className="progress mb-2" style={{ height: '6px' }}>
+                                      <div 
+                                        className="progress-bar bg-primary" 
+                                        role="progressbar" 
+                                        style={{ width: `${progress.progress || 0}%` }}
+                                      ></div>
+                                    </div>
+                                    
+                                    <div className="d-flex justify-content-between align-items-center">
+                                      <small className="text-muted">
+                                        {progress.status === 'starting' ? 'Starting...' :
+                                         progress.status === 'processing' ? 'Processing...' :
+                                         progress.status === 'PENDING' ? 'Queued...' :
+                                         progress.status === 'RUNNING' ? 'Generating...' :
+                                         'Processing...'}
+                                      </small>
+                                      <small className="text-primary fw-bold">
+                                        {Math.round(progress.progress || 0)}%
+                                      </small>
+                                    </div>
+                                    
+                                    {progress.runwayTaskId && (
+                                      <small className="text-muted d-block mt-1" style={{ fontSize: '10px' }}>
+                                        Task: {progress.runwayTaskId.substring(0, 12)}...
+                                      </small>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : completedGeneration ? (
+                        <div className="text-center py-3">
+                          <h4 className="fw-bold text-success mb-2">
+                            Generation {completedGeneration} completed
+                          </h4>
+                          <p className="text-muted mb-0">
+                            {(() => {
                               const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
                               return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            } else {
-                              return '0 videos generated';
-                            }
-                          })()}
-                        </p>
-                      </div>
+                            })()}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-3">
+                          <h4 className="fw-bold text-dark mb-2">
+                            Generation {generationCounter || 1}
+                          </h4>
+                          <p className="text-muted mb-0">
+                            Ready to generate {concurrency} video{concurrency > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
