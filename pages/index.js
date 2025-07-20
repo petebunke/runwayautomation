@@ -2619,7 +2619,7 @@ export default function RunwayAutomationApp() {
                           })
                           .map((result, index) => (
                           <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow d-flex flex-column" style={{ borderRadius: '8px' }}>
+                            <div className="card border-0 shadow h-100 d-flex flex-column" style={{ borderRadius: '8px' }}>
                               <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
                                 {result.video_url ? (
                                   <video
