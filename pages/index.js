@@ -43,94 +43,25 @@ export default function RunwayAutomationApp() {
     setMounted(true);
   }, []);
 
-  // Content filter based on Runway's Usage Policy
-  const prohibitedContent = {
-    
-    // Sexual content and sexualization
-    sexualContent: [
-      'naked', 'nude', 'nudity', 'topless', 'bottomless', 'strip', 'stripping', 'stripper', 'striptease',
-      'porn', 'pornographic', 'xxx', 'erotic', 'sexual', 'sexuality', 'intercourse', 'orgasm',
-      'masturbate', 'masturbation', 'climax', 'arousal', 'aroused', 'horny', 'seduce', 'seduction',
-      'fetish', 'kinky', 'bondage', 'bdsm', 'prostitute', 'prostitution', 'escort', 'brothel',
-      'penis', 'vagina', 'genitals', 'breasts', 'nipples', 'cleavage', 'underwear', 'lingerie',
-      'bikini', 'swimsuit', 'revealing', 'provocative', 'sensual', 'intimate', 'cum'
-    ],
-    
-    // Violence and harmful content
-    violence: [
-      'kill', 'killing', 'murder', 'murderer', 'death', 'dead', 'corpse', 'suicide', 'self-harm',
-      'torture', 'torturing', 'abuse', 'abusing', 'violence', 'violent', 'assault', 'attack',
-      'terrorist', 'terrorism', 'blood', 'bloody', 'gore', 'gory', 'harm', 'hurt', 'wound', 'injured', 'injury', 'bleeding', 
-    ],
-    
-    // Harassment and hate speech
-    harassment: [
-      'hate', 'hatred', 'racist', 'racism', 'nazi', 'supremacist', 'discrimination', 'bigot',
-      'slur',   // Content filter based on Runway's official Usage Policy
-
-  const prohibitedContent = {
-    
-    // Violence & Gore
-    violence: [
-      'terrorism', 'terrorist', 'extremism', 'extremist', 'violence', 'graphic violence',
-      'gore', 'gory', 'dismemberment', 'beheading', 'beheadings', 'mutilation', 'mutilations',
-      'organs', 'bones', 'muscle', 'exposed organs', 'animal abuse', 'kill', 'killing', 'murder',
-      'death', 'dead', 'corpse', 'torture',
-      'blood', 'bloody', 'wound', 'cut', 'stab', 'beat', 'harm', 'hurt', 'pain', 'suffering'
-    ],
-    
-    // Sexually Explicit Content & Nudity
-    sexualContent: [
-      'sexually explicit', 'sex toys', 'fetish', 'nudity', 'nude', 'naked', 'topless', 'bottomless',
-      'underwear', 'lingerie', 'bra', 'panties', 'sexually suggestive', 'intimate imagery', 'cum',
-      'non-consensual', 'ncii', 'porn', 'pornographic', 'erotic', 'sexual', 'intercourse',
-      'orgasm', 'masturbate', 'masturbation', 'arousal', 'aroused', 'seduce', 'seduction',
-      'kinky', 'bondage', 'bdsm', 'prostitute', 'escort', 'brothel', 'strip', 'stripper',
-      'penis', 'vagina', 'genitals', 'breasts', 'nipples', 'cleavage', 'revealing', 'provocative'
-    ],
-    
-    // Hateful Conduct, Harassment, and Self-Harm
-    hatefulConduct: [
-      'hate', 'hatred', 'dehumanize', 'discrimination', 'racist', 'racism', 'nazi', 'supremacist',
-      'bigot', 'slur', 'harassment', 'harass', 
-      'defame', 'defamation', 'abuse', 'abusing', 'self-harm', 'self harm', 'suicide', 'kill myself',
-      'hurt myself', 'disordered eating', 'anorexia', 'bulimia', 'cutting', 'self-injury'
-    ],
-    
-    // Common profanity and offensive terms
-    profanity: [
-      'fuck', 'fucking', 'fucked', 'fucker', 'shit', 'bitch', 'bastard', 'asshole', 'damn',
-      'hell', 'crap', 'piss', 'whore', 'slut', 'cock', 'dick', 'pussy', 'cunt', 'tits',
-      'nigger', 'nigga', 'faggot', 'fag', 'dyke', 'retard', 'retarded', 'chink', 'spic'
-    ]
-  };
-
-  const checkForProfanity = (text) => {
-    if (!text || typeof text !== 'string') return { hasIssue: false, category: null };
-    
-    const lowerText = text.toLowerCase();
-    const words = lowerText.split(/\s+/);
-    
-    // Check each category
-    for (const [category, terms] of Object.entries(prohibitedContent)) {
-      for (const term of terms) {
-        // Check individual words
-        for (const word of words) {
-          const cleanWord = word.replace(/[^\w]/g, '');
-          if (cleanWord === term || cleanWord.includes(term)) {
-            return { hasIssue: true, category, term };
-          }
-        }
-        
-        // Check full text for phrases
-        if (lowerText.includes(term)) {
-          return { hasIssue: true, category, term };
-        }
-      }
-    }
-    
-    return { hasIssue: false, category: null };
-  };
+  // Comprehensive profanity filter
+  const profanityWords = [
+    'fuck', 'fucking', 'fucked', 'fucker', 'fucks', 'shit', 'shitting', 'shits', 'damn', 'damned',
+    'hell', 'bitch', 'bitches', 'bastard', 'bastards', 'asshole', 'assholes', 'crap', 'piss',
+    'whore', 'slut', 'sluts', 'cock', 'cocks', 'dick', 'dicks', 'pussy', 'cunt', 'cunts',
+    'tits', 'boobs', 'nipples', 'penis', 'vagina', 'anus', 'rape', 'raping', 'raped',
+    'nigger', 'nigga', 'chink', 'gook', 'spic', 'wetback', 'kike', 'faggot', 'fag', 'dyke',
+    'retard', 'retarded', 'mongoloid', 'cripple', 'midget',
+    'kill', 'murder', 'suicide', 'death', 'torture', 'abuse', 'violence', 'shoot', 'shooting',
+    'bomb', 'explosion', 'terrorist', 'terrorism', 'weapon', 'gun', 'knife', 'blood', 'gore',
+    'brutal', 'savage', 'attack', 'assault', 'harm', 'hurt', 'pain', 'suffer', 'bleeding',
+    'cocaine', 'heroin', 'meth', 'methamphetamine', 'crack', 'weed', 'marijuana', 'cannabis',
+    'drugs', 'overdose', 'addiction', 'needle', 'inject', 'snort', 'smoke', 'high', 'stoned',
+    'sex', 'sexual', 'naked', 'nude', 'porn', 'pornography', 'masturbate', 'orgasm', 'climax',
+    'erotic', 'aroused', 'horny', 'seduce', 'seduction', 'fetish', 'kinky', 'bondage',
+    'prostitute', 'escort', 'brothel', 'strip', 'stripper', 'underwear', 'lingerie',
+    'f*ck', 'f**k', 'sh*t', 'sh!t', 'b*tch', 'a**hole', 'a$$hole', 'n*gger', 'f@g',
+    'fuk', 'fack', 'phuck', 'shyt', 'byatch', 'azz', 'azzhole', 'biatch'
+  ];
 
   const checkForProfanity = (text) => {
     if (!text || typeof text !== 'string') return false;
@@ -156,118 +87,40 @@ export default function RunwayAutomationApp() {
 
   const handlePromptChange = (e) => {
     const newPrompt = e.target.value;
-    const contentCheck = checkForProfanity(newPrompt);
+    const containsProfanity = checkForProfanity(newPrompt);
     
-    if (contentCheck.hasIssue && !promptContainsProfanity) {
-      const categoryMessages = {
-        childSafety: {
-          title: "Child Safety Violation",
-          icon: <AlertCircle size={20} className="text-danger me-2" />,
-          severity: "danger",
-          message: "Content related to children is strictly prohibited and may result in immediate account suspension."
-        },
-        violence: {
-          title: "Violence & Gore Content",
-          icon: <AlertCircle size={20} className="text-warning me-2" />,
-          severity: "warning", 
-          message: "Content depicting violence, gore, or harmful activities violates Runway's usage policy."
-        },
-        sexualContent: {
-          title: "Sexual Content Detected",
-          icon: <AlertCircle size={20} className="text-warning me-2" />,
-          severity: "warning",
-          message: "Sexually explicit content and nudity are prohibited on Runway's platform."
-        },
-        hatefulConduct: {
-          title: "Harmful Content Detected",
-          icon: <AlertCircle size={20} className="text-warning me-2" />,
-          severity: "warning",
-          message: "Content promoting hate, harassment, or self-harm violates community guidelines."
-        },
-        profanity: {
-          title: "Inappropriate Language",
-          icon: <Shield size={20} className="text-warning me-2" />,
-          severity: "warning",
-          message: "Offensive language may result in content being flagged or rejected."
-        }
-      };
-      
-      const categoryInfo = categoryMessages[contentCheck.category] || categoryMessages.profanity;
-      
+    if (containsProfanity && !promptContainsProfanity) {
       showModalDialog({
-        title: categoryInfo.title,
-        type: categoryInfo.severity,
+        title: "Content Warning",
+        type: "warning",
         confirmText: "I Understand",
-        cancelText: contentCheck.category === 'childSafety' ? null : "Cancel",
+        cancelText: null,
         onConfirm: () => {
           setPromptContainsProfanity(true);
           setPrompt(newPrompt);
         },
         content: (
           <div>
-            <div className={`alert alert-${categoryInfo.severity === 'danger' ? 'danger' : 'warning'} border-0 mb-3`} style={{ borderRadius: '8px' }}>
+            <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
               <div className="d-flex align-items-center mb-2">
-                {categoryInfo.icon}
-                <strong>Content Policy Violation</strong>
+                <Shield size={20} className="text-warning me-2" />
+                <strong>Inappropriate Content Detected</strong>
               </div>
-              <p className="mb-0">{categoryInfo.message}</p>
+              <p className="mb-0">Your video prompt contains potentially inappropriate or offensive language.</p>
             </div>
             
             <div className="mb-3">
-              <p className="mb-2"><strong>Runway's Usage Policy prohibits:</strong></p>
+              <p className="mb-2"><strong>Please note:</strong></p>
               <ul className="mb-0 ps-3">
-                {contentCheck.category === 'childSafety' && (
-                  <>
-                    <li>Content depicting, facilitating, or promoting child sexual abuse</li>
-                    <li>Content that facilitates minor grooming</li>
-                    <li>Content depicting child abuse or harmful acts involving minors</li>
-                  </>
-                )}
-                {contentCheck.category === 'violence' && (
-                  <>
-                    <li>Content depicting terrorism or violent extremism</li>
-                    <li>Graphic violence or content that incites violence</li>
-                    <li>Gore, dismemberment, or animal abuse</li>
-                  </>
-                )}
-                {contentCheck.category === 'sexualContent' && (
-                  <>
-                    <li>Sexually explicit content including adult nudity</li>
-                    <li>Non-consensual intimate imagery</li>
-                    <li>Sexually suggestive content in some cases</li>
-                  </>
-                )}
-                {contentCheck.category === 'hatefulConduct' && (
-                  <>
-                    <li>Content promoting discrimination based on protected attributes</li>
-                    <li>Harassment, bullying, or intimidation</li>
-                    <li>Content promoting self-harm or disordered eating</li>
-                  </>
-                )}
-                {contentCheck.category === 'profanity' && (
-                  <>
-                    <li>Offensive or inappropriate language</li>
-                    <li>Content that may be flagged by automated systems</li>
-                    <li>Language that violates community standards</li>
-                  </>
-                )}
-              </ul>
-            </div>
-            
-            <div className="alert alert-info border-0 mb-3" style={{ borderRadius: '8px' }}>
-              <strong>Consequences:</strong>
-              <ul className="mb-0 mt-2 ps-3">
-                <li>Immediate content rejection and wasted credits</li>
-                <li>Account suspension or permanent ban</li>
-                <li>Potential reporting to law enforcement (child safety violations)</li>
+                <li>Runway AI has content policies that may reject inappropriate prompts</li>
+                <li>Videos with offensive content may be automatically flagged or removed</li>
+                <li>Consider rephrasing your prompt to avoid policy violations</li>
+                <li>This could result in wasted credits or API restrictions</li>
               </ul>
             </div>
             
             <p className="mb-0 text-muted">
-              {contentCheck.category === 'childSafety' 
-                ? "We strongly recommend removing this content immediately and reviewing Runway's usage policy."
-                : "Please revise your prompt to comply with Runway's content guidelines."
-              }
+              We recommend using professional, appropriate language for better results and compliance with Runway's terms of service.
             </p>
           </div>
         )
@@ -277,7 +130,7 @@ export default function RunwayAutomationApp() {
     
     setPrompt(newPrompt);
     
-    if (!contentCheck.hasIssue && promptContainsProfanity) {
+    if (!containsProfanity && promptContainsProfanity) {
       setPromptContainsProfanity(false);
     }
   };
@@ -382,8 +235,7 @@ export default function RunwayAutomationApp() {
       const savedPrompt = localStorage.getItem('runway-automation-prompt');
       if (savedPrompt && savedPrompt.trim()) {
         setPrompt(savedPrompt);
-        const contentCheck = checkForProfanity(savedPrompt);
-        setPromptContainsProfanity(contentCheck.hasIssue);
+        setPromptContainsProfanity(checkForProfanity(savedPrompt));
       }
       
       const savedImageUrl = localStorage.getItem('runway-automation-image-url');
@@ -1474,15 +1326,15 @@ export default function RunwayAutomationApp() {
                           <label className="form-label fw-bold">
                             Video Prompt
                             {promptContainsProfanity && (
-                              <span className="badge bg-danger text-white ms-2" title="Content policy violation detected">
-                                <AlertCircle size={12} className="me-1" />
-                                Policy Violation
+                              <span className="badge bg-warning text-dark ms-2" title="Content warning detected">
+                                <Shield size={12} className="me-1" />
+                                Warning
                               </span>
                             )}
                           </label>
                           <div className="position-relative">
                             <textarea
-                              className={`form-control ${promptContainsProfanity ? 'border-danger' : ''}`}
+                              className={`form-control ${promptContainsProfanity ? 'border-warning' : ''}`}
                               rows="3"
                               value={prompt}
                               onChange={handlePromptChange}
@@ -1517,9 +1369,9 @@ export default function RunwayAutomationApp() {
                             )}
                           </div>
                           {promptContainsProfanity && (
-                            <div className="form-text text-danger">
-                              <AlertCircle size={14} className="me-1" />
-                              Warning: This prompt violates Runway's usage policy and may result in account suspension
+                            <div className="form-text text-warning">
+                              <Shield size={14} className="me-1" />
+                              Content warning: This prompt may violate Runway's content policies
                             </div>
                           )}
                         </div>
