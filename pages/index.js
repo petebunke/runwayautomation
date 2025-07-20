@@ -1969,74 +1969,16 @@ export default function RunwayAutomationApp() {
                   <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
                     
-                    {/* Video Filter Buttons */}
-                    {results.length > 0 && (
-                      <div className="mb-4">
-                        <div className="d-flex gap-2 justify-content-center">
-                          <button
-                            className={`btn btn-sm ${videoFilter === 'all' ? 'btn-primary' : 'btn-outline-primary'} shadow-sm`}
-                            onClick={() => setVideoFilter('all')}
-                            style={{ borderRadius: '6px', fontWeight: '600', minWidth: '100px' }}
-                          >
-                            <Filter size={16} className="me-1" />
-                            All Videos
-                            <span className="ms-2 badge bg-light text-dark">
-                              {results.length}
-                            </span>
-                          </button>
-                          
-                          <button
-                            className={`btn btn-sm ${videoFilter === 'favorites' ? 'btn-warning' : 'btn-outline-warning'} shadow-sm`}
-                            onClick={() => setVideoFilter('favorites')}
-                            style={{ borderRadius: '6px', fontWeight: '600', minWidth: '120px' }}
-                          >
-                            <Heart size={16} className="me-1" />
-                            Favorited
-                            <span className="ms-2 badge bg-light text-dark">
-                              {results.filter(result => favoriteVideos.has(result.id)).length}
-                            </span>
-                          </button>
-                          
-                          <button
-                            className={`btn btn-sm ${videoFilter === '4k' ? 'btn-success' : 'btn-outline-success'} shadow-sm`}
-                            onClick={() => setVideoFilter('4k')}
-                            style={{ borderRadius: '6px', fontWeight: '600', minWidth: '100px' }}
-                          >
-                            <ArrowUp size={16} className="me-1" />
-                            4K Videos
-                            <span className="ms-2 badge bg-light text-dark">
-                              {results.filter(result => result.is_4k || result.upscaled_video_url).length}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+
                     
                     {filteredVideos.length === 0 ? (
                       <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
                         <div className="mb-4">
                           <Film size={80} className="text-muted" />
                         </div>
-                        <h4 className="text-muted mb-3">
-                          {videoFilter === 'all' ? 'No videos generated yet' : 
-                           videoFilter === 'favorites' ? 'No favorited videos' : 
-                           'No 4K videos available'}
-                        </h4>
-                        <p className="text-muted mb-4">
-                          {videoFilter === 'all' ? 'Start a generation process to see your AI-generated videos here' :
-                           videoFilter === 'favorites' ? 'Mark videos as favorites by clicking the heart icon' :
-                           'Upscale your videos to 4K using the upscale button'}
-                        </p>
-                        <div className="d-flex justify-content-center gap-2">
-                          {videoFilter !== 'all' && (
-                            <button
-                              className="btn btn-outline-primary"
-                              onClick={() => setVideoFilter('all')}
-                              style={{ borderRadius: '6px' }}
-                            >
-                              View All Videos
-                            </button>
-                          )}
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <div className="d-flex justify-content-center">
                           <button
                             className="btn btn-primary btn-lg shadow"
                             onClick={() => setActiveTab('setup')}
@@ -2049,7 +1991,7 @@ export default function RunwayAutomationApp() {
                     ) : (
                       <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
                         <div className="row g-4">
-                          {filteredVideos.map((result, index) => (
+                          {results.map((result, index) => (
                             <div key={index} className="col-md-6 col-lg-3">
                               <div className="card border-0 shadow h-100 d-flex flex-column" style={{ borderRadius: '8px' }}>
                                 <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
