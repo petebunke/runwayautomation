@@ -1,11 +1,4 @@
-{/* Fixed Generation Log with proper spacing */}
-                    <div className="card bg-dark text-light border-0 shadow overflow-hidden" style={{ 
-                      borderRadius: '8px',
-                      height: '300px'
-                    }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center">
-                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
-                        <div className="d-fleximport React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3 } from 'lucide-react';
 import Head from 'next/head';
 
@@ -2422,7 +2415,7 @@ export default function RunwayAutomationApp() {
                       display: 'flex',
                       flexDirection: 'column'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0, minHeight: '50px' }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
@@ -2445,13 +2438,14 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div 
                         ref={logContainerRef}
-                        className="px-3 pb-3" 
+                        className="px-3 py-2" 
                         style={{ 
                           fontFamily: 'monospace',
-                          overflowY: 'auto',
-                          flex: '1 1 auto',
-                          minHeight: '0px',
-                          maxHeight: 'calc(300px - 60px)'
+                          overflowY: 'scroll',
+                          overflowX: 'hidden',
+                          height: '250px',
+                          maxHeight: '250px',
+                          position: 'relative'
                         }}
                       >
                         {logs.map((log, index) => (
@@ -2469,6 +2463,8 @@ export default function RunwayAutomationApp() {
                             No logs yet... Logs will appear here during video generation and persist across page refreshes.
                           </div>
                         )}
+                        {/* Spacer to ensure last item is visible */}
+                        <div style={{ height: '20px' }}></div>
                       </div>
                     </div>
                   </div>
@@ -2855,7 +2851,7 @@ export default function RunwayAutomationApp() {
                   style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
                 />
               </a>
-            </div> 
+            </div>
           </div>
         </div>
       </div>
