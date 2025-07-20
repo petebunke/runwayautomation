@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield, Filter, Star } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -36,6 +36,7 @@ export default function RunwayAutomationApp() {
   const [customTitles, setCustomTitles] = useState({});
   const [tempEditTitle, setTempEditTitle] = useState('');
   const [promptContainsProfanity, setPromptContainsProfanity] = useState(false);
+  const [videoFilter, setVideoFilter] = useState('all'); // 'all', 'favorites', '4k'
   const fileInputRef = useRef(null);
   const logContainerRef = useRef(null);
 
@@ -324,6 +325,11 @@ export default function RunwayAutomationApp() {
       if (savedActiveTab && ['setup', 'generation', 'results'].includes(savedActiveTab)) {
         setActiveTab(savedActiveTab);
       }
+
+      const savedVideoFilter = localStorage.getItem('runway-automation-video-filter');
+      if (savedVideoFilter && ['all', 'favorites', '4k'].includes(savedVideoFilter)) {
+        setVideoFilter(savedVideoFilter);
+      }
     } catch (error) {
       console.warn('Failed to load saved data from localStorage:', error);
     }
@@ -484,6 +490,15 @@ export default function RunwayAutomationApp() {
       console.warn('Failed to save active tab to localStorage:', error);
     }
   }, [activeTab, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      localStorage.setItem('runway-automation-video-filter', videoFilter);
+    } catch (error) {
+      console.warn('Failed to save video filter to localStorage:', error);
+    }
+  }, [videoFilter, mounted]);
 
   // Helper functions
   const clearStoredApiKey = () => {
@@ -982,6 +997,185 @@ export default function RunwayAutomationApp() {
     return true;
   };
 
+  // 4K upscale functionality
+  const upscaleVideo = async (result) => {
+    if (!result.video_url) {
+      addLog('❌ Cannot upscale: Video URL not available', 'error');
+      return;
+    }
+
+    if (upscalingProgress[result.id]) {
+      addLog('⚠️ Video is already being upscaled', 'warning');
+      return;
+    }
+
+    const estimatedCredits = 10; // Estimate for upscaling
+    if (organizationInfo && organizationInfo.creditBalance < estimatedCredits) {
+      showModalDialog({
+        title: "Insufficient Credits",
+        type: "warning",
+        confirmText: "Continue Anyway",
+        cancelText: "Cancel",
+        onConfirm: () => {
+          startUpscale(result);
+        },
+        content: (
+          <div>
+            <p className="mb-3">
+              <strong>You may not have enough credits for 4K upscaling.</strong>
+            </p>
+            <p className="mb-3">
+              Current balance: {organizationInfo.creditBalance} credits<br />
+              Estimated cost: ~{estimatedCredits} credits
+            </p>
+            <p className="mb-0 text-muted">
+              Would you like to continue anyway?
+            </p>
+          </div>
+        )
+      });
+      return;
+    }
+
+    startUpscale(result);
+  };
+
+  const startUpscale = async (result) => {
+    setUpscalingProgress(prev => ({
+      ...prev,
+      [result.id]: { status: 'starting', taskId: null }
+    }));
+
+    addLog(`🚀 Starting 4K upscale for ${getVideoDisplayTitle(result)}...`, 'info');
+
+    try {
+      const response = await fetch(API_BASE + '/runway-upscale', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          videoUrl: result.video_url,
+          taskId: result.taskId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upscale request failed');
+      }
+
+      const upscaleData = await response.json();
+      
+      setUpscalingProgress(prev => ({
+        ...prev,
+        [result.id]: { status: 'processing', taskId: upscaleData.id }
+      }));
+
+      addLog(`✅ 4K upscale started for ${getVideoDisplayTitle(result)} (Task: ${upscaleData.id})`, 'success');
+      
+      // Start polling for upscale status
+      pollUpscaleStatus(result.id, upscaleData.id);
+      
+    } catch (error) {
+      addLog(`❌ Failed to start 4K upscale: ${error.message}`, 'error');
+      setUpscalingProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[result.id];
+        return newProgress;
+      });
+    }
+  };
+
+  const pollUpscaleStatus = async (videoId, taskId) => {
+    const maxAttempts = 120; // 10 minutes max
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/runway-status?taskId=${taskId}&apiKey=${runwayApiKey}`);
+        
+        if (!response.ok) {
+          throw new Error('Status check failed');
+        }
+
+        const statusData = await response.json();
+        
+        setUpscalingProgress(prev => ({
+          ...prev,
+          [videoId]: { ...prev[videoId], status: statusData.status }
+        }));
+
+        if (statusData.status === 'SUCCEEDED') {
+          const upscaledVideoUrl = statusData.output?.[0];
+          if (upscaledVideoUrl) {
+            // Update the result with 4K version
+            setResults(prev => prev.map(result => 
+              result.id === videoId 
+                ? { ...result, upscaled_video_url: upscaledVideoUrl, is_4k: true }
+                : result
+            ));
+            
+            addLog(`✅ 4K upscale completed for video ${videoId}`, 'success');
+          }
+          
+          setUpscalingProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[videoId];
+            return newProgress;
+          });
+          
+          updateCreditsAfterGeneration();
+          return;
+        }
+
+        if (statusData.status === 'FAILED') {
+          addLog(`❌ 4K upscale failed for video ${videoId}`, 'error');
+          setUpscalingProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[videoId];
+            return newProgress;
+          });
+          return;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts && (statusData.status === 'PENDING' || statusData.status === 'RUNNING')) {
+          setTimeout(poll, 5000); // Check every 5 seconds
+        } else if (attempts >= maxAttempts) {
+          addLog(`⏰ 4K upscale timeout for video ${videoId}`, 'warning');
+          setUpscalingProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[videoId];
+            return newProgress;
+          });
+        }
+      } catch (error) {
+        addLog(`❌ Error checking 4K upscale status: ${error.message}`, 'error');
+        setUpscalingProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[videoId];
+          return newProgress;
+        });
+      }
+    };
+
+    poll();
+  };
+
+  // Filter videos based on current filter
+  const getFilteredVideos = () => {
+    switch (videoFilter) {
+      case 'favorites':
+        return results.filter(result => favoriteVideos.has(result.id));
+      case '4k':
+        return results.filter(result => result.is_4k || result.upscaled_video_url);
+      default:
+        return results;
+    }
+  };
+
   // Simplified video generation functions for space
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
     const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
@@ -994,6 +1188,8 @@ export default function RunwayAutomationApp() {
     if (!checkRequiredInputs()) return;
     addLog('🚀 Starting video generation...', 'info');
   };
+
+  const filteredVideos = getFilteredVideos();
 
   return (
     <>
@@ -1772,14 +1968,75 @@ export default function RunwayAutomationApp() {
                   
                   <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
                     <div className="mb-4"></div>
-                    {results.length === 0 ? (
+                    
+                    {/* Video Filter Buttons */}
+                    {results.length > 0 && (
+                      <div className="mb-4">
+                        <div className="d-flex gap-2 justify-content-center">
+                          <button
+                            className={`btn btn-sm ${videoFilter === 'all' ? 'btn-primary' : 'btn-outline-primary'} shadow-sm`}
+                            onClick={() => setVideoFilter('all')}
+                            style={{ borderRadius: '6px', fontWeight: '600', minWidth: '100px' }}
+                          >
+                            <Filter size={16} className="me-1" />
+                            All Videos
+                            <span className="ms-2 badge bg-light text-dark">
+                              {results.length}
+                            </span>
+                          </button>
+                          
+                          <button
+                            className={`btn btn-sm ${videoFilter === 'favorites' ? 'btn-warning' : 'btn-outline-warning'} shadow-sm`}
+                            onClick={() => setVideoFilter('favorites')}
+                            style={{ borderRadius: '6px', fontWeight: '600', minWidth: '120px' }}
+                          >
+                            <Heart size={16} className="me-1" />
+                            Favorited
+                            <span className="ms-2 badge bg-light text-dark">
+                              {results.filter(result => favoriteVideos.has(result.id)).length}
+                            </span>
+                          </button>
+                          
+                          <button
+                            className={`btn btn-sm ${videoFilter === '4k' ? 'btn-success' : 'btn-outline-success'} shadow-sm`}
+                            onClick={() => setVideoFilter('4k')}
+                            style={{ borderRadius: '6px', fontWeight: '600', minWidth: '100px' }}
+                          >
+                            <ArrowUp size={16} className="me-1" />
+                            4K Videos
+                            <span className="ms-2 badge bg-light text-dark">
+                              {results.filter(result => result.is_4k || result.upscaled_video_url).length}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {filteredVideos.length === 0 ? (
                       <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
                         <div className="mb-4">
                           <Film size={80} className="text-muted" />
                         </div>
-                        <h4 className="text-muted mb-3">No videos generated yet</h4>
-                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
-                        <div className="d-flex justify-content-center">
+                        <h4 className="text-muted mb-3">
+                          {videoFilter === 'all' ? 'No videos generated yet' : 
+                           videoFilter === 'favorites' ? 'No favorited videos' : 
+                           'No 4K videos available'}
+                        </h4>
+                        <p className="text-muted mb-4">
+                          {videoFilter === 'all' ? 'Start a generation process to see your AI-generated videos here' :
+                           videoFilter === 'favorites' ? 'Mark videos as favorites by clicking the heart icon' :
+                           'Upscale your videos to 4K using the upscale button'}
+                        </p>
+                        <div className="d-flex justify-content-center gap-2">
+                          {videoFilter !== 'all' && (
+                            <button
+                              className="btn btn-outline-primary"
+                              onClick={() => setVideoFilter('all')}
+                              style={{ borderRadius: '6px' }}
+                            >
+                              View All Videos
+                            </button>
+                          )}
                           <button
                             className="btn btn-primary btn-lg shadow"
                             onClick={() => setActiveTab('setup')}
@@ -1790,94 +2047,136 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     ) : (
-                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
-                        {results.map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow h-100" style={{ borderRadius: '8px' }}>
-                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                {result.video_url ? (
-                                  <video
-                                    src={result.video_url}
-                                    poster={result.thumbnail_url}
-                                    controls
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                    preload="metadata"
-                                  >
-                                    Your browser does not support video playback.
-                                  </video>
-                                ) : (
-                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <div className="text-center">
-                                      <Film size={48} className="text-primary mb-3" />
-                                      <div className="fw-bold text-muted">Processing...</div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                <button
-                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
-                                  onClick={() => toggleFavorite(result.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.9)',
-                                    borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
-                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                >
-                                  <Heart 
-                                    size={16} 
-                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                  />
-                                </button>
-                              </div>
-                              
-                              <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  <span className="fw-bold text-primary me-2" style={{ 
-                                    lineHeight: '1.2',
-                                    wordBreak: 'break-word',
-                                    maxWidth: '200px',
-                                    flex: '1'
-                                  }}>
-                                    {getVideoDisplayTitle(result)}
-                                  </span>
-                                </div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group">
-                                      <button
-                                        className="btn btn-primary btn-sm flex-fill"
-                                        onClick={() => addLog('Download feature coming soon!', 'info')}
-                                      >
-                                        <Download size={16} className="me-1" />
-                                        Download
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm flex-fill"
-                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
-                                      >
-                                        <ExternalLink size={16} className="me-1" />
-                                        View
-                                      </button>
+                      <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
+                        <div className="row g-4">
+                          {filteredVideos.map((result, index) => (
+                            <div key={index} className="col-md-6 col-lg-3">
+                              <div className="card border-0 shadow h-100 d-flex flex-column" style={{ borderRadius: '8px' }}>
+                                <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                  {result.video_url || result.upscaled_video_url ? (
+                                    <video
+                                      src={result.upscaled_video_url || result.video_url}
+                                      poster={result.thumbnail_url}
+                                      controls
+                                      className="w-100 h-100"
+                                      style={{ objectFit: 'cover' }}
+                                      preload="metadata"
+                                    >
+                                      Your browser does not support video playback.
+                                    </video>
+                                  ) : (
+                                    <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                      <div className="text-center">
+                                        <Film size={48} className="text-primary mb-3" />
+                                        <div className="fw-bold text-muted">Processing...</div>
+                                      </div>
                                     </div>
                                   )}
+                                  
+                                  <div className="position-absolute top-0 end-0 m-2 d-flex gap-1">
+                                    {(result.is_4k || result.upscaled_video_url) && (
+                                      <span
+                                        className="badge bg-success d-flex align-items-center"
+                                        style={{ borderRadius: '12px', fontSize: '10px', padding: '4px 8px' }}
+                                        title="4K Quality"
+                                      >
+                                        4K
+                                      </span>
+                                    )}
+                                    <button
+                                      className="btn btn-sm"
+                                      onClick={() => toggleFavorite(result.id)}
+                                      style={{
+                                        border: 'none',
+                                        background: 'rgba(255, 255, 255, 0.9)',
+                                        borderRadius: '50%',
+                                        width: '32px',
+                                        height: '32px',
+                                        color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                      title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                    >
+                                      <Heart 
+                                        size={14} 
+                                        fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                      />
+                                    </button>
+                                  </div>
+                                </div>
+                                
+                                <div className="card-body p-3 d-flex flex-column flex-grow-1">
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <span className="fw-bold text-primary me-2" style={{ 
+                                      lineHeight: '1.2',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '200px',
+                                      flex: '1'
+                                    }}>
+                                      {getVideoDisplayTitle(result)}
+                                    </span>
+                                  </div>
+                                  <h6 className="card-title mb-3 flex-grow-1" style={{ fontWeight: '400', fontSize: '14px', lineHeight: '1.3' }} title={result.prompt}>
+                                    {result.prompt}
+                                  </h6>
+                                  
+                                  <div className="mt-auto">
+                                    <div className="d-grid gap-2">
+                                      {result.video_url && (
+                                        <>
+                                          <div className="btn-group" role="group">
+                                            <button
+                                              className="btn btn-primary btn-sm flex-fill"
+                                              onClick={() => addLog('Download feature coming soon!', 'info')}
+                                              style={{ fontSize: '12px' }}
+                                            >
+                                              <Download size={14} className="me-1" />
+                                              Download
+                                            </button>
+                                            <button
+                                              className="btn btn-outline-primary btn-sm flex-fill"
+                                              onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
+                                              style={{ fontSize: '12px' }}
+                                            >
+                                              <ExternalLink size={14} className="me-1" />
+                                              View
+                                            </button>
+                                          </div>
+                                          
+                                          {!result.is_4k && !result.upscaled_video_url && (
+                                            <button
+                                              className="btn btn-success btn-sm w-100"
+                                              onClick={() => upscaleVideo(result)}
+                                              disabled={upscalingProgress[result.id]}
+                                              style={{ fontSize: '12px' }}
+                                            >
+                                              {upscalingProgress[result.id] ? (
+                                                <>
+                                                  <div className="spinner-border spinner-border-sm me-1" role="status">
+                                                    <span className="visually-hidden">Upscaling...</span>
+                                                  </div>
+                                                  {upscalingProgress[result.id].status === 'starting' ? 'Starting...' : 'Upscaling...'}
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <ArrowUp size={14} className="me-1" />
+                                                  Upscale to 4K
+                                                </>
+                                              )}
+                                            </button>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
