@@ -2281,7 +2281,7 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {/* Always show generation status */}
-                    <div className="mb-4" style={{ minHeight: '100px', flexShrink: 0 }}>
+                    <div className="mb-4" style={{ minHeight: '100px' }}>
                       <div className="text-center py-3">
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
@@ -2317,7 +2317,7 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-4" style={{ flexShrink: 0 }}>
+                      <div className="mb-4">
                         <div className="row g-3">
                           {Object.entries(generationProgress).map(([jobId, progress]) => (
                             <div key={jobId} className="col-md-6 col-xl-3">
@@ -2364,7 +2364,7 @@ export default function RunwayAutomationApp() {
 
                     {/* Show upscaling progress if any */}
                     {Object.keys(upscalingProgress).length > 0 && (
-                      <div className="mb-4" style={{ flexShrink: 0 }}>
+                      <div className="mb-4">
                         <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
                         <div className="row g-3">
                           {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
@@ -2411,19 +2411,9 @@ export default function RunwayAutomationApp() {
                     {/* Fixed Generation Log with proper spacing */}
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
                       borderRadius: '8px',
-                      height: '280px',
-                      position: 'relative',
-                      overflow: 'hidden'
+                      height: '300px'
                     }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ 
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '56px',
-                        zIndex: 10,
-                        backgroundColor: '#212529'
-                      }}>
+                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center">
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
                         <div className="d-flex gap-2">
                           <button 
@@ -2446,33 +2436,33 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div 
                         ref={logContainerRef}
+                        className="px-3" 
                         style={{ 
-                          position: 'absolute',
-                          top: '56px',
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
                           fontFamily: 'monospace',
                           overflowY: 'auto',
-                          overflowX: 'hidden',
-                          padding: '8px 16px 20px 16px'
+                          height: 'calc(100% - 60px)',
+                          paddingTop: '8px',
+                          paddingBottom: '8px'
                         }}
                       >
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`} style={{ marginBottom: '4px' }}>
-                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">
-                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                          </div>
-                        )}
+                        <div style={{ minHeight: '100%' }}>
+                          {logs.map((log, index) => (
+                            <div key={index} className={`small ${
+                              log.type === 'error' ? 'text-danger' :
+                              log.type === 'success' ? 'text-light' :
+                              log.type === 'warning' ? 'text-warning' :
+                              'text-light'
+                            }`} style={{ marginBottom: '4px' }}>
+                              <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                            </div>
+                          ))}
+                          {logs.length === 0 && (
+                            <div className="text-muted small">
+                              No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                            </div>
+                          )}
+                          <div style={{ height: '20px' }}></div>
+                        </div>
                       </div>
                     </div>
                   </div>
