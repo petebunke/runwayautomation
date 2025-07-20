@@ -2256,9 +2256,9 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
                   
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
+                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important', height: 'calc(100vh - 400px)', minHeight: '500px' }}>
                     <div className="mb-4"></div>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
+                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px', flexShrink: 0 }}>
                       <div className="card-body p-3">
                         <div className="d-flex justify-content-between align-items-center">
                           <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
@@ -2281,7 +2281,7 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {/* Always show generation status */}
-                    <div className="mb-4" style={{ minHeight: '100px' }}>
+                    <div className="mb-4" style={{ minHeight: '100px', flexShrink: 0 }}>
                       <div className="text-center py-3">
                         <h4 className="fw-bold text-dark mb-2">
                           {(() => {
@@ -2317,7 +2317,7 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-4">
+                      <div className="mb-4" style={{ flexShrink: 0 }}>
                         <div className="row g-3">
                           {Object.entries(generationProgress).map(([jobId, progress]) => (
                             <div key={jobId} className="col-md-6 col-xl-3">
@@ -2364,7 +2364,7 @@ export default function RunwayAutomationApp() {
 
                     {/* Show upscaling progress if any */}
                     {Object.keys(upscalingProgress).length > 0 && (
-                      <div className="mb-4">
+                      <div className="mb-4" style={{ flexShrink: 0 }}>
                         <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
                         <div className="row g-3">
                           {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
@@ -2411,9 +2411,12 @@ export default function RunwayAutomationApp() {
                     {/* Fixed Generation Log with proper spacing */}
                     <div className="card bg-dark text-light border-0 shadow" style={{ 
                       borderRadius: '8px',
-                      height: '300px',
+                      flex: '1 1 auto',
+                      minHeight: '200px',
+                      maxHeight: '400px',
                       display: 'flex',
-                      flexDirection: 'column'
+                      flexDirection: 'column',
+                      overflow: 'hidden'
                     }}>
                       <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
                         <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
@@ -2442,7 +2445,7 @@ export default function RunwayAutomationApp() {
                           fontFamily: 'monospace',
                           overflowY: 'auto',
                           overflowX: 'hidden',
-                          flex: 1,
+                          flex: '1 1 auto',
                           minHeight: 0,
                           padding: '8px 16px',
                           scrollBehavior: 'smooth'
