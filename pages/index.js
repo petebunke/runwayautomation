@@ -1156,15 +1156,257 @@ export default function RunwayAutomationApp() {
 
   // Simplified video generation functions for space
   const generateVideo = async (promptText, imageUrlText, jobIndex = 0, generationNum, videoNum) => {
-    const jobId = 'Generation ' + generationNum + ' - Video ' + videoNum;
-    addLog('Starting generation for job ' + (jobIndex + 1), 'info');
-    // Placeholder for actual implementation
-    return null;
+    const jobId = `Generation ${generationNum} - Video ${videoNum}`;
+    const taskId = `task_${Date.now()}_${jobIndex}`;
+    
+    addLog(`🎬 Starting ${jobId}...`, 'info');
+    
+    setGenerationProgress(prev => ({
+      ...prev,
+      [taskId]: { status: 'starting', jobId, progress: 0 }
+    }));
+
+    try {
+      // Prepare the request payload
+      const payload = {
+        promptText: promptText.trim(),
+        promptImage: imageUrlText.trim(),
+        model: model,
+        ratio: convertAspectRatio(aspectRatio, model),
+        duration: duration
+      };
+
+      // Make the generation request
+      const response = await fetch(API_BASE + '/runway-generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: runwayApiKey,
+          payload: payload
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Generation failed: ${response.status}`);
+      }
+
+      const taskData = await response.json();
+      const runwayTaskId = taskData.id;
+
+      addLog(`✅ ${jobId} started (Task: ${runwayTaskId})`, 'success');
+      
+      setGenerationProgress(prev => ({
+        ...prev,
+        [taskId]: { ...prev[taskId], status: 'processing', runwayTaskId, progress: 25 }
+      }));
+
+      // Start polling for status
+      const result = await pollVideoStatus(taskId, runwayTaskId, jobId, promptText);
+      return result;
+
+    } catch (error) {
+      addLog(`❌ ${jobId} failed: ${error.message}`, 'error');
+      setGenerationProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[taskId];
+        return newProgress;
+      });
+      return null;
+    }
+  };
+
+  const pollVideoStatus = async (taskId, runwayTaskId, jobId, promptText) => {
+    const maxAttempts = 120; // 10 minutes max
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/runway-status?taskId=${runwayTaskId}&apiKey=${runwayApiKey}`);
+        
+        if (!response.ok) {
+          throw new Error('Status check failed');
+        }
+
+        const statusData = await response.json();
+        const progress = Math.min(25 + (attempts * 0.6), 95);
+        
+        setGenerationProgress(prev => ({
+          ...prev,
+          [taskId]: { ...prev[taskId], status: statusData.status, progress }
+        }));
+
+        if (statusData.status === 'SUCCEEDED') {
+          const videoUrl = statusData.output?.[0];
+          const thumbnailUrl = statusData.thumbnailUrl;
+          
+          if (videoUrl) {
+            const newResult = {
+              id: taskId,
+              taskId: runwayTaskId,
+              jobId: jobId,
+              prompt: promptText,
+              video_url: videoUrl,
+              thumbnail_url: thumbnailUrl,
+              status: 'completed',
+              model: model,
+              duration: duration,
+              aspectRatio: aspectRatio,
+              createdAt: new Date().toISOString()
+            };
+
+            setResults(prev => [...prev, newResult]);
+            addLog(`✅ ${jobId} completed successfully`, 'success');
+            
+            setGenerationProgress(prev => {
+              const newProgress = { ...prev };
+              delete newProgress[taskId];
+              return newProgress;
+            });
+
+            updateCreditsAfterGeneration();
+            return newResult;
+          }
+        }
+
+        if (statusData.status === 'FAILED') {
+          addLog(`❌ ${jobId} failed during processing`, 'error');
+          setGenerationProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[taskId];
+            return newProgress;
+          });
+          return null;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts && (statusData.status === 'PENDING' || statusData.status === 'RUNNING')) {
+          setTimeout(poll, 5000); // Check every 5 seconds
+        } else if (attempts >= maxAttempts) {
+          addLog(`⏰ ${jobId} timeout after 10 minutes`, 'warning');
+          setGenerationProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[taskId];
+            return newProgress;
+          });
+          return null;
+        }
+      } catch (error) {
+        addLog(`❌ Error checking ${jobId} status: ${error.message}`, 'error');
+        setGenerationProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[taskId];
+          return newProgress;
+        });
+        return null;
+      }
+    };
+
+    poll();
   };
 
   const generateVideos = async () => {
     if (!checkRequiredInputs()) return;
-    addLog('🚀 Starting video generation...', 'info');
+
+    if (isRunning) {
+      addLog('⚠️ Generation already in progress', 'warning');
+      return;
+    }
+
+    // Cost warning
+    const estimatedCredits = estimateCreditsNeeded(concurrency, model, duration);
+    
+    if (!hasShownCostWarning) {
+      const confirmed = await new Promise((resolve) => {
+        showModalDialog({
+          title: "Confirm Video Generation",
+          type: "warning",
+          confirmText: "Generate Videos",
+          cancelText: "Cancel",
+          onConfirm: () => resolve(true),
+          content: (
+            <div>
+              <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
+                <div className="d-flex align-items-center mb-2">
+                  <CreditCard size={20} className="text-warning me-2" />
+                  <strong>Generation Cost Estimate</strong>
+                </div>
+                <p className="mb-0">You are about to generate {concurrency} video{concurrency > 1 ? 's' : ''} using {model}.</p>
+              </div>
+              
+              <div className="mb-3">
+                <p className="mb-2"><strong>Estimated costs:</strong></p>
+                <ul className="mb-0 ps-3">
+                  <li>{concurrency} × {model === 'gen4_turbo' ? (duration === 10 ? '100' : '50') : (duration === 10 ? '50' : '25')} credits = ~{estimatedCredits} credits</li>
+                  <li>Approximate cost: ${(estimatedCredits * 0.01).toFixed(2)} USD</li>
+                  <li>Generation time: ~{Math.ceil(concurrency * duration / 4)}-{Math.ceil(concurrency * duration / 2)} minutes</li>
+                </ul>
+              </div>
+              
+              <p className="mb-0 text-muted">
+                Current balance: {organizationInfo ? organizationInfo.creditBalance : 'Unknown'} credits
+              </p>
+            </div>
+          )
+        });
+      });
+
+      if (!confirmed) {
+        return;
+      }
+      
+      setHasShownCostWarning(true);
+      try {
+        localStorage.setItem('runway-automation-cost-warning-shown', 'true');
+      } catch (error) {
+        console.warn('Failed to save cost warning state:', error);
+      }
+    }
+
+    setIsRunning(true);
+    const currentGeneration = generationCounter + 1;
+    setGenerationCounter(currentGeneration);
+    setCompletedGeneration(null);
+
+    addLog(`🚀 Starting Generation ${currentGeneration} with ${concurrency} video${concurrency > 1 ? 's' : ''}`, 'info');
+    addLog(`📋 Model: ${model}, Duration: ${duration}s, Ratio: ${aspectRatio}`, 'info');
+
+    const promises = [];
+    for (let i = 0; i < concurrency; i++) {
+      const videoNum = i + 1;
+      
+      // Add delay between requests to avoid rate limiting
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+      }
+      
+      if (!isRunning) {
+        addLog('🛑 Generation stopped by user', 'warning');
+        break;
+      }
+      
+      promises.push(generateVideo(prompt, imageUrl, i, currentGeneration, videoNum));
+    }
+
+    try {
+      const results = await Promise.allSettled(promises);
+      const successful = results.filter(r => r.status === 'fulfilled' && r.value).length;
+      const failed = results.length - successful;
+
+      if (successful > 0) {
+        addLog(`✅ Generation ${currentGeneration} completed: ${successful} successful, ${failed} failed`, 'success');
+        setCompletedGeneration(currentGeneration);
+      } else {
+        addLog(`❌ Generation ${currentGeneration} failed: All videos failed to generate`, 'error');
+      }
+    } catch (error) {
+      addLog(`❌ Generation ${currentGeneration} error: ${error.message}`, 'error');
+    } finally {
+      setIsRunning(false);
+      setGenerationProgress({});
+    }
   };
 
   const filteredVideos = results;
