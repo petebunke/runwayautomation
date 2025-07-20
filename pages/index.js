@@ -2437,36 +2437,30 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                       <div 
+                        ref={logContainerRef}
+                        className="px-3 pb-3" 
                         style={{ 
+                          fontFamily: 'monospace',
+                          overflowY: 'scroll',
                           flex: 1,
-                          overflow: 'auto',
-                          minHeight: 0
+                          paddingTop: '8px'
                         }}
                       >
-                        <div 
-                          ref={logContainerRef}
-                          style={{ 
-                            fontFamily: 'monospace',
-                            padding: '8px 16px 16px 16px',
-                            minHeight: '100%'
-                          }}
-                        >
-                          {logs.map((log, index) => (
-                            <div key={index} className={`small ${
-                              log.type === 'error' ? 'text-danger' :
-                              log.type === 'success' ? 'text-light' :
-                              log.type === 'warning' ? 'text-warning' :
-                              'text-light'
-                            }`} style={{ marginBottom: '4px', lineHeight: '1.4' }}>
-                              <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
-                            </div>
-                          ))}
-                          {logs.length === 0 && (
-                            <div className="text-muted small">
-                              No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                            </div>
-                          )}
-                        </div>
+                        {logs.map((log, index) => (
+                          <div key={index} className={`small ${
+                            log.type === 'error' ? 'text-danger' :
+                            log.type === 'success' ? 'text-light' :
+                            log.type === 'warning' ? 'text-warning' :
+                            'text-light'
+                          }`} style={{ marginBottom: '4px' }}>
+                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                          </div>
+                        ))}
+                        {logs.length === 0 && (
+                          <div className="text-muted small">
+                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
