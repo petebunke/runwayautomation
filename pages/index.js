@@ -1080,6 +1080,65 @@ export default function RunwayAutomationApp() {
             return updated;
           });
           
+          // Show specific modal for internal bad output error
+          if (failureReason.includes('INTERNAL.BAD_OUTPUT.CODE01')) {
+            setTimeout(() => {
+              showModalDialog({
+                title: "Generation Failed - Image Processing Error",
+                type: "warning",
+                confirmText: "Try Again",
+                cancelText: "Close",
+                onConfirm: () => {
+                  // Auto-switch to setup tab to encourage trying with different settings
+                  setActiveTab('setup');
+                },
+                content: (
+                  <div>
+                    <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
+                      <div className="d-flex align-items-center mb-2">
+                        <AlertCircle size={20} className="text-danger me-2" />
+                        <strong>Runway API Processing Error</strong>
+                      </div>
+                      <p className="mb-0">The video generation failed due to an internal processing issue with your image or prompt.</p>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <strong>What happened?</strong>
+                      <p className="mb-2 text-muted">Runway's servers encountered an internal error (<code>INTERNAL.BAD_OUTPUT.CODE01</code>) while processing your request. This typically indicates:</p>
+                      <ul className="mb-0 text-muted">
+                        <li>Image processing difficulties with the uploaded image</li>
+                        <li>Temporary API server issues</li>
+                        <li>Content filtering triggered by the image/prompt combination</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <strong>How to fix this:</strong>
+                      <ol className="mb-0 text-muted">
+                        <li><strong>Try a different image</strong> - Use a clearer, simpler image</li>
+                        <li><strong>Modify your prompt</strong> - Make it more specific and descriptive</li>
+                        <li><strong>Check image format</strong> - Ensure it's JPG or PNG</li>
+                        <li><strong>Verify aspect ratio</strong> - Keep between 0.5-2.0 (width/height)</li>
+                        <li><strong>Wait and retry</strong> - Sometimes it's just a temporary server issue</li>
+                      </ol>
+                    </div>
+                    
+                    <div className="alert alert-success border-0" style={{ borderRadius: '8px' }}>
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-check-circle me-2"></i>
+                        <strong>Good news:</strong> No credits were charged for this failed generation.
+                      </div>
+                    </div>
+                    
+                    <p className="mb-0 text-muted small">
+                      This is a Runway API error, not an issue with the automation app. Most users succeed on their next attempt with a different image or prompt.
+                    </p>
+                  </div>
+                )
+              });
+            }, 1000); // Small delay to ensure generation state is cleaned up first
+          }
+          
           throw new Error(failureReason);
         }
 
