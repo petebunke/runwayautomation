@@ -2651,7 +2651,7 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {/* Fixed Generation Log with proper scrolling */}
-                    <div className="mt-auto px-4 pb-4">
+                    <div className="mt-auto px-4 pb-3">
                       <div className="card bg-dark text-light border-0 shadow" style={{ 
                         borderRadius: '8px',
                         height: '240px',
@@ -2681,7 +2681,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         <div 
                           ref={logContainerRef}
-                          className="px-3 pb-4" 
+                          className="px-3 pb-3" 
                           style={{ 
                             fontFamily: 'monospace',
                             overflowY: 'auto',
