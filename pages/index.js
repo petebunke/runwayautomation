@@ -1734,6 +1734,7 @@ export default function RunwayAutomationApp() {
           }
 
           addLog(`✓ 4K upscaling started for ${actualVideoName} (Task ID: ${upscaleTask.id})`, 'success');
+          addLog(`🔍 Starting polling for upscale task ${upscaleTask.id}`, 'info');
           
           // Update the original video result with upscaling info
           setResults(prev => prev.map(result => 
@@ -1783,11 +1784,15 @@ export default function RunwayAutomationApp() {
 
   // New function to poll upscaling completion with auto-navigation
   const pollUpscaleCompletion = async (upscaleTaskId, originalTaskId, videoName, upscaleId) => {
+    addLog(`🔄 Starting upscale polling for task ${upscaleTaskId}`, 'info');
+    
     const maxPolls = Math.floor(1800 / 10); // 30 minutes with 10-second intervals
     let pollCount = 0;
 
     const pollInterval = setInterval(async () => {
       try {
+        addLog(`📊 Upscale poll ${pollCount + 1} for ${videoName}`, 'info');
+        
         const response = await fetch(API_BASE + '/runway-status?taskId=' + upscaleTaskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
           method: 'GET',
           headers: {
@@ -1807,6 +1812,8 @@ export default function RunwayAutomationApp() {
         if (!response.ok) {
           throw new Error(task.error || 'Upscaling polling failed: ' + response.status);
         }
+        
+        addLog(`📈 Upscale status for ${videoName}: ${task.status}`, 'info');
         
         let progress = 20;
         
@@ -2682,7 +2689,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div 
                         ref={logContainerRef}
-                        className="px-3" 
+                        className="px-3 pb-3" 
                         style={{ 
                           fontFamily: 'monospace',
                           overflowY: 'auto',
