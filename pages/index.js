@@ -1195,7 +1195,7 @@ export default function RunwayAutomationApp() {
                       <p className="mb-0">The video generation failed due to an internal processing issue with your image or prompt.</p>
                     </div>
                     
-        
+                
                     
                     <div className="mb-3">
                       <strong>How to fix this:</strong>
@@ -2496,7 +2496,7 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
                   
-                  <div className="card-body p-0 d-flex flex-column" style={{ height: 'calc(100vh - 300px)', minHeight: '600px' }}>
+                  <div className="card-body p-0 d-flex flex-column" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
                     <div className="p-4 pb-0">
                       <div className="mb-4"></div>
                       <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
@@ -2650,11 +2650,13 @@ export default function RunwayAutomationApp() {
                       )}
                     </div>
 
-                    {/* Fixed Generation Log that extends to bottom of container */}
-                    <div className="flex-grow-1 d-flex flex-column px-4 pb-4">
-                      <div className="card bg-dark text-light border-0 shadow flex-grow-1 d-flex flex-column" style={{ 
+                    {/* Fixed Generation Log with proper scrolling */}
+                    <div className="mt-auto px-4 pb-3">
+                      <div className="card bg-dark text-light border-0 shadow" style={{ 
                         borderRadius: '8px',
-                        minHeight: '0'
+                        height: '240px',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}>
                         <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
                           <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
@@ -2679,12 +2681,13 @@ export default function RunwayAutomationApp() {
                         </div>
                         <div 
                           ref={logContainerRef}
-                          className="px-3 pb-3 flex-grow-1" 
+                          className="px-3 pb-3" 
                           style={{ 
                             fontFamily: 'monospace',
                             overflowY: 'auto',
-                            overflowX: 'hidden',
-                            minHeight: '0'
+                            flex: '1 1 auto',
+                            minHeight: '0px',
+                            paddingBottom: '20px !important'
                           }}
                         >
                           {logs.map((log, index) => (
@@ -2956,4 +2959,144 @@ export default function RunwayAutomationApp() {
                                           className="btn btn-secondary btn-sm"
                                           onClick={cancelEditTitle}
                                           style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                          aria-label="Cancel
+                                          aria-label="Cancel edit"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <span className="fw-bold text-primary me-2" style={{ 
+                                          lineHeight: '1.2',
+                                          wordBreak: 'break-word',
+                                          maxWidth: '200px',
+                                          flex: '1'
+                                        }}>
+                                          {getVideoDisplayTitle(result)}
+                                        </span>
+                                        
+                                        {/* Edit button positioned at bottom of first line */}
+                                        <button
+                                          className="btn btn-sm btn-outline-secondary p-1"
+                                          onClick={() => handleEditTitle(result.id, result.jobId)}
+                                          title="Edit video title"
+                                          style={{ 
+                                            border: 'none',
+                                            background: 'transparent',
+                                            borderRadius: '4px',
+                                            width: '24px',
+                                            height: '24px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            alignSelf: 'flex-start',
+                                            marginTop: '0px',
+                                            flexShrink: 0
+                                          }}
+                                          aria-label="Edit video title"
+                                        >
+                                          <Edit3 size={12} />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                  <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                    {result.prompt}
+                                  </h6>
+                                  
+                                  <div className="d-grid gap-2">
+                                    {result.video_url && (
+                                      <div className="btn-group" role="group" aria-label="Video actions">
+                                        <button
+                                          className="btn btn-primary btn-sm flex-fill"
+                                          onClick={() => downloadVideo(
+                                            result.upscaled_video_url || result.video_url, 
+                                            generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
+                                          )}
+                                          title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                          aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                        >
+                                          <Download size={16} className="me-1" aria-hidden="true" />
+                                          Download{result.upscaled_video_url ? ' 4K' : ''}
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-primary btn-sm flex-fill"
+                                          onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title={result.upscaled_video_url ? "View 4K version" : "View video"}
+                                          aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
+                                        >
+                                          <ExternalLink size={16} className="me-1" aria-hidden="true" />
+                                          View
+                                        </button>
+                                        {!result.upscaled_video_url && result.video_url && (
+                                          <button
+                                            className="btn btn-sm"
+                                            onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
+                                            disabled={upscalingProgress[`upscale_${result.id}`]}
+                                            title="Upscale to 4K resolution"
+                                            style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                                            aria-label="Upscale video to 4K resolution"
+                                          >
+                                            <ArrowUp size={16} className="me-1" aria-hidden="true" />
+                                            4K
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Show both original and 4K download options if 4K exists */}
+                                    {result.upscaled_video_url && result.video_url && (
+                                      <div className="btn-group mt-1" role="group" aria-label="Original video actions">
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm flex-fill"
+                                          onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                          title="Download original resolution"
+                                          aria-label="Download original resolution video"
+                                        >
+                                          <Download size={14} className="me-1" aria-hidden="true" />
+                                          Original
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm flex-fill"
+                                          onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title="View original resolution"
+                                          aria-label="View original resolution video in new tab"
+                                        >
+                                          <ExternalLink size={14} className="me-1" aria-hidden="true" />
+                                          View Original
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mt-4 mb-4">
+            <div className="d-flex align-items-center justify-content-center text-white-50">
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
+            </div>
+            <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px'}}>
+              <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
+                  alt="Powered by Runway" 
+                  style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
+                />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
