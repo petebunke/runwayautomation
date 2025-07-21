@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3 } from 'lucide-react';
+import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield } from 'lucide-react';
 import Head from 'next/head';
 
 export default function RunwayAutomationApp() {
@@ -52,6 +52,23 @@ export default function RunwayAutomationApp() {
   const Modal = ({ show, onClose, title, children, onConfirm, confirmText = "Confirm", cancelText = "Cancel", type = "confirm" }) => {
     if (!show) return null;
 
+    const getModalIcon = () => {
+      switch (type) {
+        case 'warning': return <AlertCircle className="text-white" size={32} />;
+        case 'safety': return <Shield className="text-white" size={32} />;
+        case 'credit': return <CreditCard className="text-white" size={32} />;
+        default: return <CreditCard className="text-white" size={32} />;
+      }
+    };
+
+    const getModalColor = () => {
+      switch (type) {
+        case 'safety': return '#dc3545'; // Red for safety issues
+        case 'warning': return '#fd7e14'; // Orange for warnings
+        default: return '#4dd0ff'; // Default blue
+      }
+    };
+
     return (
       <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ 
         backgroundColor: 'rgba(0,0,0,0.5)', 
@@ -69,7 +86,8 @@ export default function RunwayAutomationApp() {
             className="bg-primary position-relative d-flex align-items-center justify-content-center" 
             style={{ 
               height: '80px',
-              borderRadius: '8px 8px 0 0'
+              borderRadius: '8px 8px 0 0',
+              backgroundColor: type === 'warning' ? '#fd7e14' : type === 'safety' ? '#dc3545' : '#0d6efd'
             }}
           >
             <div 
@@ -81,10 +99,10 @@ export default function RunwayAutomationApp() {
                 top: '40px',
                 zIndex: 10,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                backgroundColor: '#4dd0ff'
+                backgroundColor: getModalColor()
               }}
             >
-              {type === 'warning' ? <AlertCircle className="text-white" size={32} /> : <CreditCard className="text-white" size={32} />}
+              {getModalIcon()}
             </div>
             
             <div className="text-white text-center">
@@ -106,7 +124,7 @@ export default function RunwayAutomationApp() {
               </button>
               {onConfirm && (
                 <button
-                  className={`btn ${type === 'warning' ? 'btn-danger' : 'btn-primary'} shadow`}
+                  className={`btn ${type === 'warning' || type === 'safety' ? 'btn-danger' : 'btn-primary'} shadow`}
                   onClick={() => {
                     onConfirm();
                     onClose();
@@ -126,6 +144,61 @@ export default function RunwayAutomationApp() {
   const showModalDialog = (config) => {
     setModalConfig(config);
     setShowModal(true);
+  };
+
+  // Show safety failure modal
+  const showSafetyFailureModal = (errorMessage) => {
+    showModalDialog({
+      title: "Content Safety Policy Violation",
+      type: "safety",
+      confirmText: "I Understand",
+      cancelText: null,
+      onConfirm: null,
+      content: (
+        <div>
+          <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
+            <div className="d-flex align-items-center mb-2">
+              <Shield size={20} className="text-danger me-2" />
+              <strong>Content Rejected by Safety Filter</strong>
+            </div>
+            <p className="mb-0">Your content was flagged by Runway's safety systems and cannot be processed.</p>
+          </div>
+          
+          <div className="mb-3">
+            <strong>Error Details:</strong>
+            <div className="bg-light p-2 rounded mt-2" style={{ fontFamily: 'monospace', fontSize: '0.9em' }}>
+              {errorMessage}
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <strong>Runway's Usage Policy prohibits content that:</strong>
+            <ul className="mb-0 text-muted mt-2">
+              <li>Contains violence, gore, or disturbing imagery</li>
+              <li>Depicts illegal activities or harmful behavior</li>
+              <li>Includes hate speech or discriminatory content</li>
+              <li>Contains sexually explicit or suggestive material</li>
+              <li>Infringes on copyrights or trademarks</li>
+              <li>Attempts to generate content of real people without consent</li>
+            </ul>
+          </div>
+          
+          <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
+            <strong>Important:</strong> Credits used for safety-rejected content are not refunded. Please review your prompt and image before retrying.
+          </div>
+          
+          <p className="mb-0 text-muted">
+            Learn more about content guidelines at{' '}
+            <a href="https://help.runwayml.com/hc/en-us/articles/17944787368595-Runway-s-Usage-Policy" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="text-decoration-none fw-bold">
+              Runway's Usage Policy
+            </a>
+          </p>
+        </div>
+      )
+    });
   };
 
   useEffect(() => {
@@ -1080,8 +1153,14 @@ export default function RunwayAutomationApp() {
             return updated;
           });
           
+          // Check for safety failures first
+          if (failureReason.includes('safety.input.') || failureReason.toLowerCase().includes('safety filter')) {
+            setTimeout(() => {
+              showSafetyFailureModal(failureReason);
+            }, 1000);
+          }
           // Show specific modal for internal bad output error
-          if (failureReason.includes('INTERNAL.BAD_OUTPUT.CODE01')) {
+          else if (failureReason.includes('INTERNAL.BAD_OUTPUT.CODE01')) {
             setTimeout(() => {
               showModalDialog({
                 title: "Image Processing Error",
@@ -1576,7 +1655,7 @@ export default function RunwayAutomationApp() {
     setIsDownloadingAll(false);
   };
 
-  // Add the upscaling function
+  // Enhanced upscaling function with auto-navigation to results
   const upscaleVideo = async (taskId, videoUrl, videoName) => {
     if (!runwayApiKey.trim()) {
       addLog('❌ Runway API key is required for 4K upscaling!', 'error');
@@ -1645,29 +1724,8 @@ export default function RunwayAutomationApp() {
               : result
           ));
           
-          // For demo purposes, simulate upscaling completion
-          setTimeout(() => {
-            setUpscalingProgress(prev => {
-              const updated = { ...prev };
-              delete updated[upscaleId];
-              return updated;
-            });
-            
-            // Simulate adding upscaled URL
-            setResults(prev => prev.map(result => 
-              result.id === taskId 
-                ? { 
-                    ...result, 
-                    upscaled_video_url: result.video_url // Using original URL as placeholder
-                  }
-                : result
-            ));
-            
-            addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
-            
-            // Update credits after upscaling
-            updateCreditsAfterGeneration();
-          }, 5000);
+          // Poll for upscaling completion with auto-navigation
+          pollUpscaleCompletion(upscaleTask.id, taskId, videoName, upscaleId);
           
         } catch (error) {
           addLog(`❌ 4K upscaling failed for ${videoName}: ${error.message}`, 'error');
@@ -1700,6 +1758,128 @@ export default function RunwayAutomationApp() {
         </div>
       )
     });
+  };
+
+  // New function to poll upscaling completion with auto-navigation
+  const pollUpscaleCompletion = async (upscaleTaskId, originalTaskId, videoName, upscaleId) => {
+    const maxPolls = Math.floor(1800 / 10); // 30 minutes with 10-second intervals
+    let pollCount = 0;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + upscaleTaskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error('Invalid response from Runway API: ' + responseText.substring(0, 100));
+        }
+
+        if (!response.ok) {
+          throw new Error(task.error || 'Upscaling polling failed: ' + response.status);
+        }
+        
+        let progress = 20;
+        
+        if (task.status === 'PENDING') {
+          progress = 35;
+        } else if (task.status === 'RUNNING') {
+          progress = 50 + (pollCount * 3);
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+        }
+        
+        setUpscalingProgress(prev => ({
+          ...prev,
+          [upscaleId]: { 
+            status: task.status.toLowerCase(), 
+            progress: Math.round(progress),
+            message: task.status.toLowerCase()
+          }
+        }));
+
+        if (task.status === 'SUCCEEDED') {
+          clearInterval(pollInterval);
+          
+          addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
+          
+          // Clear upscaling progress
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          
+          // Update results with upscaled video URL
+          setResults(prev => prev.map(result => 
+            result.id === originalTaskId 
+              ? { 
+                  ...result, 
+                  upscaled_video_url: task.output && task.output[0] ? task.output[0] : result.video_url
+                }
+              : result
+          ));
+          
+          // Auto-navigate to results tab if not already there
+          if (activeTab !== 'results') {
+            addLog('🎬 Automatically switching to Results tab to show completed 4K video', 'info');
+            setActiveTab('results');
+            // Scroll to top when switching tabs
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          
+          // Update credits after upscaling
+          updateCreditsAfterGeneration();
+          
+          return;
+        }
+
+        if (task.status === 'FAILED') {
+          clearInterval(pollInterval);
+          
+          const failureReason = task.failure_reason || task.failureCode || task.error || '4K upscaling failed - no specific reason provided';
+          
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${failureReason}`, 'error');
+          
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          
+          return;
+        }
+
+        pollCount++;
+        
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          addLog(`⏰ 4K upscaling timeout for ${videoName} after 30 minutes`, 'warning');
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+        }
+        
+      } catch (error) {
+        clearInterval(pollInterval);
+        addLog(`❌ 4K upscaling polling error for ${videoName}: ${error.message}`, 'error');
+        setUpscalingProgress(prev => {
+          const updated = { ...prev };
+          delete updated[upscaleId];
+          return updated;
+        });
+      }
+    }, 10000); // Poll every 10 seconds for upscaling
   };
 
   return (
