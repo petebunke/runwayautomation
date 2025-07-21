@@ -1383,6 +1383,10 @@ export default function RunwayAutomationApp() {
   const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
     setIsRunning(true);
     
+    // Clear any previous generation progress and upscaling progress when starting new generation
+    setGenerationProgress({});
+    setUpscalingProgress({});
+    
     const currentGeneration = generationCounter + 1;
     setGenerationCounter(currentGeneration);
     
@@ -1842,13 +1846,13 @@ export default function RunwayAutomationApp() {
               : result
           ));
           
-          // Auto-navigate to results tab if not already there
-          if (activeTab !== 'results') {
-            addLog('🎬 Automatically switching to Results tab to show completed 4K video', 'info');
+          // Always auto-navigate to results tab when upscaling completes
+          addLog('🎬 Automatically switching to Results tab to show completed 4K video', 'info');
+          setTimeout(() => {
             setActiveTab('results');
             // Scroll to top when switching tabs
             window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
+          }, 500); // Small delay to ensure state updates complete
           
           // Update credits after upscaling
           updateCreditsAfterGeneration();
