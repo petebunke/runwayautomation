@@ -62,11 +62,8 @@ export default function RunwayAutomationApp() {
     };
 
     const getModalColor = () => {
-      switch (type) {
-        case 'safety': return '#dc3545'; // Red for safety issues
-        case 'warning': return '#fd7e14'; // Orange for warnings
-        default: return '#4dd0ff'; // Default blue
-      }
+      // All modals use the same light cyan color
+      return '#4dd0ff';
     };
 
     return (
@@ -87,7 +84,7 @@ export default function RunwayAutomationApp() {
             style={{ 
               height: '80px',
               borderRadius: '8px 8px 0 0',
-              backgroundColor: type === 'warning' ? '#fd7e14' : type === 'safety' ? '#dc3545' : '#0d6efd'
+              backgroundColor: '#0d6efd' // All modals use the same background color
             }}
           >
             <div 
@@ -1154,7 +1151,11 @@ export default function RunwayAutomationApp() {
           });
           
           // Check for safety failures first
-          if (failureReason.includes('safety.input.') || failureReason.toLowerCase().includes('safety filter')) {
+          if (failureReason.toUpperCase().includes('SAFETY.INPUT.') || 
+              failureReason.toLowerCase().includes('safety filter') ||
+              failureReason.toUpperCase().includes('SAFETY.INPUT.TEXT') ||
+              failureReason.toUpperCase().includes('SAFETY.INPUT.IMAGE') ||
+              failureReason.toUpperCase().includes('SAFETY.INPUT.')) {
             setTimeout(() => {
               showSafetyFailureModal(failureReason);
             }, 1000);
