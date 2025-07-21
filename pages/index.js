@@ -2678,7 +2678,7 @@ export default function RunwayAutomationApp() {
                       </div>
                       <div 
                         ref={logContainerRef}
-                        className="px-3 pb-3" 
+                        className="px-3" 
                         style={{ 
                           fontFamily: 'monospace',
                           overflowY: 'auto',
