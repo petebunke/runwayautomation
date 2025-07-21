@@ -169,23 +169,22 @@ export default function RunwayAutomationApp() {
           </div>
 
           <div className="mb-3">
-            <strong>Runway's Usage Policy prohibits content that:</strong>
-            <ul className="mb-0 text-muted mt-2">
-              <li>Contains violence, gore, or disturbing imagery</li>
-              <li>Depicts illegal activities or harmful behavior</li>
-              <li>Includes hate speech or discriminatory content</li>
-              <li>Contains sexually explicit or suggestive material</li>
-              <li>Infringes on copyrights or trademarks</li>
-              <li>Attempts to generate content of real people without consent</li>
+            <strong>Runway's Usage Policy prohibits content with:</strong>
+            <ul className="mb-0 text-muted mt-2 small">
+              <li>Violence, gore, or disturbing imagery</li>
+              <li>Illegal activities or harmful behavior</li>
+              <li>Hate speech or discriminatory content</li>
+              <li>Sexually explicit or suggestive material</li>
+              <li>Copyright infringement or real people without consent</li>
             </ul>
           </div>
           
           <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-            <strong>Important:</strong> Credits used for safety-rejected content are not refunded. Please review your prompt and image before retrying.
+            <strong>Important:</strong> Credits used for safety-rejected content are not refunded.
           </div>
           
-          <p className="mb-0 text-muted">
-            Learn more about content guidelines at{' '}
+          <p className="mb-0 text-muted small">
+            Learn more at{' '}
             <a href="https://help.runwayml.com/hc/en-us/articles/17944787368595-Runway-s-Usage-Policy" 
                target="_blank" 
                rel="noopener noreferrer" 
