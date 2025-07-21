@@ -1096,7 +1096,7 @@ export default function RunwayAutomationApp() {
                   <div>
                     <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
                       <div className="d-flex align-items-center mb-2">
-                        <AlertCircle size={20} className="text-danger me-2" />
+                        
                         <strong>Runway API Processing Error</strong>
                       </div>
                       <p className="mb-0">The video generation failed due to an internal processing issue with your image or prompt.</p>
