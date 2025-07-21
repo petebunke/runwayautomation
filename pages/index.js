@@ -2429,7 +2429,7 @@ export default function RunwayAutomationApp() {
           {activeTab === 'generation' && (
             <div className="row justify-content-center" style={{ margin: '0' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', height: 'calc(100vh - 320px)' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2496,212 +2496,215 @@ export default function RunwayAutomationApp() {
                     </div>
                   </div>
                   
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
-                    <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
-                      <div className="card-body p-3">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
-                          <div className="d-flex gap-5 align-items-center text-center">
-                            <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
-                            <span className="text-dark"><strong>Credits:</strong> {organizationInfo ? organizationInfo.creditBalance : 0}</span>
-                            <div className="d-flex align-items-center">
-                              <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
-                                {isRunning && (
-                                  <div className="w-100 h-100 rounded-circle bg-primary"></div>
-                                )}
+                  <div className="card-body p-0 d-flex flex-column" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
+                    <div className="p-4 pb-0">
+                      <div className="mb-4"></div>
+                      <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
+                        <div className="card-body p-3">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
+                            <div className="d-flex gap-5 align-items-center text-center">
+                              <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                              <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                              <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo ? organizationInfo.creditBalance : 0}</span>
+                              <div className="d-flex align-items-center">
+                                <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
+                                  {isRunning && (
+                                    <div className="w-100 h-100 rounded-circle bg-primary"></div>
+                                  )}
+                                </div>
+                                <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                               </div>
-                              <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Always show generation status */}
-                    <div className="mb-4" style={{ minHeight: '100px' }}>
-                      <div className="text-center py-3">
-                        <h4 className="fw-bold text-dark mb-2">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              // During generation
-                              return `Generation ${generationCounter || 1} in progress`;
-                            } else if (completedGeneration) {
-                              // After completion
-                              return `Generation ${completedGeneration} completed`;
-                            } else {
-                              // Initial state
-                              return `Generation ${generationCounter || 1}`;
-                            }
-                          })()}
-                        </h4>
-                        <p className="text-muted mb-0">
-                          {(() => {
-                            if (Object.keys(generationProgress).length > 0) {
-                              // During generation - show active job count
-                              const count = Object.keys(generationProgress).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generating`;
-                            } else if (completedGeneration) {
-                              // After completion - show completed count from that generation
-                              const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
-                              return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
-                            } else {
-                              // Initial state
-                              return '0 videos generated';
-                            }
-                          })()}
-                        </p>
+                      {/* Always show generation status */}
+                      <div className="mb-4" style={{ minHeight: '100px' }}>
+                        <div className="text-center py-3">
+                          <h4 className="fw-bold text-dark mb-2">
+                            {(() => {
+                              if (Object.keys(generationProgress).length > 0) {
+                                // During generation
+                                return `Generation ${generationCounter || 1} in progress`;
+                              } else if (completedGeneration) {
+                                // After completion
+                                return `Generation ${completedGeneration} completed`;
+                              } else {
+                                // Initial state
+                                return `Generation ${generationCounter || 1}`;
+                              }
+                            })()}
+                          </h4>
+                          <p className="text-muted mb-0">
+                            {(() => {
+                              if (Object.keys(generationProgress).length > 0) {
+                                // During generation - show active job count
+                                const count = Object.keys(generationProgress).length;
+                                return `${count} video${count !== 1 ? 's' : ''} generating`;
+                              } else if (completedGeneration) {
+                                // After completion - show completed count from that generation
+                                const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                                return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                              } else {
+                                // Initial state
+                                return '0 videos generated';
+                              }
+                            })()}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    {Object.keys(generationProgress).length > 0 && (
-                      <div className="mb-4">
-                        <div className="row g-3">
-                          {Object.entries(generationProgress).map(([jobId, progress]) => (
-                            <div key={jobId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '120px'
-                                    }}>
-                                      {jobId}
-                                    </span>
-                                    <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-success' :
-                                      progress.status === 'failed' ? 'bg-danger' :
-                                      progress.status === 'throttled' ? 'bg-warning' :
-                                      'bg-primary'
-                                    }`}>
-                                      {progress.status}
-                                    </span>
-                                  </div>
-                                  <div className="progress mb-2" style={{ height: '8px' }}>
-                                    <div 
-                                      className={`progress-bar ${
+                      {Object.keys(generationProgress).length > 0 && (
+                        <div className="mb-4">
+                          <div className="row g-3">
+                            {Object.entries(generationProgress).map(([jobId, progress]) => (
+                              <div key={jobId} className="col-md-6 col-xl-3">
+                                <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                  <div className="card-body p-3">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                      <span className="fw-bold small" style={{ 
+                                        lineHeight: '1.2',
+                                        wordBreak: 'break-word',
+                                        maxWidth: '120px'
+                                      }}>
+                                        {jobId}
+                                      </span>
+                                      <span className={`badge ${
                                         progress.status === 'completed' ? 'bg-success' :
                                         progress.status === 'failed' ? 'bg-danger' :
                                         progress.status === 'throttled' ? 'bg-warning' :
                                         'bg-primary'
-                                      }`}
-                                      style={{ width: progress.progress + '%' }}
-                                    ></div>
+                                      }`}>
+                                        {progress.status}
+                                      </span>
+                                    </div>
+                                    <div className="progress mb-2" style={{ height: '8px' }}>
+                                      <div 
+                                        className={`progress-bar ${
+                                          progress.status === 'completed' ? 'bg-success' :
+                                          progress.status === 'failed' ? 'bg-danger' :
+                                          progress.status === 'throttled' ? 'bg-warning' :
+                                          'bg-primary'
+                                        }`}
+                                        style={{ width: progress.progress + '%' }}
+                                      ></div>
+                                    </div>
+                                    <small className="text-muted">
+                                      {progress.message || progress.status}
+                                    </small>
                                   </div>
-                                  <small className="text-muted">
-                                    {progress.message || progress.status}
-                                  </small>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Show upscaling progress if any */}
-                    {Object.keys(upscalingProgress).length > 0 && (
-                      <div className="mb-4">
-                        <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
-                        <div className="row g-3">
-                          {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
-                            <div key={upscaleId} className="col-md-6 col-xl-3">
-                              <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                <div className="card-body p-3">
-                                  <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <span className="fw-bold small" style={{ 
-                                      lineHeight: '1.2',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '120px'
-                                    }}>
-                                      4K Upscale
-                                    </span>
-                                    <span className={`badge ${
-                                      progress.status === 'completed' ? 'bg-success' :
-                                      progress.status === 'failed' ? 'bg-danger' :
-                                      'bg-info'
-                                    }`}>
-                                      {progress.status}
-                                    </span>
-                                  </div>
-                                  <div className="progress mb-2" style={{ height: '8px' }}>
-                                    <div 
-                                      className={`progress-bar ${
+                      {/* Show upscaling progress if any */}
+                      {Object.keys(upscalingProgress).length > 0 && (
+                        <div className="mb-4">
+                          <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
+                          <div className="row g-3">
+                            {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
+                              <div key={upscaleId} className="col-md-6 col-xl-3">
+                                <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                  <div className="card-body p-3">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                      <span className="fw-bold small" style={{ 
+                                        lineHeight: '1.2',
+                                        wordBreak: 'break-word',
+                                        maxWidth: '120px'
+                                      }}>
+                                        4K Upscale
+                                      </span>
+                                      <span className={`badge ${
                                         progress.status === 'completed' ? 'bg-success' :
                                         progress.status === 'failed' ? 'bg-danger' :
                                         'bg-info'
-                                      }`}
-                                      style={{ width: progress.progress + '%' }}
-                                    ></div>
+                                      }`}>
+                                        {progress.status}
+                                      </span>
+                                    </div>
+                                    <div className="progress mb-2" style={{ height: '8px' }}>
+                                      <div 
+                                        className={`progress-bar ${
+                                          progress.status === 'completed' ? 'bg-success' :
+                                          progress.status === 'failed' ? 'bg-danger' :
+                                          'bg-info'
+                                        }`}
+                                        style={{ width: progress.progress + '%' }}
+                                      ></div>
+                                    </div>
+                                    <small className="text-muted">
+                                      {progress.message || progress.status}
+                                    </small>
                                   </div>
-                                  <small className="text-muted">
-                                    {progress.message || progress.status}
-                                  </small>
                                 </div>
                               </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fixed Generation Log with proper scrolling */}
+                    <div className="mt-auto px-4 pb-4">
+                      <div className="card bg-dark text-light border-0 shadow" style={{ 
+                        borderRadius: '8px',
+                        height: '240px',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}>
+                        <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
+                          <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
+                          <div className="d-flex gap-2">
+                            <button 
+                              className="btn btn-sm btn-outline-danger" 
+                              onClick={clearLogs}
+                              title="Clear all logs"
+                              style={{ borderRadius: '6px' }}
+                            >
+                              <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                            </button>
+                            <button 
+                              className="btn btn-sm btn-outline-light" 
+                              onClick={copyLogsToClipboard}
+                              title="Copy all logs to clipboard"
+                              style={{ borderRadius: '6px' }}
+                            >
+                              <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div 
+                          ref={logContainerRef}
+                          className="px-3 pb-3" 
+                          style={{ 
+                            fontFamily: 'monospace',
+                            overflowY: 'auto',
+                            flex: '1 1 auto',
+                            minHeight: '0px'
+                          }}
+                        >
+                          {logs.map((log, index) => (
+                            <div key={index} className={`small mb-1 ${
+                              log.type === 'error' ? 'text-danger' :
+                              log.type === 'success' ? 'text-light' :
+                              log.type === 'warning' ? 'text-warning' :
+                              'text-light'
+                            }`}>
+                              <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
                             </div>
                           ))}
+                          {logs.length === 0 && (
+                            <div className="text-muted small">
+                              No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Fixed Generation Log with proper spacing */}
-                    <div className="card bg-dark text-light border-0 shadow" style={{ 
-                      borderRadius: '8px',
-                      height: '300px',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
-                        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
-                        <div className="d-flex gap-2">
-                          <button 
-                            className="btn btn-sm btn-outline-danger" 
-                            onClick={clearLogs}
-                            title="Clear all logs"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-outline-light" 
-                            onClick={copyLogsToClipboard}
-                            title="Copy all logs to clipboard"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
-                          </button>
-                        </div>
-                      </div>
-                      <div 
-                        ref={logContainerRef}
-                        className="px-3" 
-                        style={{ 
-                          fontFamily: 'monospace',
-                          overflowY: 'auto',
-                          flex: '1 1 auto',
-                          minHeight: '0px',
-                          maxHeight: 'calc(300px - 60px)'
-                        }}
-                      >
-                        {logs.map((log, index) => (
-                          <div key={index} className={`small mb-1 ${
-                            log.type === 'error' ? 'text-danger' :
-                            log.type === 'success' ? 'text-light' :
-                            log.type === 'warning' ? 'text-warning' :
-                            'text-light'
-                          }`}>
-                            <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
-                          </div>
-                        ))}
-                        {logs.length === 0 && (
-                          <div className="text-muted small">
-                            No logs yet... Logs will appear here during video generation and persist across page refreshes.
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -2713,7 +2716,7 @@ export default function RunwayAutomationApp() {
           {activeTab === 'results' && (
             <div className="row justify-content-center" style={{ margin: '0' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', height: 'calc(100vh - 320px)' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
@@ -2810,10 +2813,9 @@ export default function RunwayAutomationApp() {
                     )}
                   </div>
                   
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
-                    <div className="mb-4"></div>
+                  <div className="card-body p-0 d-flex flex-column" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
                     {results.length === 0 ? (
-                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
+                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center p-4">
                         <div className="mb-4">
                           <Film size={80} className="text-muted" />
                         </div>
@@ -2830,244 +2832,246 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     ) : (
-                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
-                        {results
-                          .slice()
-                          .sort((a, b) => {
-                            const parseJobId = (jobId) => {
-                              if (!jobId) return { generation: 0, video: 0 };
-                              
-                              const genMatch = jobId.match(/Generation (\d+)/);
-                              const vidMatch = jobId.match(/Video (\d+)/);
-                              
-                              return {
-                                generation: genMatch ? parseInt(genMatch[1]) : 0,
-                                video: vidMatch ? parseInt(vidMatch[1]) : 0
+                      <div className="p-4" style={{ overflowY: 'auto', flex: '1 1 auto' }}>
+                        <div className="row g-4">
+                          {results
+                            .slice()
+                            .sort((a, b) => {
+                              const parseJobId = (jobId) => {
+                                if (!jobId) return { generation: 0, video: 0 };
+                                
+                                const genMatch = jobId.match(/Generation (\d+)/);
+                                const vidMatch = jobId.match(/Video (\d+)/);
+                                
+                                return {
+                                  generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                  video: vidMatch ? parseInt(vidMatch[1]) : 0
+                                };
                               };
-                            };
-                            
-                            const aData = parseJobId(a.jobId);
-                            const bData = parseJobId(b.jobId);
-                            
-                            if (aData.generation !== bData.generation) {
-                              return aData.generation - bData.generation;
-                            }
-                            return aData.video - bData.video;
-                          })
-                          .map((result, index) => (
-                          <div key={index} className="col-md-6 col-lg-3">
-                            <div className="card border-0 shadow" style={{ borderRadius: '8px' }}>
-                              <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
-                                {result.video_url ? (
-                                  <video
-                                    src={result.video_url}
-                                    poster={result.thumbnail_url}
-                                    controls
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                    preload="metadata"
-                                  >
-                                    Your browser does not support video playback.
-                                  </video>
-                                ) : result.thumbnail_url ? (
-                                  <img 
-                                    src={result.thumbnail_url}
-                                    alt={'Thumbnail for: ' + result.prompt}
-                                    className="w-100 h-100"
-                                    style={{ objectFit: 'cover' }}
-                                  />
-                                ) : (
-                                  <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <div className="text-center">
-                                      <Film size={48} className="text-primary mb-3" />
-                                      <div className="fw-bold text-muted">Processing...</div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {result.status !== 'completed' && (
-                                  <div className="position-absolute top-0 start-0 m-3">
-                                    <span className="badge bg-warning shadow-sm">
-                                      ⏳ Processing
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* 4K badge for upscaled videos */}
-                                {result.upscaled_video_url && (
-                                  <div className="position-absolute top-0 start-0 m-2">
-                                    <span className="badge bg-success shadow-sm">
-                                      4K ✨
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {/* Favorite button in upper-right corner */}
-                                <button
-                                  className="btn btn-sm position-absolute top-0 end-0 m-2"
-                                  onClick={() => toggleFavorite(result.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.9)',
-                                    borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
-                                    color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                >
-                                  <Heart 
-                                    size={16} 
-                                    fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
-                                  />
-                                </button>
-                              </div>
                               
-                              <div className="card-body p-3">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  {editingVideoTitle === result.id ? (
-                                    <div className="d-flex align-items-center w-100">
-                                      <input
-                                        type="text"
-                                        value={tempEditTitle}
-                                        onChange={(e) => setTempEditTitle(e.target.value)}
-                                        onKeyDown={(e) => handleEditKeyPress(e, result.id)}
-                                        onBlur={() => saveEditTitle(result.id)}
-                                        className="form-control form-control-sm me-2"
-                                        style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
-                                        autoFocus
-                                        maxLength={100}
-                                        aria-label="Edit video title"
-                                      />
-                                      <button
-                                        className="btn btn-success btn-sm me-1"
-                                        onClick={() => saveEditTitle(result.id)}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Save title"
-                                      >
-                                        ✓
-                                      </button>
-                                      <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={cancelEditTitle}
-                                        style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
-                                        aria-label="Cancel edit"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
+                              const aData = parseJobId(a.jobId);
+                              const bData = parseJobId(b.jobId);
+                              
+                              if (aData.generation !== bData.generation) {
+                                return aData.generation - bData.generation;
+                              }
+                              return aData.video - bData.video;
+                            })
+                            .map((result, index) => (
+                            <div key={index} className="col-md-6 col-lg-3">
+                              <div className="card border-0 shadow" style={{ borderRadius: '8px' }}>
+                                <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                  {result.video_url ? (
+                                    <video
+                                      src={result.video_url}
+                                      poster={result.thumbnail_url}
+                                      controls
+                                      className="w-100 h-100"
+                                      style={{ objectFit: 'cover' }}
+                                      preload="metadata"
+                                    >
+                                      Your browser does not support video playback.
+                                    </video>
+                                  ) : result.thumbnail_url ? (
+                                    <img 
+                                      src={result.thumbnail_url}
+                                      alt={'Thumbnail for: ' + result.prompt}
+                                      className="w-100 h-100"
+                                      style={{ objectFit: 'cover' }}
+                                    />
                                   ) : (
-                                    <>
-                                      <span className="fw-bold text-primary me-2" style={{ 
-                                        lineHeight: '1.2',
-                                        wordBreak: 'break-word',
-                                        maxWidth: '200px',
-                                        flex: '1'
-                                      }}>
-                                        {getVideoDisplayTitle(result)}
-                                      </span>
-                                      
-                                      {/* Edit button positioned at bottom of first line */}
-                                      <button
-                                        className="btn btn-sm btn-outline-secondary p-1"
-                                        onClick={() => handleEditTitle(result.id, result.jobId)}
-                                        title="Edit video title"
-                                        style={{ 
-                                          border: 'none',
-                                          background: 'transparent',
-                                          borderRadius: '4px',
-                                          width: '24px',
-                                          height: '24px',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          alignSelf: 'flex-start',
-                                          marginTop: '0px',
-                                          flexShrink: 0
-                                        }}
-                                        aria-label="Edit video title"
-                                      >
-                                        <Edit3 size={12} />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                                <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
-                                  {result.prompt}
-                                </h6>
-                                
-                                <div className="d-grid gap-2">
-                                  {result.video_url && (
-                                    <div className="btn-group" role="group" aria-label="Video actions">
-                                      <button
-                                        className="btn btn-primary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(
-                                          result.upscaled_video_url || result.video_url, 
-                                          generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
-                                        )}
-                                        title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                        aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
-                                      >
-                                        <Download size={16} className="me-1" aria-hidden="true" />
-                                        Download{result.upscaled_video_url ? ' 4K' : ''}
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-primary btn-sm flex-fill"
-                                        onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title={result.upscaled_video_url ? "View 4K version" : "View video"}
-                                        aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
-                                      >
-                                        <ExternalLink size={16} className="me-1" aria-hidden="true" />
-                                        View
-                                      </button>
-                                      {!result.upscaled_video_url && result.video_url && (
-                                        <button
-                                          className="btn btn-sm"
-                                          onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
-                                          disabled={upscalingProgress[`upscale_${result.id}`]}
-                                          title="Upscale to 4K resolution"
-                                          style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
-                                          aria-label="Upscale video to 4K resolution"
-                                        >
-                                          <ArrowUp size={16} className="me-1" aria-hidden="true" />
-                                          4K
-                                        </button>
-                                      )}
+                                    <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                      <div className="text-center">
+                                        <Film size={48} className="text-primary mb-3" />
+                                        <div className="fw-bold text-muted">Processing...</div>
+                                      </div>
                                     </div>
                                   )}
                                   
-                                  {/* Show both original and 4K download options if 4K exists */}
-                                  {result.upscaled_video_url && result.video_url && (
-                                    <div className="btn-group mt-1" role="group" aria-label="Original video actions">
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
-                                        title="Download original resolution"
-                                        aria-label="Download original resolution video"
-                                      >
-                                        <Download size={14} className="me-1" aria-hidden="true" />
-                                        Original
-                                      </button>
-                                      <button
-                                        className="btn btn-outline-secondary btn-sm flex-fill"
-                                        onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
-                                        title="View original resolution"
-                                        aria-label="View original resolution video in new tab"
-                                      >
-                                        <ExternalLink size={14} className="me-1" aria-hidden="true" />
-                                        View Original
-                                      </button>
+                                  {result.status !== 'completed' && (
+                                    <div className="position-absolute top-0 start-0 m-3">
+                                      <span className="badge bg-warning shadow-sm">
+                                        ⏳ Processing
+                                      </span>
                                     </div>
                                   )}
+                                  
+                                  {/* 4K badge for upscaled videos */}
+                                  {result.upscaled_video_url && (
+                                    <div className="position-absolute top-0 start-0 m-2">
+                                      <span className="badge bg-success shadow-sm">
+                                        4K ✨
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Favorite button in upper-right corner */}
+                                  <button
+                                    className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                    onClick={() => toggleFavorite(result.id)}
+                                    style={{
+                                      border: 'none',
+                                      background: 'rgba(255, 255, 255, 0.9)',
+                                      borderRadius: '50%',
+                                      width: '36px',
+                                      height: '36px',
+                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                      transition: 'all 0.2s ease',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Heart 
+                                      size={16} 
+                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                    />
+                                  </button>
+                                </div>
+                                
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    {editingVideoTitle === result.id ? (
+                                      <div className="d-flex align-items-center w-100">
+                                        <input
+                                          type="text"
+                                          value={tempEditTitle}
+                                          onChange={(e) => setTempEditTitle(e.target.value)}
+                                          onKeyDown={(e) => handleEditKeyPress(e, result.id)}
+                                          onBlur={() => saveEditTitle(result.id)}
+                                          className="form-control form-control-sm me-2"
+                                          style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
+                                          autoFocus
+                                          maxLength={100}
+                                          aria-label="Edit video title"
+                                        />
+                                        <button
+                                          className="btn btn-success btn-sm me-1"
+                                          onClick={() => saveEditTitle(result.id)}
+                                          style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                          aria-label="Save title"
+                                        >
+                                          ✓
+                                        </button>
+                                        <button
+                                          className="btn btn-secondary btn-sm"
+                                          onClick={cancelEditTitle}
+                                          style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                          aria-label="Cancel edit"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <span className="fw-bold text-primary me-2" style={{ 
+                                          lineHeight: '1.2',
+                                          wordBreak: 'break-word',
+                                          maxWidth: '200px',
+                                          flex: '1'
+                                        }}>
+                                          {getVideoDisplayTitle(result)}
+                                        </span>
+                                        
+                                        {/* Edit button positioned at bottom of first line */}
+                                        <button
+                                          className="btn btn-sm btn-outline-secondary p-1"
+                                          onClick={() => handleEditTitle(result.id, result.jobId)}
+                                          title="Edit video title"
+                                          style={{ 
+                                            border: 'none',
+                                            background: 'transparent',
+                                            borderRadius: '4px',
+                                            width: '24px',
+                                            height: '24px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            alignSelf: 'flex-start',
+                                            marginTop: '0px',
+                                            flexShrink: 0
+                                          }}
+                                          aria-label="Edit video title"
+                                        >
+                                          <Edit3 size={12} />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                  <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                    {result.prompt}
+                                  </h6>
+                                  
+                                  <div className="d-grid gap-2">
+                                    {result.video_url && (
+                                      <div className="btn-group" role="group" aria-label="Video actions">
+                                        <button
+                                          className="btn btn-primary btn-sm flex-fill"
+                                          onClick={() => downloadVideo(
+                                            result.upscaled_video_url || result.video_url, 
+                                            generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
+                                          )}
+                                          title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                          aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                        >
+                                          <Download size={16} className="me-1" aria-hidden="true" />
+                                          Download{result.upscaled_video_url ? ' 4K' : ''}
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-primary btn-sm flex-fill"
+                                          onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title={result.upscaled_video_url ? "View 4K version" : "View video"}
+                                          aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
+                                        >
+                                          <ExternalLink size={16} className="me-1" aria-hidden="true" />
+                                          View
+                                        </button>
+                                        {!result.upscaled_video_url && result.video_url && (
+                                          <button
+                                            className="btn btn-sm"
+                                            onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
+                                            disabled={upscalingProgress[`upscale_${result.id}`]}
+                                            title="Upscale to 4K resolution"
+                                            style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                                            aria-label="Upscale video to 4K resolution"
+                                          >
+                                            <ArrowUp size={16} className="me-1" aria-hidden="true" />
+                                            4K
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Show both original and 4K download options if 4K exists */}
+                                    {result.upscaled_video_url && result.video_url && (
+                                      <div className="btn-group mt-1" role="group" aria-label="Original video actions">
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm flex-fill"
+                                          onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                          title="Download original resolution"
+                                          aria-label="Download original resolution video"
+                                        >
+                                          <Download size={14} className="me-1" aria-hidden="true" />
+                                          Original
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm flex-fill"
+                                          onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title="View original resolution"
+                                          aria-label="View original resolution video in new tab"
+                                        >
+                                          <ExternalLink size={14} className="me-1" aria-hidden="true" />
+                                          View Original
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
