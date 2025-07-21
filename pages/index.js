@@ -2591,7 +2591,7 @@ export default function RunwayAutomationApp() {
                       </div>
                     ) : (
                       <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
-                        <div className="row g-3">
+                        <div className="row g-4">
                           {results
                             .slice()
                             .sort((a, b) => {
@@ -2864,7 +2864,7 @@ export default function RunwayAutomationApp() {
                 />
               </a>
             </div>
-          </div> 
+          </div>
         </div>
       </div>
     </>
