@@ -1680,6 +1680,9 @@ export default function RunwayAutomationApp() {
       return;
     }
 
+    // Get the actual video display name for the upscaling job
+    const videoResult = results.find(result => result.id === taskId);
+    const actualVideoName = videoResult ? getVideoDisplayTitle(videoResult) : videoName;
     const upscaleId = `upscale_${taskId}`;
     
     // Show cost warning for upscaling
@@ -1690,11 +1693,11 @@ export default function RunwayAutomationApp() {
       cancelText: "Cancel",
       onConfirm: async () => {
         try {
-          addLog(`🔄 Starting 4K upscaling for ${videoName}...`, 'info');
+          addLog(`🔄 Starting 4K upscaling for ${actualVideoName}...`, 'info');
           
           setUpscalingProgress(prev => ({
             ...prev,
-            [upscaleId]: { status: 'starting', progress: 0, message: 'Starting 4K upscale...' }
+            [upscaleId]: { status: 'starting', progress: 0, message: 'Starting 4K upscale...', videoName: actualVideoName }
           }));
 
           const response = await fetch(API_BASE + '/runway-upscale', {
@@ -1730,7 +1733,7 @@ export default function RunwayAutomationApp() {
             throw new Error('Could not parse upscale API response');
           }
 
-          addLog(`✓ 4K upscaling started for ${videoName} (Task ID: ${upscaleTask.id})`, 'success');
+          addLog(`✓ 4K upscaling started for ${actualVideoName} (Task ID: ${upscaleTask.id})`, 'success');
           
           // Update the original video result with upscaling info
           setResults(prev => prev.map(result => 
@@ -1743,10 +1746,10 @@ export default function RunwayAutomationApp() {
           ));
           
           // Poll for upscaling completion with auto-navigation
-          pollUpscaleCompletion(upscaleTask.id, taskId, videoName, upscaleId);
+          pollUpscaleCompletion(upscaleTask.id, taskId, actualVideoName, upscaleId);
           
         } catch (error) {
-          addLog(`❌ 4K upscaling failed for ${videoName}: ${error.message}`, 'error');
+          addLog(`❌ 4K upscaling failed for ${actualVideoName}: ${error.message}`, 'error');
           setUpscalingProgress(prev => {
             const updated = { ...prev };
             delete updated[upscaleId];
@@ -1765,7 +1768,7 @@ export default function RunwayAutomationApp() {
           </div>
           
           <div className="mb-3">
-            <p className="mb-2"><strong>Video:</strong> {videoName}</p>
+            <p className="mb-2"><strong>Video:</strong> {actualVideoName}</p>
             <p className="mb-2"><strong>Process:</strong> Standard → 4K resolution</p>
             <p className="mb-0 text-muted">This will create a new high-resolution version of your video.</p>
           </div>
@@ -1820,7 +1823,8 @@ export default function RunwayAutomationApp() {
           [upscaleId]: { 
             status: task.status.toLowerCase(), 
             progress: Math.round(progress),
-            message: task.status.toLowerCase()
+            message: task.status.toLowerCase(),
+            videoName: prev[upscaleId]?.videoName || videoName
           }
         }));
 
@@ -2617,7 +2621,7 @@ export default function RunwayAutomationApp() {
                                       wordBreak: 'break-word',
                                       maxWidth: '120px'
                                     }}>
-                                      4K Upscale
+                                      {progress.videoName || '4K Upscale'}
                                     </span>
                                     <span className={`badge ${
                                       progress.status === 'completed' ? 'bg-success' :
@@ -2713,12 +2717,13 @@ export default function RunwayAutomationApp() {
           {activeTab === 'results' && (
             <div className="row justify-content-center" style={{ margin: '0' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
-                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', height: 'calc(100vh - 320px)' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden', height: 'calc(100vh - 320px)', display: 'flex', flexDirection: 'column' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
                     style={{ 
                       height: '80px',
-                      borderRadius: '8px 8px 0 0'
+                      borderRadius: '8px 8px 0 0',
+                      flexShrink: 0
                     }}
                   >
                     <div 
@@ -2810,7 +2815,7 @@ export default function RunwayAutomationApp() {
                     )}
                   </div>
                   
-                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
+                  <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important', flex: '1 1 auto', minHeight: '0' }}>
                     <div className="mb-4"></div>
                     {results.length === 0 ? (
                       <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
@@ -2830,7 +2835,7 @@ export default function RunwayAutomationApp() {
                         </div>
                       </div>
                     ) : (
-                      <div className="row g-4 flex-grow-1" style={{ overflowY: 'auto' }}>
+                      <div className="row g-4" style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: '0' }}>
                         {results
                           .slice()
                           .sort((a, b) => {
