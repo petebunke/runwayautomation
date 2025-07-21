@@ -112,21 +112,32 @@ export default function RunwayAutomationApp() {
             {children}
             
             <div className="d-flex gap-2 justify-content-end mt-4">
-              <button
-                className="btn btn-secondary"
-                onClick={onClose}
-                style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
-              >
-                {cancelText}
-              </button>
+              {cancelText && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={onClose}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: onConfirm ? '50%' : '100%' }}
+                >
+                  {cancelText}
+                </button>
+              )}
               {onConfirm && (
                 <button
                   className={`btn ${type === 'warning' || type === 'safety' ? 'btn-danger' : 'btn-primary'} shadow`}
                   onClick={() => {
-                    onConfirm();
+                    if (onConfirm) onConfirm();
                     onClose();
                   }}
-                  style={{ borderRadius: '8px', fontWeight: '600', width: '50%' }}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: cancelText ? '50%' : '100%' }}
+                >
+                  {confirmText}
+                </button>
+              )}
+              {!onConfirm && !cancelText && (
+                <button
+                  className="btn btn-primary shadow"
+                  onClick={onClose}
+                  style={{ borderRadius: '8px', fontWeight: '600', width: '100%' }}
                 >
                   {confirmText}
                 </button>
@@ -146,16 +157,18 @@ export default function RunwayAutomationApp() {
   // Show safety failure modal
   const showSafetyFailureModal = (errorMessage) => {
     showModalDialog({
-      title: "Content Safety Policy Violation",
+      title: "Content Policy Violation",
       type: "safety",
       confirmText: "I Understand",
-      cancelText: null,
-      onConfirm: null,
+      cancelText: "Close",
+      onConfirm: () => {
+        // Optional: Could switch to setup tab to encourage retry with different content
+        // setActiveTab('setup');
+      },
       content: (
         <div>
           <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
             <div className="d-flex align-items-center mb-2">
-              <Shield size={20} className="text-danger me-2" />
               <strong>Content Rejected by Safety Filter</strong>
             </div>
             <p className="mb-0">Your content was flagged by Runway's safety systems and cannot be processed.</p>
