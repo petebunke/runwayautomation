@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+// Get the actual video display name for the upscaling job
+    const videoResult = results.find(result => result.id === taskId);
+    const actualVideoName = videoimport React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield } from 'lucide-react';
 import Head from 'next/head';
 
@@ -1680,9 +1682,9 @@ export default function RunwayAutomationApp() {
       return;
     }
 
-    // Get the actual video display name for the upscaling job
+    // Get the actual video display name for UI display only
     const videoResult = results.find(result => result.id === taskId);
-    const actualVideoName = videoResult ? getVideoDisplayTitle(videoResult) : videoName;
+    const displayVideoName = videoResult ? getVideoDisplayTitle(videoResult) : videoName;
     const upscaleId = `upscale_${taskId}`;
     
     // Show cost warning for upscaling
@@ -1693,11 +1695,11 @@ export default function RunwayAutomationApp() {
       cancelText: "Cancel",
       onConfirm: async () => {
         try {
-          addLog(`🔄 Starting 4K upscaling for ${actualVideoName}...`, 'info');
+          addLog(`🔄 Starting 4K upscaling for ${displayVideoName}...`, 'info');
           
           setUpscalingProgress(prev => ({
             ...prev,
-            [upscaleId]: { status: 'starting', progress: 0, message: 'Starting 4K upscale...', videoName: actualVideoName }
+            [upscaleId]: { status: 'starting', progress: 0, message: 'Starting 4K upscale...', videoName: displayVideoName }
           }));
 
           const response = await fetch(API_BASE + '/runway-upscale', {
@@ -1733,7 +1735,7 @@ export default function RunwayAutomationApp() {
             throw new Error('Could not parse upscale API response');
           }
 
-          addLog(`✓ 4K upscaling started for ${actualVideoName} (Task ID: ${upscaleTask.id})`, 'success');
+          addLog(`✓ 4K upscaling started for ${displayVideoName} (Task ID: ${upscaleTask.id})`, 'success');
           addLog(`🔍 Starting polling for upscale task ${upscaleTask.id}`, 'info');
           
           // Update the original video result with upscaling info
@@ -1746,11 +1748,11 @@ export default function RunwayAutomationApp() {
               : result
           ));
           
-          // Poll for upscaling completion with auto-navigation
-          pollUpscaleCompletion(upscaleTask.id, taskId, actualVideoName, upscaleId);
+          // Poll for upscaling completion with auto-navigation (use displayVideoName for logs)
+          pollUpscaleCompletion(upscaleTask.id, taskId, displayVideoName, upscaleId);
           
         } catch (error) {
-          addLog(`❌ 4K upscaling failed for ${actualVideoName}: ${error.message}`, 'error');
+          addLog(`❌ 4K upscaling failed for ${displayVideoName}: ${error.message}`, 'error');
           setUpscalingProgress(prev => {
             const updated = { ...prev };
             delete updated[upscaleId];
@@ -1769,7 +1771,7 @@ export default function RunwayAutomationApp() {
           </div>
           
           <div className="mb-3">
-            <p className="mb-2"><strong>Video:</strong> {actualVideoName}</p>
+            <p className="mb-2"><strong>Video:</strong> {displayVideoName}</p>
             <p className="mb-2"><strong>Process:</strong> Standard → 4K resolution</p>
             <p className="mb-0 text-muted">This will create a new high-resolution version of your video.</p>
           </div>
