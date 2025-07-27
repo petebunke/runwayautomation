@@ -2238,7 +2238,10 @@ export default function RunwayAutomationApp() {
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
                               placeholder=""
-                              style={{ borderRadius: '8px' }}
+                              style={{ 
+                                borderRadius: '8px',
+                                lineHeight: '1.5'
+                              }}
                             />
                             {!prompt && (
                               <div 
@@ -2248,7 +2251,8 @@ export default function RunwayAutomationApp() {
                                   top: '12px', 
                                   pointerEvents: 'none',
                                   color: '#6c757d',
-                                  fontSize: '16px'
+                                  fontSize: '16px',
+                                  lineHeight: '1.5'
                                 }}
                               >
                                 Add an image then describe your shot.{' '}
@@ -2497,7 +2501,7 @@ export default function RunwayAutomationApp() {
                   </div>
                   
                   <div className="card-body p-0 d-flex flex-column" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
-                    <div className="p-4 pb-0">
+                    <div className="p-4 pb-0" style={{ overflowY: 'auto', flex: '1 1 auto' }}>
                       <div className="mb-4"></div>
                       <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
                         <div className="card-body p-3">
@@ -2653,7 +2657,7 @@ export default function RunwayAutomationApp() {
                     {/* Fixed Generation Log with proper scrolling */}
                     <div className="mt-auto px-4 pb-4">
                       <div className="card bg-dark text-light border-0 shadow" style={{ 
-                        borderRadius: '8px',
+                        borderRadius: '8px 8px 0 0',
                         height: '240px',
                         display: 'flex',
                         flexDirection: 'column'
@@ -2897,15 +2901,6 @@ export default function RunwayAutomationApp() {
                                     </div>
                                   )}
                                   
-                                  {/* 4K badge for upscaled videos */}
-                                  {result.upscaled_video_url && (
-                                    <div className="position-absolute top-0 start-0 m-2">
-                                      <span className="badge bg-success shadow-sm">
-                                        4K ✨
-                                      </span>
-                                    </div>
-                                  )}
-                                  
                                   {/* Favorite button in upper-right corner */}
                                   <button
                                     className="btn btn-sm position-absolute top-0 end-0 m-2"
@@ -2929,6 +2924,15 @@ export default function RunwayAutomationApp() {
                                       fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
                                     />
                                   </button>
+                                  
+                                  {/* 4K badge underneath favorite button */}
+                                  {result.upscaled_video_url && (
+                                    <div className="position-absolute top-0 end-0 m-2" style={{ marginTop: '52px' }}>
+                                      <span className="badge bg-success shadow-sm">
+                                        4K ✨
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <div className="card-body p-3">
