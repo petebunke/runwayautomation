@@ -157,7 +157,7 @@ export default function RunwayAutomationApp() {
   // Show safety failure modal
   const showSafetyFailureModal = (errorMessage) => {
     showModalDialog({
-      title: "Content Policy Violation",
+      title: "Usage Violation",
       type: "safety",
       confirmText: "I Understand",
       cancelText: "Close",
@@ -169,9 +169,9 @@ export default function RunwayAutomationApp() {
         <div>
           <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
             <div className="d-flex align-items-center mb-2">
-              <strong>Content Rejected by Safety Filter</strong>
+              <strong>Content Rejected by Runway API</strong>
             </div>
-            <p className="mb-0">Your content was flagged by Runway's safety systems and cannot be processed.</p>
+            <p className="mb-0">Your content was flagged by the Runway API and cannot be processed.</p>
           </div>
           
           <div className="mb-3">
@@ -193,7 +193,7 @@ export default function RunwayAutomationApp() {
           </div>
           
           <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-            <strong>Important:</strong> Credits used for safety-rejected content are not refunded.
+            Credits used for safety-rejected content are not refunded.
           </div>
           
           <p className="mb-0 text-muted small">
@@ -202,7 +202,7 @@ export default function RunwayAutomationApp() {
                target="_blank" 
                rel="noopener noreferrer" 
                className="text-decoration-none fw-bold">
-              Runway's Usage Policy
+              Runway's Usage Policy.
             </a>
           </p>
         </div>
@@ -2651,7 +2651,7 @@ export default function RunwayAutomationApp() {
                     </div>
 
                     {/* Fixed Generation Log with proper scrolling */}
-                    <div className="mt-auto px-4 pb-4">
+                    <div className="mt-auto px-4 pb-3">
                       <div className="card bg-dark text-light border-0 shadow" style={{ 
                         borderRadius: '8px',
                         height: '240px',
@@ -2681,7 +2681,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         <div 
                           ref={logContainerRef}
-                          className="px-3 pb-4" 
+                          className="px-3 pb-3" 
                           style={{ 
                             fontFamily: 'monospace',
                             overflowY: 'auto',
@@ -3093,7 +3093,7 @@ export default function RunwayAutomationApp() {
                   style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
                 />
               </a>
-            </div> 
+            </div>
           </div>
         </div>
       </div>
