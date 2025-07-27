@@ -157,7 +157,7 @@ export default function RunwayAutomationApp() {
   // Show safety failure modal
   const showSafetyFailureModal = (errorMessage) => {
     showModalDialog({
-      title: "Usage Violation",
+      title: "Content Policy Violation",
       type: "safety",
       confirmText: "I Understand",
       cancelText: "Close",
@@ -169,9 +169,9 @@ export default function RunwayAutomationApp() {
         <div>
           <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
             <div className="d-flex align-items-center mb-2">
-              <strong>Content Rejected by Runway API</strong>
+              <strong>Content Rejected by Safety Filter</strong>
             </div>
-            <p className="mb-0">Your content was flagged by the Runway API and cannot be processed.</p>
+            <p className="mb-0">Your content was flagged by Runway's safety systems and cannot be processed.</p>
           </div>
           
           <div className="mb-3">
@@ -193,7 +193,7 @@ export default function RunwayAutomationApp() {
           </div>
           
           <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-            Credits used for safety-rejected content are not refunded.
+            <strong>Important:</strong> Credits used for safety-rejected content are not refunded.
           </div>
           
           <p className="mb-0 text-muted small">
@@ -202,7 +202,7 @@ export default function RunwayAutomationApp() {
                target="_blank" 
                rel="noopener noreferrer" 
                className="text-decoration-none fw-bold">
-              Runway's Usage Policy.
+              Runway's Usage Policy
             </a>
           </p>
         </div>
@@ -3083,7 +3083,7 @@ export default function RunwayAutomationApp() {
 
           <div className="text-center mt-3 mb-3">
             <div className="d-flex align-items-center justify-content-center text-white-50">
-              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.</small>
+              <small>Based on <a href="https://apify.com/igolaizola/runway-automation" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Runway Automation for Apify</a> by <a href="https://igolaizola.com/" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Iñigo Garcia Olaizola</a>.<br />Vibe coded by <a href="https://petebunke.com" target="_blank" rel="noopener noreferrer" className="text-white-50 fw-bold text-decoration-none">Pete Bunke</a>. All rights reserved.<br /><a href="mailto:petebunke@gmail.com?subject=Runway%20Automation%20User%20Feedback" className="text-white-50 text-decoration-none"><strong>Got user feedback?</strong> Hit me up!</a></small>
             </div>
             <div className="d-flex align-items-center justify-content-center text-white-50 mt-2" style={{ marginLeft: '5px'}}>
               <a href="https://runwayml.com" target="_blank" rel="noopener noreferrer">
