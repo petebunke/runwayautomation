@@ -62,6 +62,7 @@ export default function RunwayAutomationApp() {
     };
 
     const getModalColor = () => {
+      // All modals use the same light cyan color
       return '#4dd0ff';
     };
 
@@ -83,7 +84,7 @@ export default function RunwayAutomationApp() {
             style={{ 
               height: '80px',
               borderRadius: '8px 8px 0 0',
-              backgroundColor: '#0d6efd'
+              backgroundColor: '#0d6efd' // All modals use the same background color
             }}
           >
             <div 
@@ -156,7 +157,7 @@ export default function RunwayAutomationApp() {
   // Show safety failure modal
   const showSafetyFailureModal = (errorMessage) => {
     showModalDialog({
-      title: "Content Policy Violation",
+      title: "Usage Violation",
       type: "safety",
       confirmText: "I Understand",
       cancelText: "Close",
@@ -168,9 +169,9 @@ export default function RunwayAutomationApp() {
         <div>
           <div className="alert alert-danger border-0 mb-3" style={{ borderRadius: '8px' }}>
             <div className="d-flex align-items-center mb-2">
-              <strong>Content Rejected by Safety Filter</strong>
+              <strong>Content Rejected by Runway API</strong>
             </div>
-            <p className="mb-0">Your content was flagged by Runway's safety systems and cannot be processed.</p>
+            <p className="mb-0">Your content was flagged by the Runway API and cannot be processed.</p>
           </div>
           
           <div className="mb-3">
@@ -192,7 +193,7 @@ export default function RunwayAutomationApp() {
           </div>
           
           <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
-            <strong>Important:</strong> Credits used for safety-rejected content are not refunded.
+            Credits used for safety-rejected content are not refunded.
           </div>
           
           <p className="mb-0 text-muted small">
@@ -201,7 +202,7 @@ export default function RunwayAutomationApp() {
                target="_blank" 
                rel="noopener noreferrer" 
                className="text-decoration-none fw-bold">
-              Runway's Usage Policy
+              Runway's Usage Policy.
             </a>
           </p>
         </div>
@@ -830,11 +831,21 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // Enhanced credit estimation function with correct rates
+  // Enhanced credit estimation function
   const estimateCreditsNeeded = (totalJobs, model, duration) => {
-    // Credit rates: 5 credits per second for both models
-    const creditsPerSecond = 5;
-    const creditsPerVideo = creditsPerSecond * duration;
+    // Credit estimates based on model and duration
+    const creditRates = {
+      'gen4_turbo': {
+        5: 50,  // 50 credits for 5 seconds
+        10: 100 // 100 credits for 10 seconds
+      },
+      'gen3a_turbo': {
+        5: 25,  // 25 credits for 5 seconds
+        10: 50  // 50 credits for 10 seconds
+      }
+    };
+
+    const creditsPerVideo = creditRates[model]?.[duration] || 50;
     return creditsPerVideo * totalJobs;
   };
 
@@ -1318,11 +1329,8 @@ export default function RunwayAutomationApp() {
       }
     }
     
-    // Updated cost estimates using correct credit rates (5 credits per second)
-    const creditsPerVideo = duration * 5;
-    const totalCreditsNeeded = creditsPerVideo * totalJobs;
-    const estimatedCostMin = totalCreditsNeeded * 0.01; // $0.01 per credit
-    const estimatedCostMax = totalCreditsNeeded * 0.01; // Same rate for consistency
+    const estimatedCostMin = totalJobs * 0.25;
+    const estimatedCostMax = totalJobs * 0.75;
     
     if (!hasShownCostWarning) {
       showModalDialog({
@@ -1348,13 +1356,13 @@ export default function RunwayAutomationApp() {
             <div className="row g-3 mb-3">
               <div className="col-6">
                 <div className="text-center p-3 border rounded">
-                  <div className="h5 mb-1">~${estimatedCostMin.toFixed(2)}</div>
+                  <div className="h5 mb-1">${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)}</div>
                   <small className="text-muted">Estimated Cost</small>
                 </div>
               </div>
               <div className="col-6">
                 <div className="text-center p-3 border rounded">
-                  <div className="h5 mb-1">{totalCreditsNeeded}</div>
+                  <div className="h5 mb-1">{totalJobs * 25} - {totalJobs * 50}</div>
                   <small className="text-muted">Credits Required</small>
                 </div>
               </div>
@@ -1384,7 +1392,7 @@ export default function RunwayAutomationApp() {
     
     addLog('🚀 Starting Runway video generation...', 'info');
     addLog('Configuration: ' + model + ', ' + aspectRatio + ', ' + duration + 's', 'info');
-    addLog(`💰 Estimated cost: ~$${estimatedCostMin.toFixed(2)} (${totalJobs} videos)`, 'info');
+    addLog(`💰 Estimated cost: ${estimatedCostMin.toFixed(2)} - ${estimatedCostMax.toFixed(2)} (${totalJobs} videos)`, 'info');
     
     if (organizationInfo) {
       const estimatedCredits = estimateCreditsNeeded(totalJobs, model, duration);
@@ -1589,11 +1597,11 @@ export default function RunwayAutomationApp() {
     if (customTitle) {
       // Clean the custom title for filename
       const cleanTitle = customTitle.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '-');
-      return `${cleanTitle}${isUpscaled ? '_4k' : ''}.mp4`;
+      return `${cleanTitle}${isUpscaled ? '_4K' : ''}.mp4`;
     }
     
     // Fall back to original logic
-    if (!jobId) return `video_${taskId}${isUpscaled ? '_4k' : ''}.mp4`;
+    if (!jobId) return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
     
     const genMatch = jobId.match(/Generation (\d+)/);
     const vidMatch = jobId.match(/Video (\d+)/);
@@ -1601,10 +1609,10 @@ export default function RunwayAutomationApp() {
     if (genMatch && vidMatch) {
       const generation = genMatch[1];
       const video = vidMatch[1];
-      return `gen-${generation}-vid-${video}${isUpscaled ? '_4k' : ''}.mp4`;
+      return `gen-${generation}-video-${video}${isUpscaled ? '_4K' : ''}.mp4`;
     }
     
-    return `video_${taskId}${isUpscaled ? '_4k' : ''}.mp4`;
+    return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
   };
 
   const downloadAllVideos = async () => {
@@ -1674,13 +1682,7 @@ export default function RunwayAutomationApp() {
 
     const upscaleId = `upscale_${taskId}`;
     
-    // Get the video's display title for the upscaling cost warning
-    const videoResult = results.find(r => r.id === taskId);
-    const displayTitle = videoResult ? getVideoDisplayTitle(videoResult) : videoName;
-    
-    // Show cost warning for upscaling with corrected credit calculation
-    const upscaleCredits = duration * 2; // 2 credits per second for upscaling
-    
+    // Show cost warning for upscaling
     showModalDialog({
       title: "Upscaling Cost Warning",
       type: "warning",
@@ -1688,7 +1690,7 @@ export default function RunwayAutomationApp() {
       cancelText: "Cancel",
       onConfirm: async () => {
         try {
-          addLog(`🔄 Starting 4K upscaling for ${displayTitle}...`, 'info');
+          addLog(`🔄 Starting 4K upscaling for ${videoName}...`, 'info');
           
           setUpscalingProgress(prev => ({
             ...prev,
@@ -1728,7 +1730,7 @@ export default function RunwayAutomationApp() {
             throw new Error('Could not parse upscale API response');
           }
 
-          addLog(`✓ 4K upscaling started for ${displayTitle} (Task ID: ${upscaleTask.id})`, 'success');
+          addLog(`✓ 4K upscaling started for ${videoName} (Task ID: ${upscaleTask.id})`, 'success');
           
           // Update the original video result with upscaling info
           setResults(prev => prev.map(result => 
@@ -1741,10 +1743,10 @@ export default function RunwayAutomationApp() {
           ));
           
           // Poll for upscaling completion with auto-navigation
-          pollUpscaleCompletion(upscaleTask.id, taskId, displayTitle, upscaleId);
+          pollUpscaleCompletion(upscaleTask.id, taskId, videoName, upscaleId);
           
         } catch (error) {
-          addLog(`❌ 4K upscaling failed for ${displayTitle}: ${error.message}`, 'error');
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${error.message}`, 'error');
           setUpscalingProgress(prev => {
             const updated = { ...prev };
             delete updated[upscaleId];
@@ -1759,11 +1761,11 @@ export default function RunwayAutomationApp() {
               <AlertCircle size={20} className="text-warning me-2" />
               <strong>4K Upscaling Cost</strong>
             </div>
-            <p className="mb-0">4K upscaling costs <strong>{upscaleCredits} credits</strong> for this {duration}-second video.</p>
+            <p className="mb-0">4K upscaling costs <strong>{duration === 5 ? '10 credits' : '20 credits'}</strong> per video.</p>
           </div>
           
           <div className="mb-3">
-            <p className="mb-2"><strong>Video:</strong> {displayTitle}</p>
+            <p className="mb-2"><strong>Video:</strong> {videoName}</p>
             <p className="mb-2"><strong>Process:</strong> Standard → 4K resolution</p>
             <p className="mb-0 text-muted">This will create a new high-resolution version of your video.</p>
           </div>
@@ -1776,8 +1778,8 @@ export default function RunwayAutomationApp() {
     });
   };
 
-  // New function to poll upscaling completion with auto-navigation and updated title display
-  const pollUpscaleCompletion = async (upscaleTaskId, originalTaskId, videoDisplayTitle, upscaleId) => {
+  // New function to poll upscaling completion with auto-navigation
+  const pollUpscaleCompletion = async (upscaleTaskId, originalTaskId, videoName, upscaleId) => {
     const maxPolls = Math.floor(1800 / 10); // 30 minutes with 10-second intervals
     let pollCount = 0;
 
@@ -1825,7 +1827,7 @@ export default function RunwayAutomationApp() {
         if (task.status === 'SUCCEEDED') {
           clearInterval(pollInterval);
           
-          addLog(`✅ 4K upscaling completed for ${videoDisplayTitle}`, 'success');
+          addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
           
           // Clear upscaling progress
           setUpscalingProgress(prev => {
@@ -1863,7 +1865,7 @@ export default function RunwayAutomationApp() {
           
           const failureReason = task.failure_reason || task.failureCode || task.error || '4K upscaling failed - no specific reason provided';
           
-          addLog(`❌ 4K upscaling failed for ${videoDisplayTitle}: ${failureReason}`, 'error');
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${failureReason}`, 'error');
           
           setUpscalingProgress(prev => {
             const updated = { ...prev };
@@ -1878,7 +1880,7 @@ export default function RunwayAutomationApp() {
         
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval);
-          addLog(`⏰ 4K upscaling timeout for ${videoDisplayTitle} after 30 minutes`, 'warning');
+          addLog(`⏰ 4K upscaling timeout for ${videoName} after 30 minutes`, 'warning');
           setUpscalingProgress(prev => {
             const updated = { ...prev };
             delete updated[upscaleId];
@@ -1888,7 +1890,7 @@ export default function RunwayAutomationApp() {
         
       } catch (error) {
         clearInterval(pollInterval);
-        addLog(`❌ 4K upscaling polling error for ${videoDisplayTitle}: ${error.message}`, 'error');
+        addLog(`❌ 4K upscaling polling error for ${videoName}: ${error.message}`, 'error');
         setUpscalingProgress(prev => {
           const updated = { ...prev };
           delete updated[upscaleId];
@@ -2066,8 +2068,8 @@ export default function RunwayAutomationApp() {
                           <ul className="small mb-0 ps-3">
                             <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
                             <li>Minimum $10 (1000 credits)</li>
-                            <li>5 credits per second for video generation</li>
-                            <li>2 credits per second for 4K upscaling</li>
+                            <li>~25-50 credits per 5-10 second video ($0.25-$0.50)</li>
+                            <li>~10-20 credits for 4K upscaling ($0.10-$0.20)</li>
                             <li>Credits are separate from web app credits</li>
                           </ul>
                           
@@ -2229,24 +2231,41 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
-                          <textarea
-                            className="form-control"
-                            rows="3"
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder=""
-                            style={{ borderRadius: '8px' }}
-                          />
-                          <div className="form-text">
-                            Add an image then describe your shot.{' '}
-                            <a 
-                              href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-decoration-none fw-bold"
-                            >
-                              View guide
-                            </a>
+                          <div className="position-relative">
+                            <textarea
+                              className="form-control"
+                              rows="3"
+                              value={prompt}
+                              onChange={(e) => setPrompt(e.target.value)}
+                              placeholder=""
+                              style={{ borderRadius: '8px' }}
+                            />
+                            {!prompt && (
+                              <div 
+                                className="position-absolute" 
+                                style={{ 
+                                  left: '16px', 
+                                  top: '12px', 
+                                  pointerEvents: 'none',
+                                  color: '#6c757d',
+                                  fontSize: '16px'
+                                }}
+                              >
+                                Add an image then describe your shot.{' '}
+                                <a 
+                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-decoration-underline"
+                                  style={{ 
+                                    color: '#6c757d',
+                                    pointerEvents: 'auto'
+                                  }}
+                                >
+                                  View guide
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -2441,11 +2460,7 @@ export default function RunwayAutomationApp() {
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
-                          onClick={() => {
-                            // Scroll to top when starting generation
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                            generateVideos();
-                          }}
+                          onClick={generateVideos}
                           disabled={isRunning}
                           style={{ 
                             borderRadius: '8px', 
@@ -2588,63 +2603,55 @@ export default function RunwayAutomationApp() {
                         </div>
                       )}
 
-                      {/* Show upscaling progress if any with updated titles */}
+                      {/* Show upscaling progress if any */}
                       {Object.keys(upscalingProgress).length > 0 && (
                         <div className="mb-4">
                           <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
                           <div className="row g-3">
-                            {Object.entries(upscalingProgress).map(([upscaleId, progress]) => {
-                              // Extract the original task ID from the upscale ID
-                              const originalTaskId = upscaleId.replace('upscale_', '');
-                              // Find the corresponding video result to get its display title
-                              const videoResult = results.find(r => r.id === originalTaskId);
-                              const displayTitle = videoResult ? getVideoDisplayTitle(videoResult) : '4K Upscale';
-                              
-                              return (
-                                <div key={upscaleId} className="col-md-6 col-xl-3">
-                                  <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                                    <div className="card-body p-3">
-                                      <div className="d-flex justify-content-between align-items-start mb-2">
-                                        <span className="fw-bold small" style={{ 
-                                          lineHeight: '1.2',
-                                          wordBreak: 'break-word',
-                                          maxWidth: '120px'
-                                        }}>
-                                          {displayTitle} (4K)
-                                        </span>
-                                        <span className={`badge ${
+                            {Object.entries(upscalingProgress).map(([upscaleId, progress]) => (
+                              <div key={upscaleId} className="col-md-6 col-xl-3">
+                                <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                  <div className="card-body p-3">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                      <span className="fw-bold small" style={{ 
+                                        lineHeight: '1.2',
+                                        wordBreak: 'break-word',
+                                        maxWidth: '120px'
+                                      }}>
+                                        4K Upscale
+                                      </span>
+                                      <span className={`badge ${
+                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'failed' ? 'bg-danger' :
+                                        'bg-info'
+                                      }`}>
+                                        {progress.status}
+                                      </span>
+                                    </div>
+                                    <div className="progress mb-2" style={{ height: '8px' }}>
+                                      <div 
+                                        className={`progress-bar ${
                                           progress.status === 'completed' ? 'bg-success' :
                                           progress.status === 'failed' ? 'bg-danger' :
                                           'bg-info'
-                                        }`}>
-                                          {progress.status}
-                                        </span>
-                                      </div>
-                                      <div className="progress mb-2" style={{ height: '8px' }}>
-                                        <div 
-                                          className={`progress-bar ${
-                                            progress.status === 'completed' ? 'bg-success' :
-                                            progress.status === 'failed' ? 'bg-danger' :
-                                            'bg-info'
-                                          }`}
-                                          style={{ width: progress.progress + '%' }}
-                                        ></div>
-                                      </div>
-                                      <small className="text-muted">
-                                        {progress.message || progress.status}
-                                      </small>
+                                        }`}
+                                        style={{ width: progress.progress + '%' }}
+                                      ></div>
                                     </div>
+                                    <small className="text-muted">
+                                      {progress.message || progress.status}
+                                    </small>
                                   </div>
                                 </div>
-                              );
-                            })}
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
                     </div>
 
                     {/* Fixed Generation Log with proper scrolling */}
-                    <div className="mt-auto px-4 pb-4">
+                    <div className="mt-auto px-4 pb-3">
                       <div className="card bg-dark text-light border-0 shadow" style={{ 
                         borderRadius: '8px',
                         height: '240px',
@@ -2674,7 +2681,7 @@ export default function RunwayAutomationApp() {
                         </div>
                         <div 
                           ref={logContainerRef}
-                          className="px-3 pb-4" 
+                          className="px-3 pb-3" 
                           style={{ 
                             fontFamily: 'monospace',
                             overflowY: 'auto',
@@ -2890,6 +2897,15 @@ export default function RunwayAutomationApp() {
                                     </div>
                                   )}
                                   
+                                  {/* 4K badge for upscaled videos */}
+                                  {result.upscaled_video_url && (
+                                    <div className="position-absolute top-0 start-0 m-2">
+                                      <span className="badge bg-success shadow-sm">
+                                        4K ✨
+                                      </span>
+                                    </div>
+                                  )}
+                                  
                                   {/* Favorite button in upper-right corner */}
                                   <button
                                     className="btn btn-sm position-absolute top-0 end-0 m-2"
@@ -2913,15 +2929,6 @@ export default function RunwayAutomationApp() {
                                       fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
                                     />
                                   </button>
-                                  
-                                  {/* 4K badge positioned below the favorite button */}
-                                  {result.upscaled_video_url && (
-                                    <div className="position-absolute end-0 m-2" style={{ top: '46px' }}>
-                                      <span className="badge bg-success shadow-sm">
-                                        4K ✨
-                                      </span>
-                                    </div>
-                                  )}
                                 </div>
                                 
                                 <div className="card-body p-3">
