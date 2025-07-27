@@ -2231,46 +2231,24 @@ export default function RunwayAutomationApp() {
                         <div className="mb-4"></div>
                         <div className="mb-4">
                           <label className="form-label fw-bold">Video Prompt</label>
-                          <div className="position-relative">
-                            <textarea
-                              className="form-control"
-                              rows="3"
-                              value={prompt}
-                              onChange={(e) => setPrompt(e.target.value)}
-                              placeholder="Add an image then describe your shot. View guide"
-                              style={{ 
-                                borderRadius: '8px',
-                                padding: '16px',
-                                fontSize: '16px',
-                                resize: 'vertical'
-                              }}
-                            />
-                            {!prompt && (
-                              <div 
-                                className="position-absolute" 
-                                style={{ 
-                                  left: '16px', 
-                                  top: '16px', 
-                                  pointerEvents: 'none',
-                                  color: '#6c757d',
-                                  fontSize: '16px'
-                                }}
-                              >
-                                <span>Add an image then describe your shot. </span>
-                                <a 
-                                  href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-decoration-underline"
-                                  style={{ 
-                                    color: '#6c757d',
-                                    pointerEvents: 'auto'
-                                  }}
-                                >
-                                  View guide
-                                </a>
-                              </div>
-                            )}
+                          <textarea
+                            className="form-control"
+                            rows="3"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder=""
+                            style={{ borderRadius: '8px' }}
+                          />
+                          <div className="form-text">
+                            Add an image then describe your shot.{' '}
+                            <a 
+                              href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-decoration-none fw-bold"
+                            >
+                              View guide
+                            </a>
                           </div>
                         </div>
 
@@ -2930,9 +2908,9 @@ export default function RunwayAutomationApp() {
                                     />
                                   </button>
                                   
-                                  {/* 4K badge underneath the favorite button */}
+                                  {/* 4K badge positioned below the favorite button */}
                                   {result.upscaled_video_url && (
-                                    <div className="position-absolute top-0 end-0 m-2" style={{ marginTop: '44px' }}>
+                                    <div className="position-absolute end-0 m-2" style={{ top: '46px' }}>
                                       <span className="badge bg-success shadow-sm">
                                         4K ✨
                                       </span>
