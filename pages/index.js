@@ -2237,21 +2237,26 @@ export default function RunwayAutomationApp() {
                               rows="3"
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
-                              placeholder=""
-                              style={{ borderRadius: '8px' }}
+                              placeholder="Add an image then describe your shot. View guide"
+                              style={{ 
+                                borderRadius: '8px',
+                                padding: '16px',
+                                fontSize: '16px',
+                                resize: 'vertical'
+                              }}
                             />
                             {!prompt && (
                               <div 
                                 className="position-absolute" 
                                 style={{ 
                                   left: '16px', 
-                                  top: '12px', 
+                                  top: '16px', 
                                   pointerEvents: 'none',
                                   color: '#6c757d',
                                   fontSize: '16px'
                                 }}
                               >
-                                Add an image then describe your shot.{' '}
+                                <span>Add an image then describe your shot. </span>
                                 <a 
                                   href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
                                   target="_blank" 
@@ -2460,7 +2465,11 @@ export default function RunwayAutomationApp() {
                       {!isRunning ? (
                         <button
                           className="btn btn-success btn-lg shadow"
-                          onClick={generateVideos}
+                          onClick={() => {
+                            // Scroll to top when starting generation
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            generateVideos();
+                          }}
                           disabled={isRunning}
                           style={{ 
                             borderRadius: '8px', 
@@ -2897,15 +2906,6 @@ export default function RunwayAutomationApp() {
                                     </div>
                                   )}
                                   
-                                  {/* 4K badge for upscaled videos */}
-                                  {result.upscaled_video_url && (
-                                    <div className="position-absolute top-0 start-0 m-2">
-                                      <span className="badge bg-success shadow-sm">
-                                        4K ✨
-                                      </span>
-                                    </div>
-                                  )}
-                                  
                                   {/* Favorite button in upper-right corner */}
                                   <button
                                     className="btn btn-sm position-absolute top-0 end-0 m-2"
@@ -2929,6 +2929,15 @@ export default function RunwayAutomationApp() {
                                       fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
                                     />
                                   </button>
+                                  
+                                  {/* 4K badge underneath the favorite button */}
+                                  {result.upscaled_video_url && (
+                                    <div className="position-absolute top-0 end-0 m-2" style={{ marginTop: '44px' }}>
+                                      <span className="badge bg-success shadow-sm">
+                                        4K ✨
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <div className="card-body p-3">
