@@ -1589,11 +1589,11 @@ export default function RunwayAutomationApp() {
     if (customTitle) {
       // Clean the custom title for filename
       const cleanTitle = customTitle.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '-');
-      return `${cleanTitle}${isUpscaled ? '_4K' : ''}.mp4`;
+      return `${cleanTitle}${isUpscaled ? '_4k' : ''}.mp4`;
     }
     
     // Fall back to original logic
-    if (!jobId) return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
+    if (!jobId) return `video_${taskId}${isUpscaled ? '_4k' : ''}.mp4`;
     
     const genMatch = jobId.match(/Generation (\d+)/);
     const vidMatch = jobId.match(/Video (\d+)/);
@@ -1601,10 +1601,10 @@ export default function RunwayAutomationApp() {
     if (genMatch && vidMatch) {
       const generation = genMatch[1];
       const video = vidMatch[1];
-      return `gen-${generation}-video-${video}${isUpscaled ? '_4K' : ''}.mp4`;
+      return `gen-${generation}-vid-${video}${isUpscaled ? '_4k' : ''}.mp4`;
     }
     
-    return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
+    return `video_${taskId}${isUpscaled ? '_4k' : ''}.mp4`;
   };
 
   const downloadAllVideos = async () => {
