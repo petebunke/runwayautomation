@@ -1,5 +1,4 @@
-{/* The rest of the component continues with generation and results tabs... */}
-          {/* Generation Tab Content */}
+{/* Generation Tab Content */}
           {activeTab === 'generation' && (
             <div className="row justify-content-center" style={{ margin: '0' }}>
               <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
@@ -678,7 +677,8 @@
       </div>
     </>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}
+                                import React, { useState, useEffect, useRef } from 'react';
 import { Play, Settings, Download, Plus, Trash2, AlertCircle, Film, Clapperboard, Key, ExternalLink, CreditCard, Video, FolderOpen, Heart, ArrowUp, Edit3, Shield } from 'lucide-react';
 import Head from 'next/head';
 
@@ -2256,3 +2256,838 @@ export default function RunwayAutomationApp() {
     } catch (error) {
       addLog(`❌ Failed to create ${zipName}: ${error.message}`, 'error');
     }
+  };
+
+  const generateTimestamp = () => {
+    const now = new Date();
+    return now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  };
+
+  const generateFilename = (jobId, taskId, isUpscaled = false) => {
+    // Check if there's a custom title for this video
+    const customTitle = customTitles[taskId];
+    if (customTitle) {
+      // Clean the custom title for filename
+      const cleanTitle = customTitle.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '-');
+      return `${cleanTitle}${isUpscaled ? '_4K' : ''}.mp4`;
+    }
+    
+    // Fall back to original logic
+    if (!jobId) return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
+    
+    const genMatch = jobId.match(/Generation (\d+)/);
+    const vidMatch = jobId.match(/Video (\d+)/);
+    
+    if (genMatch && vidMatch) {
+      const generation = genMatch[1];
+      const video = vidMatch[1];
+      return `gen-${generation}-video-${video}${isUpscaled ? '_4K' : ''}.mp4`;
+    }
+    
+    return `video_${taskId}${isUpscaled ? '_4K' : ''}.mp4`;
+  };
+
+  const downloadAllVideos = async () => {
+    const videosWithUrls = results.filter(result => result.video_url && result.status === 'completed');
+    
+    if (videosWithUrls.length === 0) {
+      addLog('❌ No completed videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    const timestamp = generateTimestamp();
+    const zipName = `All Videos (${timestamp}).zip`;
+    const folderName = `All Videos (${timestamp})`;
+    
+    await createZipDownload(videosWithUrls, zipName, folderName);
+    setIsDownloadingAll(false);
+  };
+
+  const downloadUpscaledVideos = async () => {
+    const upscaledVideos = results.filter(result => 
+      result.upscaled_video_url && 
+      result.status === 'completed'
+    );
+    
+    if (upscaledVideos.length === 0) {
+      addLog('❌ No 4K videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    const timestamp = generateTimestamp();
+    const zipName = `4K Videos (${timestamp}).zip`;
+    const folderName = `4K Videos (${timestamp})`;
+    
+    await createZipDownload(upscaledVideos, zipName, folderName);
+    setIsDownloadingAll(false);
+  };
+
+  const downloadFavoritedVideos = async () => {
+    const favoritedVideos = results.filter(result => 
+      result.video_url && 
+      result.status === 'completed' && 
+      favoriteVideos.has(result.id)
+    );
+    
+    if (favoritedVideos.length === 0) {
+      addLog('❌ No favorited videos available for download', 'error');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    const timestamp = generateTimestamp();
+    const zipName = `Favorited Videos (${timestamp}).zip`;
+    const folderName = `Favorited Videos (${timestamp})`;
+    
+    await createZipDownload(favoritedVideos, zipName, folderName);
+    setIsDownloadingAll(false);
+  };
+
+  // Enhanced upscaling function with auto-navigation to results
+  const upscaleVideo = async (taskId, videoUrl, videoName) => {
+    if (!runwayApiKey.trim()) {
+      addLog('❌ Runway API key is required for 4K upscaling!', 'error');
+      return;
+    }
+
+    const upscaleId = `upscale_${taskId}`;
+    
+    // Show cost warning for upscaling
+    showModalDialog({
+      title: "Upscaling Cost Warning",
+      type: "warning",
+      confirmText: "Start 4K Upscaling",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          addLog(`🔄 Starting 4K upscaling for ${videoName}...`, 'info');
+          
+          setUpscalingProgress(prev => ({
+            ...prev,
+            [upscaleId]: { status: 'starting', progress: 0, message: 'Starting 4K upscale...' }
+          }));
+
+          const response = await fetch(API_BASE + '/runway-upscale', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: runwayApiKey,
+              taskId: taskId,
+              videoUrl: videoUrl
+            })
+          });
+
+          const responseText = await response.text();
+          
+          if (!response.ok) {
+            let errorData;
+            try {
+              errorData = JSON.parse(responseText);
+            } catch (parseError) {
+              throw new Error(`Upscale API Error ${response.status}: Could not parse error response`);
+            }
+            
+            const errorMessage = errorData.error || errorData.message || 'Upscaling failed';
+            throw new Error(errorMessage);
+          }
+
+          let upscaleTask;
+          try {
+            upscaleTask = JSON.parse(responseText);
+          } catch (parseError) {
+            throw new Error('Could not parse upscale API response');
+          }
+
+          addLog(`✓ 4K upscaling started for ${videoName} (Task ID: ${upscaleTask.id})`, 'success');
+          
+          // Update the original video result with upscaling info
+          setResults(prev => prev.map(result => 
+            result.id === taskId 
+              ? { 
+                  ...result, 
+                  upscale_task_id: upscaleTask.id
+                }
+              : result
+          ));
+          
+          // Poll for upscaling completion with auto-navigation
+          pollUpscaleCompletion(upscaleTask.id, taskId, videoName, upscaleId);
+          
+        } catch (error) {
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${error.message}`, 'error');
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+        }
+      },
+      content: (
+        <div>
+          <div className="alert alert-warning border-0 mb-3" style={{ borderRadius: '8px' }}>
+            <div className="d-flex align-items-center mb-2">
+              <AlertCircle size={20} className="text-warning me-2" />
+              <strong>4K Upscaling Cost</strong>
+            </div>
+            <p className="mb-0">4K upscaling costs <strong>{duration === 5 ? '10 credits' : '20 credits'}</strong> per video.</p>
+          </div>
+          
+          <div className="mb-3">
+            <p className="mb-2"><strong>Video:</strong> {videoName}</p>
+            <p className="mb-2"><strong>Process:</strong> Standard → 4K resolution</p>
+            <p className="mb-0 text-muted">This will create a new high-resolution version of your video.</p>
+          </div>
+          
+          <p className="mb-0 text-muted">
+            Are you sure you want to proceed with 4K upscaling?
+          </p>
+        </div>
+      )
+    });
+  };
+
+  // New function to poll upscaling completion with auto-navigation
+  const pollUpscaleCompletion = async (upscaleTaskId, originalTaskId, videoName, upscaleId) => {
+    const maxPolls = Math.floor(1800 / 10); // 30 minutes with 10-second intervals
+    let pollCount = 0;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(API_BASE + '/runway-status?taskId=' + upscaleTaskId + '&apiKey=' + encodeURIComponent(runwayApiKey), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const responseText = await response.text();
+        
+        let task;
+        try {
+          task = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error('Invalid response from Runway API: ' + responseText.substring(0, 100));
+        }
+
+        if (!response.ok) {
+          throw new Error(task.error || 'Upscaling polling failed: ' + response.status);
+        }
+        
+        let progress = 20;
+        
+        if (task.status === 'PENDING') {
+          progress = 35;
+        } else if (task.status === 'RUNNING') {
+          progress = 50 + (pollCount * 3);
+        } else if (task.status === 'SUCCEEDED') {
+          progress = 100;
+        }
+        
+        setUpscalingProgress(prev => ({
+          ...prev,
+          [upscaleId]: { 
+            status: task.status.toLowerCase(), 
+            progress: Math.round(progress),
+            message: task.status.toLowerCase()
+          }
+        }));
+
+        if (task.status === 'SUCCEEDED') {
+          clearInterval(pollInterval);
+          
+          addLog(`✅ 4K upscaling completed for ${videoName}`, 'success');
+          
+          // Clear upscaling progress
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          
+          // Update results with upscaled video URL
+          setResults(prev => prev.map(result => 
+            result.id === originalTaskId 
+              ? { 
+                  ...result, 
+                  upscaled_video_url: task.output && task.output[0] ? task.output[0] : result.video_url
+                }
+              : result
+          ));
+          
+          // Always auto-navigate to results tab when upscaling completes
+          addLog('🎬 Automatically switching to Results tab to show completed 4K video', 'info');
+          setTimeout(() => {
+            setActiveTab('results');
+            // Scroll to top when switching tabs
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 500); // Small delay to ensure state updates complete
+          
+          // Update credits after upscaling
+          updateCreditsAfterGeneration();
+          
+          return;
+        }
+
+        if (task.status === 'FAILED') {
+          clearInterval(pollInterval);
+          
+          const failureReason = task.failure_reason || task.failureCode || task.error || '4K upscaling failed - no specific reason provided';
+          
+          addLog(`❌ 4K upscaling failed for ${videoName}: ${failureReason}`, 'error');
+          
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+          
+          return;
+        }
+
+        pollCount++;
+        
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          addLog(`⏰ 4K upscaling timeout for ${videoName} after 30 minutes`, 'warning');
+          setUpscalingProgress(prev => {
+            const updated = { ...prev };
+            delete updated[upscaleId];
+            return updated;
+          });
+        }
+        
+      } catch (error) {
+        clearInterval(pollInterval);
+        addLog(`❌ 4K upscaling polling error for ${videoName}: ${error.message}`, 'error');
+        setUpscalingProgress(prev => {
+          const updated = { ...prev };
+          delete updated[upscaleId];
+          return updated;
+        });
+      }
+    }, 10000); // Poll every 10 seconds for upscaling
+  };
+
+  return (
+    <>
+      <Head>
+        <title>Runway Automation Pro - AI Video Generation</title>
+        <meta name="description" content="Professional-grade video generation automation for RunwayML. Generate multiple AI videos with advanced batch processing." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+        
+        {/* Bootstrap CSS */}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+        
+        {/* Bootstrap Icons */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+        
+        {/* JSZip for download functionality */}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossOrigin="anonymous"></script>
+        
+        {/* Bootstrap JS */}
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossOrigin="anonymous"></script>
+        
+        {/* Global styles to fix Safari scrollbar layout shift */}
+        <style jsx global>{`
+          html {
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
+          }
+          
+          body {
+            overflow-x: hidden;
+          }
+          
+          /* Ensure consistent viewport on all browsers */
+          .main-container {
+            min-height: 100vh;
+            overflow-x: hidden;
+          }
+          
+          /* Fix for Safari specific scrollbar issues */
+          @supports (-webkit-appearance: none) {
+            html {
+              overflow-y: scroll !important;
+            }
+            
+            body {
+              padding-right: 0 !important;
+              margin-right: 0 !important;
+            }
+          }
+        `}</style>
+      </Head>
+
+      <div className="main-container" style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <div className="container-fluid py-4">
+          {/* Modal */}
+          <Modal
+            show={showModal}
+            onClose={() => setShowModal(false)}
+            title={modalConfig.title}
+            type={modalConfig.type}
+            onConfirm={modalConfig.onConfirm}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+          >
+            {modalConfig.content}
+          </Modal>
+
+          {/* Hidden file input for image upload */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+
+          {/* Header */}
+          <div className="text-center mb-4">
+            <div className="d-flex align-items-center justify-content-center mb-3">
+              <Clapperboard className="text-white me-3" size={40} />
+              <h1 className="text-white mb-0 fw-bold">Runway Automation</h1>
+            </div>
+            <p className="text-white-50 mb-0">
+              A free web app for the Runway API and Image-to-Video.
+              <br />
+              Batch generate up to 20 videos at once and upscale your
+              <br />
+              favorite ones. Download videos in 4K as MP4 and JSON.
+            </p>
+          </div>
+
+          {/* Navigation */}
+          <div className="row justify-content-center mb-4">
+            <div className="col-auto">
+              <div className="btn-group shadow" role="group" aria-label="Navigation tabs">
+                <button
+                  type="button"
+                  className={`btn ${activeTab === 'setup' ? 'btn-primary' : 'btn-outline-light'}`}
+                  onClick={() => setActiveTab('setup')}
+                  style={{ borderRadius: '8px 0 0 8px', fontWeight: '600' }}
+                >
+                  <Settings size={20} className="me-2" />
+                  Setup
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${activeTab === 'generation' ? 'btn-primary' : 'btn-outline-light'}`}
+                  onClick={() => setActiveTab('generation')}
+                  style={{ borderRadius: '0', fontWeight: '600' }}
+                >
+                  <Video size={20} className="me-2" />
+                  Generation
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${activeTab === 'results' ? 'btn-primary' : 'btn-outline-light'}`}
+                  onClick={() => setActiveTab('results')}
+                  style={{ borderRadius: '0 8px 8px 0', fontWeight: '600' }}
+                >
+                  <Download size={20} className="me-2" />
+                  Results
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Tab Content - Fixed to use consistent container structure */}
+          {activeTab === 'setup' && (
+            <div className="row justify-content-center" style={{ margin: '0' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+                <div className="row g-4">
+                  {/* API Setup Card */}
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Key className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
+                        
+                        <div className="mb-4">
+                          <label htmlFor="runwayApiKey" className="form-label fw-bold">
+                            Runway API Key
+                            <span className="text-danger ms-1">*</span>
+                          </label>
+                          <div className="input-group">
+                            <input
+                              type="password"
+                              className="form-control"
+                              id="runwayApiKey"
+                              placeholder="Your Runway API Key..."
+                              value={runwayApiKey}
+                              onChange={(e) => setRunwayApiKey(e.target.value)}
+                              style={{ borderRadius: '8px 0 0 8px' }}
+                              autoComplete="off"
+                            />
+                            {runwayApiKey.trim() && (
+                              <button
+                                className="btn btn-outline-danger"
+                                type="button"
+                                onClick={clearStoredApiKey}
+                                style={{ borderRadius: '0 8px 8px 0' }}
+                                title="Clear API key"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <div className="form-text">
+                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">
+                              Get your API key from Runway Developer Portal
+                            </a>
+                          </div>
+                        </div>
+
+                        {/* Credits Section */}
+                        <div className="alert alert-warning border-0 mb-4" style={{ borderRadius: '8px' }}>
+                          <div className="d-flex align-items-center mb-2">
+                            <CreditCard size={20} className="text-warning me-2" />
+                            <strong>Credits Required</strong>
+                          </div>
+                          <p className="mb-2">The Runway API requires credits for all video generations.</p>
+                          <ul className="mb-2 small">
+                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Minimum $10 (1000 credits)</li>
+                            <li>5 credits per second for video generation</li>
+                            <li>2 credits per second for 4K upscaling</li>
+                            <li>Credits are separate from web app credits</li>
+                          </ul>
+                          
+                          <div className="row g-2">
+                            <div className="col-6">
+                              <div className="text-center p-2 bg-light rounded">
+                                <div className="fw-bold text-primary">{organizationInfo ? organizationInfo.creditBalance : '---'}</div>
+                                <small className="text-muted">Credits</small>
+                              </div>
+                            </div>
+                            <div className="col-6">
+                              <div className="text-center p-2 bg-light rounded">
+                                <div className="fw-bold text-primary">
+                                  {organizationInfo ? 
+                                    (organizationInfo.usageInfo ? 
+                                      `${organizationInfo.usageInfo.dailyGen4Turbo + organizationInfo.usageInfo.dailyGen3aTurbo}` : '0'
+                                    ) : '---'
+                                  }/1000
+                                </div>
+                                <small className="text-muted">Generations Per Day</small>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Settings */}
+                        <div className="row g-3 mb-4">
+                          <div className="col-md-6">
+                            <label htmlFor="model" className="form-label fw-bold">Model</label>
+                            <select
+                              className="form-select"
+                              id="model"
+                              value={model}
+                              onChange={(e) => setModel(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {modelOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="form-text small">
+                              <a href="#" className="text-decoration-none" 
+                                 data-bs-toggle="tooltip" 
+                                 data-bs-placement="top" 
+                                 title="Gen-4 Turbo offers highest quality with more aspect ratios. Gen-3 Alpha Turbo is faster and more reliable.">
+                                ℹ️ Model comparison
+                              </a>
+                            </div>
+                          </div>
+                          
+                          <div className="col-md-6">
+                            <label htmlFor="aspectRatio" className="form-label fw-bold">Aspect Ratio</label>
+                            <select
+                              className="form-select"
+                              id="aspectRatio"
+                              value={aspectRatio}
+                              onChange={(e) => setAspectRatio(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {aspectRatioOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="row g-3">
+                          <div className="col-md-6">
+                            <label htmlFor="duration" className="form-label fw-bold">Duration (seconds)</label>
+                            <select
+                              className="form-select"
+                              id="duration"
+                              value={duration}
+                              onChange={(e) => setDuration(parseInt(e.target.value))}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              <option value={5}>5 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+                          
+                          <div className="col-md-6">
+                            <label htmlFor="concurrency" className="form-label fw-bold"># of Videos Generated</label>
+                            <select
+                              className="form-select"
+                              id="concurrency"
+                              value={concurrency}
+                              onChange={(e) => setConcurrency(parseInt(e.target.value))}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              <option value={1}>1</option>
+                              <option value={2}>2</option>
+                              <option value={3}>3</option>
+                              <option value={4}>4</option>
+                              <option value={5}>5</option>
+                              <option value={10}>10</option>
+                              <option value={15}>15</option>
+                              <option value={20}>20</option>
+                            </select>
+                            <div className="form-text small">
+                              <a href="#" className="text-decoration-none" 
+                                 data-bs-toggle="tooltip" 
+                                 data-bs-placement="top" 
+                                 title="Generate multiple videos using the same prompt and image. Higher numbers consume more credits.">
+                                ℹ️ Batch generation info
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Video Setup Card */}
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <FolderOpen className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
+                        </div>
+                        
+                        <div style={{ marginRight: '30px' }}>
+                          <button
+                            className="btn btn-success shadow"
+                            onClick={() => {
+                              // Scroll to top when navigating to generation
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              generateVideos();
+                            }}
+                            disabled={isRunning}
+                            style={{ 
+                              borderRadius: '8px', 
+                              fontWeight: '600',
+                              opacity: '1',
+                              transition: 'opacity 0.15s ease-in-out'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          >
+                            <Play size={20} className="me-2" />
+                            Generate Video
+                            {concurrency > 1 && (
+                              <span className="ms-2 badge bg-light text-dark">
+                                {concurrency}
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
+                        
+                        <div className="mb-4">
+                          <label htmlFor="prompt" className="form-label fw-bold">
+                            Video Prompt
+                            <span className="text-danger ms-1">*</span>
+                          </label>
+                          <textarea
+                            className="form-control"
+                            id="prompt"
+                            rows="4"
+                            placeholder="Add an image then describe your shot. View guide"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            style={{ borderRadius: '8px' }}
+                          />
+                          <div className="form-text">
+                            <a href="https://help.runwayml.com/hc/en-us/articles/16496161814675-Prompting-Guide" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">
+                              View guide
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <label className="form-label fw-bold mb-0">
+                              Image
+                              <span className="text-danger ms-1">*</span>
+                              <a href="#" className="text-decoration-none ms-1" 
+                                 data-bs-toggle="tooltip" 
+                                 data-bs-placement="top" 
+                                 title="Upload an image file or paste a direct image URL. The image will be used as the first frame of your video.">
+                                ℹ️
+                              </a>
+                            </label>
+                          </div>
+                          
+                          {imageUrl && !imageError ? (
+                            <div className="position-relative mb-3" style={{ borderRadius: '8px', overflow: 'hidden', maxHeight: '200px' }}>
+                              <img 
+                                src={imageUrl}
+                                alt="Preview"
+                                className="w-100"
+                                style={{ 
+                                  objectFit: 'cover',
+                                  maxHeight: '200px',
+                                  borderRadius: '8px'
+                                }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                              <button
+                                className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                onClick={() => setImageUrl('')}
+                                style={{ borderRadius: '50%', width: '32px', height: '32px', padding: '0' }}
+                                title="Remove image"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <div 
+                              className="border border-dashed rounded d-flex flex-column align-items-center justify-content-center text-center p-4 mb-3"
+                              style={{ 
+                                borderRadius: '8px',
+                                minHeight: '200px',
+                                borderColor: imageError ? '#dc3545' : '#dee2e6',
+                                backgroundColor: imageError ? '#f8d7da' : '#f8f9fa',
+                                cursor: 'pointer'
+                              }}
+                              onClick={triggerImageUpload}
+                            >
+                              {isUploadingImage ? (
+                                <div className="text-center">
+                                  <div className="spinner-border text-primary mb-3" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                  </div>
+                                  <div className="fw-bold text-primary">Processing image...</div>
+                                </div>
+                              ) : imageError ? (
+                                <div className="text-center">
+                                  <AlertCircle size={48} className="text-danger mb-3" />
+                                  <div className="fw-bold text-danger mb-2">Failed to load image</div>
+                                  <button
+                                    className="btn btn-primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      triggerImageUpload();
+                                    }}
+                                    style={{ borderRadius: '6px' }}
+                                  >
+                                    <FolderOpen size={16} className="me-2" />
+                                    Click to upload image
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-center">
+                                  <FolderOpen size={48} className="text-primary mb-3" />
+                                  <div className="fw-bold text-primary mb-2">Click to upload image</div>
+                                  <div className="text-muted small">or paste image URL below</div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="input-group">
+                            <span className="input-group-text" style={{ borderRadius: '8px 0 0 8px' }}>🖼️</span>
+                            <input
+                              type="url"
+                              className="form-control"
+                              placeholder="Or paste image URL here..."
+                              value={imageUrl}
+                              onChange={(e) => {
+                                setImageUrl(e.target.value);
+                                setImageError(false);
+                              }}
+                              style={{ borderRadius: '0 8px 8px 0' }}
+                            />
+                          </div>
+                          <div className="form-text">
+                            Supports JPG, PNG, GIF, WebP. Max 50MB. Image will be compressed automatically.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
