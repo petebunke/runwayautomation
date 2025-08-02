@@ -1,4 +1,4 @@
-// /pages/api/runway-generate.js (Updated for image-to-video generation)
+// /pages/api/runway-generate.js (Fixed based on debug results)
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -29,263 +29,92 @@ export default async function handler(req, res) {
     if (!payload.promptImage) {
       return res.status(400).json({ 
         error: 'Image required for video generation',
-        message: 'Image-to-video generation requires an image input.'
+        message: 'The current RunwayML API only supports image-to-video generation.'
       });
     }
 
-    // Validate image URL/data URI format
-    if (payload.promptImage.startsWith('data:image/')) {
-      // Validate data URI format
-      const mimeMatch = payload.promptImage.match(/^data:image\/(jpeg|jpg|png|webp);base64,/);
-      if (!mimeMatch) {
-        return res.status(400).json({
-          error: 'Invalid image data URI format',
-          message: 'Image data URI must be JPEG, PNG, or WebP format with base64 encoding'
-        });
-      }
+    console.log('Making request to RunwayML API...');
+    console.log('Payload:', JSON.stringify(payload, null, 2));
 
-      // Check 5MB data URI size limit
-      if (payload.promptImage.length > 5 * 1024 * 1024) {
-        return res.status(400).json({
-          error: 'Image data URI too large',
-          message: 'Data URI must be under 5MB. Please upload to a server and use URL instead.'
-        });
-      }
-    } else {
-      // Validate URL format
-      try {
-        const urlObj = new URL(payload.promptImage);
-        
-        // Must be HTTPS
-        if (urlObj.protocol !== 'https:') {
-          return res.status(400).json({
-            error: 'Invalid image URL protocol',
-            message: 'Image URL must use HTTPS protocol'
-          });
-        }
+    const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'X-Runway-Version': '2024-11-06'
+      },
+      body: JSON.stringify(payload)
+    });
 
-        // Must use domain name, not IP address
-        const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(urlObj.hostname);
-        if (isIP) {
-          return res.status(400).json({
-            error: 'Invalid image URL format',
-            message: 'Image URL must use a domain name, not an IP address'
-          });
-        }
+    console.log('Response status:', response.status);
+    console.log('Response content-type:', response.headers.get('content-type'));
 
-        // URL length limit
-        if (payload.promptImage.length > 2048) {
-          return res.status(400).json({
-            error: 'Image URL too long',
-            message: 'Image URL must be under 2048 characters'
-          });
-        }
-      } catch (urlError) {
-        return res.status(400).json({
-          error: 'Invalid image URL',
-          message: 'Please provide a valid HTTPS URL or data URI'
-        });
-      }
+    // Get response as text first to debug the issue
+    const responseText = await response.text();
+    console.log('Response length:', responseText.length);
+    console.log('Response first 200 chars:', responseText.substring(0, 200));
+
+    // Handle HTML error responses (like 404 pages)
+    if (response.headers.get('content-type')?.includes('text/html')) {
+      console.log('Received HTML response instead of JSON');
+      return res.status(response.status).json({
+        error: 'RunwayML API returned HTML error page',
+        message: `HTTP ${response.status}: Server returned HTML instead of JSON`,
+        status: response.status
+      });
     }
 
-    console.log('Making image-to-video request to RunwayML API...');
-    console.log('Payload:', JSON.stringify({
-      ...payload,
-      promptImage: payload.promptImage.substring(0, 100) + '...' // Truncate for logging
-    }, null, 2));
+    // Handle empty responses
+    if (!responseText.trim()) {
+      return res.status(502).json({
+        error: 'Empty response from RunwayML API',
+        message: 'No data received'
+      });
+    }
 
-    // Create abort controller for timeout handling
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+    // Handle obvious binary data
+    if (responseText.charCodeAt(0) === 0 || responseText.includes('\ufffd')) {
+      return res.status(502).json({
+        error: 'RunwayML API returned binary data',
+        message: 'Unexpected binary response'
+      });
+    }
 
+    // Try to parse JSON
+    let data;
     try {
-      const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'X-Runway-Version': '2024-11-06'
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError.message);
+      console.log('Failed to parse response:', responseText.substring(0, 500));
+      
+      return res.status(502).json({
+        error: 'Invalid JSON response from RunwayML API',
+        message: 'Could not parse response as JSON',
+        parseError: parseError.message,
+        contentType: response.headers.get('content-type'),
+        status: response.status,
+        preview: responseText.substring(0, 200)
       });
-
-      clearTimeout(timeoutId);
-
-      console.log('Response status:', response.status);
-      console.log('Response content-type:', response.headers.get('content-type'));
-
-      // Get response as text first to debug potential issues
-      const responseText = await response.text();
-      console.log('Response length:', responseText.length);
-      console.log('Response first 200 chars:', responseText.substring(0, 200));
-
-      // Handle HTML error responses (like 404 pages)
-      if (response.headers.get('content-type')?.includes('text/html')) {
-        console.log('Received HTML response instead of JSON');
-        return res.status(response.status).json({
-          error: 'RunwayML API returned HTML error page',
-          message: `HTTP ${response.status}: Server returned HTML instead of JSON`,
-          status: response.status
-        });
-      }
-
-      // Handle empty responses
-      if (!responseText.trim()) {
-        return res.status(502).json({
-          error: 'Empty response from RunwayML API',
-          message: 'No data received from image-to-video endpoint'
-        });
-      }
-
-      // Handle obvious binary data
-      if (responseText.charCodeAt(0) === 0 || responseText.includes('\ufffd')) {
-        return res.status(502).json({
-          error: 'RunwayML API returned binary data',
-          message: 'Unexpected binary response from image-to-video endpoint'
-        });
-      }
-
-      // Try to parse JSON
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError.message);
-        console.log('Failed to parse response:', responseText.substring(0, 500));
-        
-        return res.status(502).json({
-          error: 'Invalid JSON response from RunwayML API',
-          message: 'Could not parse response as JSON',
-          parseError: parseError.message,
-          contentType: response.headers.get('content-type'),
-          status: response.status,
-          preview: responseText.substring(0, 200)
-        });
-      }
-
-      if (!response.ok) {
-        console.error('RunwayML API error:', response.status, data);
-        
-        // Handle specific error types
-        if (response.status === 401) {
-          return res.status(401).json({
-            error: 'Invalid API key',
-            message: 'Please check your RunwayML API key and try again'
-          });
-        }
-
-        if (response.status === 400) {
-          let errorMessage = data.error || data.message || 'Bad request';
-          
-          // Handle specific validation errors
-          if (errorMessage.includes('credits') || errorMessage.includes('insufficient')) {
-            return res.status(400).json({
-              error: 'Insufficient credits',
-              message: 'You do not have enough credits for this generation',
-              details: data
-            });
-          }
-
-          if (errorMessage.includes('safety') || errorMessage.includes('SAFETY')) {
-            return res.status(400).json({
-              error: 'Content safety violation',
-              message: 'Your content was rejected by safety filters',
-              details: data
-            });
-          }
-
-          if (errorMessage.includes('image') && errorMessage.includes('format')) {
-            return res.status(400).json({
-              error: 'Invalid image format',
-              message: 'Image must be JPEG, PNG, or WebP format',
-              details: data
-            });
-          }
-
-          return res.status(400).json({
-            error: 'Generation request invalid',
-            message: errorMessage,
-            details: data
-          });
-        }
-
-        if (response.status === 429) {
-          return res.status(429).json({
-            error: 'Rate limit exceeded',
-            message: 'Too many requests. Please wait before trying again.',
-            retryAfter: response.headers.get('Retry-After') || '60'
-          });
-        }
-
-        if (response.status >= 500) {
-          return res.status(response.status).json({
-            error: 'RunwayML server error',
-            message: 'RunwayML API is experiencing issues. This is usually temporary.',
-            status: response.status,
-            retryable: true
-          });
-        }
-
-        return res.status(response.status).json({
-          error: `RunwayML API Error (${response.status})`,
-          message: data.error || data.message || 'Unknown error',
-          details: data
-        });
-      }
-
-      console.log('Success! Image-to-video task created:', data.id);
-      res.status(200).json(data);
-
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      
-      // Handle specific error types
-      if (fetchError.name === 'AbortError') {
-        return res.status(504).json({ 
-          error: 'Request timeout',
-          message: 'RunwayML API took too long to respond (2 minutes)',
-          retryable: true
-        });
-      }
-      
-      // Handle network errors gracefully
-      if (fetchError.code === 'ENOTFOUND' || fetchError.code === 'ECONNREFUSED') {
-        return res.status(503).json({ 
-          error: 'Unable to connect to RunwayML API',
-          message: 'Network error while creating image-to-video generation',
-          retryable: true
-        });
-      }
-      
-      throw fetchError;
     }
+
+    if (!response.ok) {
+      console.error('RunwayML API error:', response.status, data);
+      return res.status(response.status).json({
+        error: `RunwayML API Error (${response.status})`,
+        message: data.error || data.message || 'Unknown error',
+        details: data
+      });
+    }
+
+    console.log('Success! Task created:', data.id);
+    res.status(200).json(data);
 
   } catch (error) {
-    console.error('Image-to-video handler error:', error);
-    
-    // Handle network errors
-    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      return res.status(503).json({ 
-        error: 'Unable to connect to RunwayML API',
-        message: 'Please check your internet connection and try again',
-        retryable: true
-      });
-    }
-
-    // Handle timeout errors
-    if (error.code === 'ETIMEDOUT') {
-      return res.status(504).json({ 
-        error: 'Request timeout',
-        message: 'RunwayML API took too long to respond'
-      });
-    }
-
-    // Handle other errors
+    console.error('Handler error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred while processing the image-to-video request',
-      retryable: true
+      message: error.message
     });
   }
 }
