@@ -1904,7 +1904,7 @@ export default function RunwayAutomationApp() {
         <title>Runway Automation - Batch Video Generation</title>
         <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download videos in 4K as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234A90E2'><path d='M21 3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zM20 5H4v14h16V5zm-8 2v2h2V7h-2zm-4 0v2h2V7H8zm8 0v2h2V7h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H8zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z'/></svg>" />
+        <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNsYXBwZXJib2FyZC1pY29uIGx1Y2lkZS1jbGFwcGVyYm9hcmQiPjxwYXRoIGQ9Ik0yMC4yIDYgMyAxMWwtLjktMi40Yy0uMy0xLjEuMy0yLjIgMS4zLTIuNWwxMy41LTRjMS4xLS4zIDIuMi4zIDIuNSAxLjNaIi8+PHBhdGggZD0ibTYuMiA1LjMgMy4xIDMuOSIvPjxwYXRoIGQ9Im0xMi40IDMuNCAzLjEgNCIvPjxwYXRoIGQ9Ik0zIDExaDE4djhhMiAyIDAgMCAxLTIgMkg1YTIgMiAwIDAgMS0yLTJaIi8+PC9zdmc+" />
         
         <link 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 

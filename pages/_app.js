@@ -8,7 +8,7 @@ export default function App({ Component, pageProps }) {
         <title>Runway Automation - Batch Video Generation</title>
         <meta name="description" content="A free web app for the Runway API and Image-to-Video. Batch generate up to 20 videos at once and upscale your favorite ones. Download videos in 4K as MP4 and JSON." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNsYXBwZXJib2FyZC1pY29uIGx1Y2lkZS1jbGFwcGVyYm9hcmQiPjxwYXRoIGQ9Ik0yMC4yIDYgMyAxMWwtLjktMi40Yy0uMy0xLjEuMy0yLjIgMS4zLTIuNWwxMy41LTRjMS4xLS4zIDIuMi4zIDIuNSAxLjNaIi8+PHBhdGggZD0ibTYuMiA1LjMgMy4xIDMuOSIvPjxwYXRoIGQ9Im0xMi40IDMuNCAzLjEgNCIvPjxwYXRoIGQ9Ik0zIDExaDE4djhhMiAyIDAgMCAxLTIgMkg1YTIgMiAwIDAgMS0yLTJaIi8+PC9zdmc+" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
