@@ -1920,6 +1920,35 @@ export default function RunwayAutomationApp() {
         <script 
           src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
         />
+        
+        {/* Fix for Safari scrollbar layout shift */}
+        <style jsx global>{`
+          html {
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
+          }
+          
+          body {
+            margin: 0;
+            padding: 0;
+          }
+          
+          .container-fluid {
+            width: 100%;
+            box-sizing: border-box;
+          }
+          
+          /* Ensure consistent spacing regardless of scrollbar */
+          .fixed-container {
+            width: 100%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 12px;
+            padding-right: 12px;
+            box-sizing: border-box;
+          }
+        `}</style>
       </Head>
 
       <Modal
@@ -1936,7 +1965,7 @@ export default function RunwayAutomationApp() {
 
       <div className="vh-100 overflow-auto" style={{ background: 'black', fontFamily: 'Normal, Inter, system-ui, sans-serif' }}>
         <div className="container-fluid py-4 h-100" style={{ paddingRight: '0', paddingLeft: '0' }}>
-          <div className="d-flex align-items-center justify-content-between mb-3" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '12px', paddingRight: '12px' }}>
+          <div className="d-flex align-items-center justify-content-between mb-3 fixed-container">
             <div className="d-flex align-items-center">
               <button 
                 onClick={() => setActiveTab('setup')}
@@ -1993,7 +2022,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'setup' && (
             <div className="row justify-content-center" style={{ margin: '0' }}>
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+              <div className="col-lg-10 fixed-container">
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
@@ -2409,7 +2438,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'generation' && (
             <div className="row justify-content-center" style={{ margin: '0' }}>
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+              <div className="col-lg-10 fixed-container">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
@@ -2709,7 +2738,7 @@ export default function RunwayAutomationApp() {
 
           {activeTab === 'results' && (
             <div className="row justify-content-center" style={{ margin: '0' }}>
-              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+              <div className="col-lg-10 fixed-container">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
