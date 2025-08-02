@@ -1257,6 +1257,9 @@ export default function RunwayAutomationApp() {
   );
 }
 
+// Export as default for Next.js pages router
+export default RunwayAutomationApp;
+
     const getModalColor = () => {
       return '#4dd0ff';
     };
