@@ -1070,9 +1070,9 @@ export default function RunwayAutomationApp() {
     }
   };
 
-  // OPTIMIZED pollTaskCompletion function with faster polling
+  // Add the pollTaskCompletion function
   const pollTaskCompletion = async (taskId, jobId, promptText, imageUrlText, jobIndex) => {
-    const maxPolls = Math.floor(3600 / 3); // 1 hour with 3-second intervals (was 12 seconds)
+    const maxPolls = Math.floor(3600 / 12);
     let pollCount = 0;
 
     while (pollCount < maxPolls) {
@@ -1097,13 +1097,12 @@ export default function RunwayAutomationApp() {
           throw new Error(task.error || 'Polling failed: ' + response.status);
         }
         
-        let progress = 15;
+        let progress = 10;
         
         if (task.status === 'PENDING') {
-          progress = 30;
+          progress = 25;
         } else if (task.status === 'RUNNING') {
-          // More aggressive progress tracking for faster feedback
-          progress = 55 + (pollCount * 3);
+          progress = 50 + (pollCount * 2);
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
         }
@@ -1208,8 +1207,7 @@ export default function RunwayAutomationApp() {
           throw new Error(failureReason);
         }
 
-        // OPTIMIZED: Reduced from 6000ms to 3000ms for faster polling
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 6000)); // Reduced from 8000ms to 6000ms
         pollCount++;
         
       } catch (error) {
@@ -1374,7 +1372,6 @@ export default function RunwayAutomationApp() {
     startGeneration(totalJobs, estimatedCostMin, estimatedCostMax);
   };
 
-  // OPTIMIZED startGeneration function with reduced stagger delay
   const startGeneration = async (totalJobs, estimatedCostMin, estimatedCostMax) => {
     setIsRunning(true);
     
@@ -1403,8 +1400,7 @@ export default function RunwayAutomationApp() {
     for (let i = 0; i < totalJobs; i++) {
       const jobIndex = i;
       const currentVideoNumber = i + 1;
-      // OPTIMIZED: Reduced stagger delay from 500ms to 200ms for much faster starts
-      const staggerDelay = i * 200;
+      const staggerDelay = i * 500; // Reduced from 1000ms to 500ms for faster starts
       
       const delayedPromise = new Promise(async (resolve) => {
         if (staggerDelay > 0) {
@@ -1423,7 +1419,7 @@ export default function RunwayAutomationApp() {
       allPromises.push(delayedPromise);
     }
 
-    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 0.2s stagger...', 'info');
+    addLog('🚀 Starting ' + totalJobs + ' concurrent video generations with 0.5s stagger...', 'info');
 
     try {
       const allResults = await Promise.all(allPromises);
@@ -1780,9 +1776,9 @@ export default function RunwayAutomationApp() {
     });
   };
 
-  // OPTIMIZED pollUpscaleCompletion function with faster polling for 4K upscaling
+  // New function to poll upscaling completion with auto-navigation and updated title display
   const pollUpscaleCompletion = async (upscaleTaskId, originalTaskId, videoDisplayTitle, upscaleId) => {
-    const maxPolls = Math.floor(1800 / 5); // 30 minutes with 5-second intervals (was 10 seconds)
+    const maxPolls = Math.floor(1800 / 10); // 30 minutes with 10-second intervals
     let pollCount = 0;
 
     const pollInterval = setInterval(async () => {
@@ -1807,13 +1803,12 @@ export default function RunwayAutomationApp() {
           throw new Error(task.error || 'Upscaling polling failed: ' + response.status);
         }
         
-        let progress = 25;
+        let progress = 20;
         
         if (task.status === 'PENDING') {
-          progress = 40;
+          progress = 35;
         } else if (task.status === 'RUNNING') {
-          // More aggressive progress tracking for faster feedback
-          progress = 60 + (pollCount * 2);
+          progress = 50 + (pollCount * 3);
         } else if (task.status === 'SUCCEEDED') {
           progress = 100;
         }
@@ -1900,7 +1895,7 @@ export default function RunwayAutomationApp() {
           return updated;
         });
       }
-    }, 5000); // OPTIMIZED: Poll every 5 seconds for upscaling (was 10 seconds)
+    }, 10000); // Poll every 10 seconds for upscaling
   };
 
   return (
@@ -1996,9 +1991,1088 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
 
-          {/* Due to space constraints, the full UI tabs are not included here */}
-          {/* This is a complete, working file with all optimizations applied */}
-          {/* Replace the existing UI sections with your current implementation */}
+          {activeTab === 'setup' && (
+            <div className="row justify-content-center" style={{ margin: '0' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+                <div className="row g-4">
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Key className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">API Setup</h3>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
+                        <div className="mb-4">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <label className="form-label fw-bold mb-0">Runway API Key</label>
+                            {runwayApiKey && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={clearStoredApiKey}
+                                title="Clear stored API key"
+                                style={{ fontSize: '12px' }}
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="password"
+                            className="form-control form-control-lg"
+                            value={runwayApiKey}
+                            onChange={(e) => setRunwayApiKey(e.target.value)}
+                            placeholder="key_xxx..."
+                            style={{ borderRadius: '8px' }}
+                          />
+                          <div className="form-text">
+                            <ExternalLink size={14} className="me-1" />
+                            <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                              Get your API key from Runway Developer Portal
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="alert alert-warning border-0 shadow-sm mb-4" style={{ borderRadius: '8px' }}>
+                          <div className="d-flex align-items-center mb-2">
+                            <CreditCard size={20} className="text-warning me-2" />
+                            <strong>Credits Required</strong>
+                          </div>
+                          <p className="mb-2 small">The Runway API requires credits for all video generations.</p>
+                          <ul className="small mb-0 ps-3">
+                            <li>Purchase credits at <a href="https://dev.runwayml.com" target="_blank" rel="noopener noreferrer" className="text-decoration-none fw-bold">dev.runwayml.com</a></li>
+                            <li>Minimum $10 (1000 credits)</li>
+                            <li>5 credits per second for video generation</li>
+                            <li>2 credits per second for 4K upscaling</li>
+                            <li>Credits are separate from web app credits</li>
+                          </ul>
+                          
+                          {/* Credit info always visible */}
+                          <div className="mt-3 pt-3 border-top border-warning">
+                            <div className="row g-2">
+                              <div className="col-6">
+                                <div className="text-center p-2 border rounded bg-white">
+                                  <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-success">
+                                    {organizationInfo ? organizationInfo.creditBalance : 0}
+                                  </div>
+                                  <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Credits</small>
+                                </div>
+                              </div>
+                              <div className="col-6">
+                                <div className="text-center p-2 border rounded bg-white">
+                                  <div className="h6 mb-0" style={{ marginBottom: '-1.5px !important' }} className="text-primary">
+                                    {(() => {
+                                      if (!organizationInfo?.tierInfo || !organizationInfo?.usageInfo) return '0/0';
+                                      
+                                      const isGen4 = model === 'gen4_turbo';
+                                      const dailyUsed = isGen4 ? 
+                                        (organizationInfo.usageInfo.dailyGen4Turbo || 0) :
+                                        (organizationInfo.usageInfo.dailyGen3aTurbo || 0);
+                                      const dailyMax = isGen4 ?
+                                        (organizationInfo.tierInfo.maxDailyGen4Turbo || 0) :
+                                        (organizationInfo.tierInfo.maxDailyGen3aTurbo || 0);
+                                      
+                                      return `${dailyUsed}/${dailyMax}`;
+                                    })()}
+                                  </div>
+                                  <small className="text-muted" style={{ marginTop: '-1.5px', display: 'block' }}>Generations Per Day</small>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="row g-3 flex-grow-1">
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Model</label>
+                            <select
+                              className="form-select"
+                              value={model}
+                              onChange={(e) => setModel(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {modelOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              Aspect Ratio
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="16:9 for YouTube, TV, and desktop. 9:16 for TikTok, IG Stories, and mobile. 1:1 for IG posts and profile pics. 4:3 for classic TV and monitors. 3:4 for print and documents. 21:9 for ultrawide movies."
+                              ></i>
+                            </label>
+                            <select
+                              className="form-select"
+                              value={aspectRatio}
+                              onChange={(e) => setAspectRatio(e.target.value)}
+                              style={{ borderRadius: '8px' }}
+                            >
+                              {aspectRatioOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">Duration (seconds)</label>
+                            <select
+                              className="form-select"
+                              value={duration}
+                              onChange={(e) => setDuration(parseInt(e.target.value))}
+                              style={{ borderRadius: '8px', marginBottom: '5px' }}
+                            >
+                              <option value={5}>5 seconds</option>
+                              <option value={10}>10 seconds</option>
+                            </select>
+                          </div>
+
+                          <div className="col-6">
+                            <label className="form-label fw-bold">
+                              # of Videos Generated
+                              <i 
+                                className="bi bi-info-circle ms-1 text-primary" 
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="Number of videos to generate simultaneously using the same prompt and image (20 max)."
+                              ></i>
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              className="form-control"
+                              value={concurrency}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                const safeValue = Math.min(Math.max(value, 1), 20);
+                                setConcurrency(safeValue);
+                                
+                                if (value > 20) {
+                                  addLog('⚠️ SAFETY: Maximum 20 videos allowed to prevent excessive costs', 'warning');
+                                }
+                              }}
+                              style={{ borderRadius: '8px', marginBottom: '5px' }}
+                            />
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                      <div 
+                        className="bg-primary position-relative d-flex align-items-center justify-content-center" 
+                        style={{ 
+                          height: '80px',
+                          borderRadius: '8px 8px 0 0'
+                        }}
+                      >
+                        <div 
+                          className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '80px', 
+                            height: '80px',
+                            left: '20px',
+                            top: '40px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            backgroundColor: '#4dd0ff'
+                          }}
+                        >
+                          <Film className="text-white" size={32} />
+                        </div>
+                        
+                        <div className="text-white text-center">
+                          <h3 className="mb-0 fw-bold">Video Setup</h3>
+                        </div>
+                      </div>
+                      
+                      <div className="card-body p-4 d-flex flex-column" style={{ paddingTop: '30px !important' }}>
+                        <div className="mb-4"></div>
+                        <div className="mb-4">
+                          <label className="form-label fw-bold">Video Prompt</label>
+                          <textarea
+                            className="form-control"
+                            rows="3"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder=""
+                            style={{ borderRadius: '8px' }}
+                          />
+                          <div className="form-text">
+                            Add an image then describe your shot.{' '}
+                            <a 
+                              href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide" 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-decoration-none fw-bold"
+                            >
+                              View guide
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="mb-4 flex-grow-1 d-flex flex-column">
+                          <label className="form-label fw-bold">
+                            Image
+                            <i 
+                              className="bi bi-info-circle ms-1 text-primary" 
+                              style={{ cursor: 'help' }}
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="top" 
+                              title="Upload an image file or paste an image URL. Image aspect ratio must be between 0.5 and 2.0 (width/height). Very wide or very tall images will be rejected by Runway."
+                            ></i>
+                          </label>
+                          
+                          {/* Hidden file input */}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            style={{ display: 'none' }}
+                          />
+                          
+                          {/* Upload button or URL input */}
+                          {!imageUrl ? (
+                            <div 
+                              className="d-flex align-items-center justify-content-center border border-2 border-dashed rounded p-4 text-center flex-grow-1"
+                              style={{ 
+                                borderColor: '#dee2e6', 
+                                backgroundColor: '#f8f9fa',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                minHeight: '120px'
+                              }}
+                              onClick={triggerImageUpload}
+                              onMouseEnter={(e) => {
+                                e.target.style.borderColor = '#0d6efd';
+                                e.target.style.backgroundColor = '#e7f3ff';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#dee2e6';
+                                e.target.style.backgroundColor = '#f8f9fa';
+                              }}
+                            >
+                              <div>
+                                {isUploadingImage ? (
+                                  <>
+                                    <div className="spinner-border text-primary mb-2" role="status">
+                                      <span className="visually-hidden">Uploading...</span>
+                                    </div>
+                                    <div className="text-muted">Uploading image...</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <FolderOpen size={48} className="text-primary mb-2" />
+                                    <div className="text-primary fw-bold mb-1">Click to upload image</div>
+                                    <div className="text-muted small">or paste image URL below</div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="position-relative flex-grow-1 d-flex">
+                              <img 
+                                src={imageUrl} 
+                                alt="Uploaded image preview"
+                                className="img-fluid rounded border w-100"
+                                style={{ height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
+                                onLoad={handleImageLoad}
+                                onError={handleImageError}
+                              />
+                              <button
+                                className="btn btn-danger btn-sm position-absolute"
+                                onClick={() => {
+                                  setImageUrl('');
+                                  setImageError(false);
+                                  if (fileInputRef.current) {
+                                    fileInputRef.current.value = '';
+                                  }
+                                }}
+                                style={{ 
+                                  border: 'none',
+                                  background: 'rgba(220, 53, 69, 0.9)',
+                                  borderRadius: '50%', 
+                                  width: '32px', 
+                                  height: '32px', 
+                                  fontSize: '18px', 
+                                  fontWeight: 'bold',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  lineHeight: '1',
+                                  top: '8px',
+                                  right: '8px',
+                                  color: 'white'
+                                }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* URL input as alternative */}
+                          <div className="mt-3">
+                            <input
+                              type="url"
+                              className="form-control"
+                              value={imageUrl}
+                              onChange={(e) => setImageUrl(e.target.value)}
+                              placeholder="Or paste image URL here..."
+                              style={{ borderRadius: '8px' }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Generate Video Button */}
+                        <div className="mt-auto pt-3">
+                          <button
+                            className="btn btn-success btn-lg w-100 shadow"
+                            onClick={() => {
+                              setActiveTab('generation');
+                              // Scroll to top when switching tabs
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              // Small delay to ensure tab switch completes before starting generation
+                              setTimeout(() => {
+                                if (!isRunning) {
+                                  generateVideos();
+                                }
+                              }, 100);
+                            }}
+                            disabled={isRunning}
+                            style={{ 
+                              borderRadius: '8px', 
+                              fontWeight: '600',
+                              backgroundColor: '#28a745',
+                              borderColor: '#28a745',
+                              opacity: '1',
+                              transition: 'opacity 0.15s ease-in-out'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          >
+                            <Play size={20} className="me-2" />
+                            Generate Video{concurrency > 1 ? 's' : ''}
+                            {concurrency > 1 && (
+                              <span className="ms-2 badge bg-light text-dark">
+                                {concurrency}
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'generation' && (
+            <div className="row justify-content-center" style={{ margin: '0' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        backgroundColor: '#4dd0ff'
+                      }}
+                    >
+                      <Video className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h3 className="mb-0 fw-bold">Video Generation</h3>
+                    </div>
+                    
+                    <div style={{ marginRight: '30px', marginTop: '10px', marginBottom: '10px' }}>
+                      {!isRunning ? (
+                        <button
+                          className="btn btn-success btn-lg shadow"
+                          onClick={() => {
+                            // Scroll to top when starting generation
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            generateVideos();
+                          }}
+                          disabled={isRunning}
+                          style={{ 
+                            borderRadius: '8px', 
+                            fontWeight: '600', 
+                            marginTop: '6px', 
+                            marginBottom: '6px',
+                            opacity: '1',
+                            transition: 'opacity 0.15s ease-in-out',
+                            backgroundColor: '#28a745',
+                            borderColor: '#28a745'
+                          }}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.85'}
+                          onMouseLeave={(e) => e.target.style.opacity = '1'}
+                        >
+                          <Play size={24} className="me-2" />
+                          Start Generation
+                          {concurrency > 1 && (
+                            <span className="ms-2 badge bg-light text-dark">
+                              {concurrency} videos
+                            </span>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-danger btn-lg shadow"
+                          onClick={stopGeneration}
+                          style={{ borderRadius: '8px', fontWeight: '600', marginTop: '10px', marginBottom: '10px' }}
+                        >
+                          <AlertCircle size={24} className="me-2" />
+                          Stop Generation
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="card-body p-0 d-flex flex-column" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
+                    <div className="p-4 pb-0">
+                      <div className="mb-4"></div>
+                      <div className="card text-white mb-4" style={{ backgroundColor: '#f8f9fa', border: '1px solid #ced4da', borderRadius: '8px' }}>
+                        <div className="card-body p-3">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="fw-bold text-dark text-uppercase d-flex align-items-center" style={{ fontSize: '0.875rem', height: '100%' }}>CONNECTION STATUS</span>
+                            <div className="d-flex gap-5 align-items-center text-center">
+                              <span className="text-dark"><strong>API:</strong> {runwayApiKey ? '✓ Connected' : '✗ Missing'}</span>
+                              <span className="text-dark"><strong>Prompt:</strong> {prompt.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                              <span className="text-dark"><strong>Image:</strong> {imageUrl.trim() ? '✓ Ready' : '✗ Missing'}</span>
+                              <span className="text-dark"><strong>Credits:</strong> {organizationInfo ? organizationInfo.creditBalance : 0}</span>
+                              <div className="d-flex align-items-center">
+                                <div className={`me-2 rounded-circle ${isRunning ? 'bg-primary' : 'bg-secondary'}`} style={{ width: '12px', height: '12px' }}>
+                                  {isRunning && (
+                                    <div className="w-100 h-100 rounded-circle bg-primary"></div>
+                                  )}
+                                </div>
+                                <span className="fw-bold text-dark">{isRunning ? 'Running' : 'Idle'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Always show generation status */}
+                      <div className="mb-4" style={{ minHeight: '100px' }}>
+                        <div className="text-center py-3">
+                          <h4 className="fw-bold text-dark mb-2">
+                            {(() => {
+                              if (Object.keys(generationProgress).length > 0) {
+                                // During generation
+                                return `Generation ${generationCounter || 1} in progress`;
+                              } else if (completedGeneration) {
+                                // After completion
+                                return `Generation ${completedGeneration} completed`;
+                              } else {
+                                // Initial state
+                                return `Generation ${generationCounter || 1}`;
+                              }
+                            })()}
+                          </h4>
+                          <p className="text-muted mb-0">
+                            {(() => {
+                              if (Object.keys(generationProgress).length > 0) {
+                                // During generation - show active job count
+                                const count = Object.keys(generationProgress).length;
+                                return `${count} video${count !== 1 ? 's' : ''} generating`;
+                              } else if (completedGeneration) {
+                                // After completion - show completed count from that generation
+                                const count = results.filter(r => r.jobId && r.jobId.includes(`Generation ${completedGeneration}`)).length;
+                                return `${count} video${count !== 1 ? 's' : ''} generated successfully`;
+                              } else {
+                                // Initial state
+                                return '0 videos generated';
+                              }
+                            })()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {Object.keys(generationProgress).length > 0 && (
+                        <div className="mb-4">
+                          <div className="row g-3">
+                            {Object.entries(generationProgress).map(([jobId, progress]) => (
+                              <div key={jobId} className="col-md-6 col-xl-3">
+                                <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                  <div className="card-body p-3">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                      <span className="fw-bold small" style={{ 
+                                        lineHeight: '1.2',
+                                        wordBreak: 'break-word',
+                                        maxWidth: '120px'
+                                      }}>
+                                        {jobId}
+                                      </span>
+                                      <span className={`badge ${
+                                        progress.status === 'completed' ? 'bg-success' :
+                                        progress.status === 'failed' ? 'bg-danger' :
+                                        progress.status === 'throttled' ? 'bg-warning' :
+                                        'bg-primary'
+                                      }`}>
+                                        {progress.status}
+                                      </span>
+                                    </div>
+                                    <div className="progress mb-2" style={{ height: '8px' }}>
+                                      <div 
+                                        className={`progress-bar ${
+                                          progress.status === 'completed' ? 'bg-success' :
+                                          progress.status === 'failed' ? 'bg-danger' :
+                                          progress.status === 'throttled' ? 'bg-warning' :
+                                          'bg-primary'
+                                        }`}
+                                        style={{ width: progress.progress + '%' }}
+                                      ></div>
+                                    </div>
+                                    <small className="text-muted">
+                                      {progress.message || progress.status}
+                                    </small>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Show upscaling progress if any with updated titles */}
+                      {Object.keys(upscalingProgress).length > 0 && (
+                        <div className="mb-4">
+                          <h5 className="fw-bold text-dark mb-3">4K Upscaling Progress</h5>
+                          <div className="row g-3">
+                            {Object.entries(upscalingProgress).map(([upscaleId, progress]) => {
+                              // Extract the original task ID from the upscale ID
+                              const originalTaskId = upscaleId.replace('upscale_', '');
+                              // Find the corresponding video result to get its display title
+                              const videoResult = results.find(r => r.id === originalTaskId);
+                              const displayTitle = videoResult ? getVideoDisplayTitle(videoResult) : '4K Upscale';
+                              
+                              return (
+                                <div key={upscaleId} className="col-md-6 col-xl-3">
+                                  <div className="card border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                                    <div className="card-body p-3">
+                                      <div className="d-flex justify-content-between align-items-start mb-2">
+                                        <span className="fw-bold small" style={{ 
+                                          lineHeight: '1.2',
+                                          wordBreak: 'break-word',
+                                          maxWidth: '120px'
+                                        }}>
+                                          {displayTitle} (4K)
+                                        </span>
+                                        <span className={`badge ${
+                                          progress.status === 'completed' ? 'bg-success' :
+                                          progress.status === 'failed' ? 'bg-danger' :
+                                          'bg-info'
+                                        }`}>
+                                          {progress.status}
+                                        </span>
+                                      </div>
+                                      <div className="progress mb-2" style={{ height: '8px' }}>
+                                        <div 
+                                          className={`progress-bar ${
+                                            progress.status === 'completed' ? 'bg-success' :
+                                            progress.status === 'failed' ? 'bg-danger' :
+                                            'bg-info'
+                                          }`}
+                                          style={{ width: progress.progress + '%' }}
+                                        ></div>
+                                      </div>
+                                      <small className="text-muted">
+                                        {progress.message || progress.status}
+                                      </small>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fixed Generation Log with proper scrolling */}
+                    <div className="mt-auto px-4 pb-4">
+                      <div className="card bg-dark text-light border-0 shadow" style={{ 
+                        borderRadius: '8px',
+                        height: '240px',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}>
+                        <div className="card-header bg-transparent border-0 pb-2 pt-3 px-3 d-flex justify-content-between align-items-center" style={{ flexShrink: 0 }}>
+                          <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>Video Generation Log</h5>
+                          <div className="d-flex gap-2">
+                            <button 
+                              className="btn btn-sm btn-outline-danger" 
+                              onClick={clearLogs}
+                              title="Clear all logs"
+                              style={{ borderRadius: '6px' }}
+                            >
+                              <i className="bi bi-trash" style={{ fontSize: '14px' }}></i>
+                            </button>
+                            <button 
+                              className="btn btn-sm btn-outline-light" 
+                              onClick={copyLogsToClipboard}
+                              title="Copy all logs to clipboard"
+                              style={{ borderRadius: '6px' }}
+                            >
+                              <i className="bi bi-clipboard" style={{ fontSize: '14px' }}></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div 
+                          ref={logContainerRef}
+                          className="px-3 pb-4" 
+                          style={{ 
+                            fontFamily: 'monospace',
+                            overflowY: 'auto',
+                            flex: '1 1 auto',
+                            minHeight: '0px',
+                            paddingBottom: '20px !important'
+                          }}
+                        >
+                          {logs.map((log, index) => (
+                            <div key={index} className={`small mb-1 ${
+                              log.type === 'error' ? 'text-danger' :
+                              log.type === 'success' ? 'text-light' :
+                              log.type === 'warning' ? 'text-warning' :
+                              'text-light'
+                            }`}>
+                              <span style={{ color: '#0d6efd' }}>[{log.timestamp}]</span> {log.message}
+                            </div>
+                          ))}
+                          {logs.length === 0 && (
+                            <div className="text-muted small">
+                              No logs yet... Logs will appear here during video generation and persist across page refreshes.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'results' && (
+            <div className="row justify-content-center" style={{ margin: '0' }}>
+              <div className="col-lg-10" style={{ maxWidth: '1200px', paddingLeft: '12px', paddingRight: '12px' }}>
+                <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                  <div 
+                    className="bg-primary position-relative d-flex align-items-center justify-content-between" 
+                    style={{ 
+                      height: '80px',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <div 
+                      className="position-absolute rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ 
+                        width: '80px', 
+                        height: '80px',
+                        left: '20px',
+                        top: '40px',
+                        zIndex: 10,
+                        backgroundColor: '#4dd0ff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Download className="text-white" size={32} />
+                    </div>
+                    
+                    <div className="text-white text-center" style={{ marginLeft: '105px' }}>
+                      <h3 className="mb-0 fw-bold">Generated Videos</h3>
+                    </div>
+                    
+                    {results.filter(result => result.video_url && result.status === 'completed').length > 0 && (
+                      <div style={{ marginRight: '30px' }}>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-light shadow"
+                            onClick={downloadAllVideos}
+                            disabled={isDownloadingAll}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            {isDownloadingAll ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download size={20} className="me-2" />
+                                All Videos
+                                <span className="ms-2 badge bg-primary">
+                                  {results.filter(result => result.video_url && result.status === 'completed').length}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                          
+                          {results.filter(result => result.upscaled_video_url && result.status === 'completed').length > 0 && (
+                            <button
+                              className="btn shadow"
+                              onClick={downloadUpscaledVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600', backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                            >
+                              <Download size={16} className="me-2" />
+                              4K Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.upscaled_video_url && result.status === 'completed').length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          {favoriteVideos.size > 0 && (
+                            <button
+                              className="btn btn-danger shadow"
+                              onClick={downloadFavoritedVideos}
+                              disabled={isDownloadingAll}
+                              style={{ borderRadius: '8px', fontWeight: '600' }}
+                            >
+                              <Download size={16} className="me-2" />
+                              Favorited Videos
+                              <span className="ms-2 badge bg-light text-dark">
+                                {results.filter(result => result.video_url && result.status === 'completed' && favoriteVideos.has(result.id)).length}
+                              </span>
+                            </button>
+                          )}
+                          
+                          <button
+                            className="btn btn-outline-light shadow"
+                            onClick={clearGeneratedVideos}
+                            style={{ borderRadius: '8px', fontWeight: '600' }}
+                          >
+                            <Trash2 size={16} className="me-2" />
+                            Clear Videos
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="card-body p-0 d-flex flex-column" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
+                    {results.length === 0 ? (
+                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center p-4">
+                        <div className="mb-4">
+                          <Film size={80} className="text-muted" />
+                        </div>
+                        <h4 className="text-muted mb-3">No videos generated yet</h4>
+                        <p className="text-muted mb-4">Start a generation process to see your AI-generated videos here</p>
+                        <div className="d-flex justify-content-center">
+                          <button
+                            className="btn btn-primary btn-lg shadow"
+                            onClick={() => setActiveTab('setup')}
+                            style={{ borderRadius: '6px', paddingLeft: '2rem', paddingRight: '2rem' }}
+                          >
+                            Get Started
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4" style={{ overflowY: 'auto', flex: '1 1 auto' }}>
+                        <div className="row g-4">
+                          {results
+                            .slice()
+                            .sort((a, b) => {
+                              const parseJobId = (jobId) => {
+                                if (!jobId) return { generation: 0, video: 0 };
+                                
+                                const genMatch = jobId.match(/Generation (\d+)/);
+                                const vidMatch = jobId.match(/Video (\d+)/);
+                                
+                                return {
+                                  generation: genMatch ? parseInt(genMatch[1]) : 0,
+                                  video: vidMatch ? parseInt(vidMatch[1]) : 0
+                                };
+                              };
+                              
+                              const aData = parseJobId(a.jobId);
+                              const bData = parseJobId(b.jobId);
+                              
+                              if (aData.generation !== bData.generation) {
+                                return aData.generation - bData.generation;
+                              }
+                              return aData.video - bData.video;
+                            })
+                            .map((result, index) => (
+                            <div key={index} className="col-md-6 col-lg-3">
+                              <div className="card border-0 shadow" style={{ borderRadius: '8px' }}>
+                                <div className="position-relative" style={{ borderRadius: '8px 8px 0 0', overflow: 'hidden', aspectRatio: '16/9' }}>
+                                  {result.video_url ? (
+                                    <video
+                                      src={result.video_url}
+                                      poster={result.thumbnail_url}
+                                      controls
+                                      className="w-100 h-100"
+                                      style={{ objectFit: 'cover' }}
+                                      preload="metadata"
+                                    >
+                                      Your browser does not support video playback.
+                                    </video>
+                                  ) : result.thumbnail_url ? (
+                                    <img 
+                                      src={result.thumbnail_url}
+                                      alt={'Thumbnail for: ' + result.prompt}
+                                      className="w-100 h-100"
+                                      style={{ objectFit: 'cover' }}
+                                    />
+                                  ) : (
+                                    <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                      <div className="text-center">
+                                        <Film size={48} className="text-primary mb-3" />
+                                        <div className="fw-bold text-muted">Processing...</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {result.status !== 'completed' && (
+                                    <div className="position-absolute top-0 start-0 m-3">
+                                      <span className="badge bg-warning shadow-sm">
+                                        ⏳ Processing
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Favorite button in upper-right corner */}
+                                  <button
+                                    className="btn btn-sm position-absolute top-0 end-0 m-2"
+                                    onClick={() => toggleFavorite(result.id)}
+                                    style={{
+                                      border: 'none',
+                                      background: 'rgba(255, 255, 255, 0.9)',
+                                      borderRadius: '50%',
+                                      width: '36px',
+                                      height: '36px',
+                                      color: favoriteVideos.has(result.id) ? '#e74c3c' : '#6c757d',
+                                      transition: 'all 0.2s ease',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title={favoriteVideos.has(result.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Heart 
+                                      size={16} 
+                                      fill={favoriteVideos.has(result.id) ? 'currentColor' : 'none'}
+                                    />
+                                  </button>
+                                  
+                                  {/* 4K badge positioned below the favorite button */}
+                                  {result.upscaled_video_url && (
+                                    <div className="position-absolute end-0 m-2" style={{ top: '46px' }}>
+                                      <span className="badge bg-success shadow-sm">
+                                        4K ✨
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="card-body p-3">
+                                  <div className="d-flex justify-content-between align-items-start mb-2">
+                                    {editingVideoTitle === result.id ? (
+                                      <div className="d-flex align-items-center w-100">
+                                        <input
+                                          type="text"
+                                          value={tempEditTitle}
+                                          onChange={(e) => setTempEditTitle(e.target.value)}
+                                          onKeyDown={(e) => handleEditKeyPress(e, result.id)}
+                                          onBlur={() => saveEditTitle(result.id)}
+                                          className="form-control form-control-sm me-2"
+                                          style={{ fontSize: '14px', fontWeight: 'bold', color: '#0d6efd' }}
+                                          autoFocus
+                                          maxLength={100}
+                                          aria-label="Edit video title"
+                                        />
+                                        <button
+                                          className="btn btn-success btn-sm me-1"
+                                          onClick={() => saveEditTitle(result.id)}
+                                          style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                          aria-label="Save title"
+                                        >
+                                          ✓
+                                        </button>
+                                        <button
+                                          className="btn btn-secondary btn-sm"
+                                          onClick={cancelEditTitle}
+                                          style={{ width: '24px', height: '24px', padding: '0', fontSize: '12px' }}
+                                          aria-label="Cancel edit"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <span className="fw-bold text-primary me-2" style={{ 
+                                          lineHeight: '1.2',
+                                          wordBreak: 'break-word',
+                                          maxWidth: '200px',
+                                          flex: '1'
+                                        }}>
+                                          {getVideoDisplayTitle(result)}
+                                        </span>
+                                        
+                                        {/* Edit button positioned at bottom of first line */}
+                                        <button
+                                          className="btn btn-sm btn-outline-secondary p-1"
+                                          onClick={() => handleEditTitle(result.id, result.jobId)}
+                                          title="Edit video title"
+                                          style={{ 
+                                            border: 'none',
+                                            background: 'transparent',
+                                            borderRadius: '4px',
+                                            width: '24px',
+                                            height: '24px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            alignSelf: 'flex-start',
+                                            marginTop: '0px',
+                                            flexShrink: 0
+                                          }}
+                                          aria-label="Edit video title"
+                                        >
+                                          <Edit3 size={12} />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                  <h6 className="card-title mb-3" style={{ fontWeight: '400' }} title={result.prompt}>
+                                    {result.prompt}
+                                  </h6>
+                                  
+                                  <div className="d-grid gap-2">
+                                    {result.video_url && (
+                                      <div className="btn-group" role="group" aria-label="Video actions">
+                                        <button
+                                          className="btn btn-primary btn-sm flex-fill"
+                                          onClick={() => downloadVideo(
+                                            result.upscaled_video_url || result.video_url, 
+                                            generateFilename(result.jobId, result.id, !!result.upscaled_video_url)
+                                          )}
+                                          title={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                          aria-label={result.upscaled_video_url ? "Download 4K version" : "Download video"}
+                                        >
+                                          <Download size={16} className="me-1" aria-hidden="true" />
+                                          Download{result.upscaled_video_url ? ' 4K' : ''}
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-primary btn-sm flex-fill"
+                                          onClick={() => window.open(result.upscaled_video_url || result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title={result.upscaled_video_url ? "View 4K version" : "View video"}
+                                          aria-label={result.upscaled_video_url ? "View 4K version in new tab" : "View video in new tab"}
+                                        >
+                                          <ExternalLink size={16} className="me-1" aria-hidden="true" />
+                                          View
+                                        </button>
+                                        {!result.upscaled_video_url && result.video_url && (
+                                          <button
+                                            className="btn btn-sm"
+                                            onClick={() => upscaleVideo(result.id, result.video_url, generateFilename(result.jobId, result.id))}
+                                            disabled={upscalingProgress[`upscale_${result.id}`]}
+                                            title="Upscale to 4K resolution"
+                                            style={{ backgroundColor: '#4dd0ff', borderColor: '#4dd0ff', color: 'white' }}
+                                            aria-label="Upscale video to 4K resolution"
+                                          >
+                                            <ArrowUp size={16} className="me-1" aria-hidden="true" />
+                                            4K
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Show both original and 4K download options if 4K exists */}
+                                    {result.upscaled_video_url && result.video_url && (
+                                      <div className="btn-group mt-1" role="group" aria-label="Original video actions">
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm flex-fill"
+                                          onClick={() => downloadVideo(result.video_url, generateFilename(result.jobId, result.id, false))}
+                                          title="Download original resolution"
+                                          aria-label="Download original resolution video"
+                                        >
+                                          <Download size={14} className="me-1" aria-hidden="true" />
+                                          Original
+                                        </button>
+                                        <button
+                                          className="btn btn-outline-secondary btn-sm flex-fill"
+                                          onClick={() => window.open(result.video_url, '_blank', 'noopener,noreferrer')}
+                                          title="View original resolution"
+                                          aria-label="View original resolution video in new tab"
+                                        >
+                                          <ExternalLink size={14} className="me-1" aria-hidden="true" />
+                                          View Original
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="text-center mt-3 mb-3">
             <div className="d-flex align-items-center justify-content-center text-white-50">
