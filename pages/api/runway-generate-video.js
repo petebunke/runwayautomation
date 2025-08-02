@@ -1,4 +1,4 @@
-// /pages/api/runway-generate.js (Updated for image-to-video generation)
+// /pages/api/runway-generate-video.js (New endpoint for video-to-video generation)
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -26,41 +26,41 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Text prompt is required' });
     }
 
-    if (!payload.promptImage) {
+    if (!payload.videoUri) {
       return res.status(400).json({ 
-        error: 'Image required for video generation',
-        message: 'Image-to-video generation requires an image input.'
+        error: 'Video required for video-to-video generation',
+        message: 'Gen-4 Aleph requires a video input for video-to-video generation.'
       });
     }
 
-    // Validate image URL/data URI format
-    if (payload.promptImage.startsWith('data:image/')) {
+    // Validate video URL/data URI format
+    if (payload.videoUri.startsWith('data:video/')) {
       // Validate data URI format
-      const mimeMatch = payload.promptImage.match(/^data:image\/(jpeg|jpg|png|webp);base64,/);
+      const mimeMatch = payload.videoUri.match(/^data:video\/(mp4|webm|quicktime|mov|ogg|h264);base64,/);
       if (!mimeMatch) {
         return res.status(400).json({
-          error: 'Invalid image data URI format',
-          message: 'Image data URI must be JPEG, PNG, or WebP format with base64 encoding'
+          error: 'Invalid video data URI format',
+          message: 'Video data URI must be MP4, WebM, MOV, OGG, or H264 format with base64 encoding'
         });
       }
 
       // Check 5MB data URI size limit
-      if (payload.promptImage.length > 5 * 1024 * 1024) {
+      if (payload.videoUri.length > 5 * 1024 * 1024) {
         return res.status(400).json({
-          error: 'Image data URI too large',
+          error: 'Video data URI too large',
           message: 'Data URI must be under 5MB. Please upload to a server and use URL instead.'
         });
       }
     } else {
       // Validate URL format
       try {
-        const urlObj = new URL(payload.promptImage);
+        const urlObj = new URL(payload.videoUri);
         
         // Must be HTTPS
         if (urlObj.protocol !== 'https:') {
           return res.status(400).json({
-            error: 'Invalid image URL protocol',
-            message: 'Image URL must use HTTPS protocol'
+            error: 'Invalid video URL protocol',
+            message: 'Video URL must use HTTPS protocol'
           });
         }
 
@@ -68,30 +68,38 @@ export default async function handler(req, res) {
         const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(urlObj.hostname);
         if (isIP) {
           return res.status(400).json({
-            error: 'Invalid image URL format',
-            message: 'Image URL must use a domain name, not an IP address'
+            error: 'Invalid video URL format',
+            message: 'Video URL must use a domain name, not an IP address'
           });
         }
 
         // URL length limit
-        if (payload.promptImage.length > 2048) {
+        if (payload.videoUri.length > 2048) {
           return res.status(400).json({
-            error: 'Image URL too long',
-            message: 'Image URL must be under 2048 characters'
+            error: 'Video URL too long',
+            message: 'Video URL must be under 2048 characters'
           });
         }
       } catch (urlError) {
         return res.status(400).json({
-          error: 'Invalid image URL',
+          error: 'Invalid video URL',
           message: 'Please provide a valid HTTPS URL or data URI'
         });
       }
     }
 
-    console.log('Making image-to-video request to RunwayML API...');
+    // Validate model is Gen-4 Aleph
+    if (payload.model !== 'gen4_aleph') {
+      return res.status(400).json({
+        error: 'Invalid model for video-to-video',
+        message: 'Video-to-video generation requires Gen-4 Aleph model'
+      });
+    }
+
+    console.log('Making video-to-video request to RunwayML API...');
     console.log('Payload:', JSON.stringify({
       ...payload,
-      promptImage: payload.promptImage.substring(0, 100) + '...' // Truncate for logging
+      videoUri: payload.videoUri.substring(0, 100) + '...' // Truncate for logging
     }, null, 2));
 
     // Create abort controller for timeout handling
@@ -99,7 +107,7 @@ export default async function handler(req, res) {
     const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
     try {
-      const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
+      const response = await fetch('https://api.dev.runwayml.com/v1/video_to_video', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -134,7 +142,7 @@ export default async function handler(req, res) {
       if (!responseText.trim()) {
         return res.status(502).json({
           error: 'Empty response from RunwayML API',
-          message: 'No data received from image-to-video endpoint'
+          message: 'No data received from video-to-video endpoint'
         });
       }
 
@@ -142,7 +150,7 @@ export default async function handler(req, res) {
       if (responseText.charCodeAt(0) === 0 || responseText.includes('\ufffd')) {
         return res.status(502).json({
           error: 'RunwayML API returned binary data',
-          message: 'Unexpected binary response from image-to-video endpoint'
+          message: 'Unexpected binary response from video-to-video endpoint'
         });
       }
 
@@ -182,7 +190,7 @@ export default async function handler(req, res) {
           if (errorMessage.includes('credits') || errorMessage.includes('insufficient')) {
             return res.status(400).json({
               error: 'Insufficient credits',
-              message: 'You do not have enough credits for this generation',
+              message: 'You do not have enough credits for video-to-video generation (~15 credits per second)',
               details: data
             });
           }
@@ -195,10 +203,18 @@ export default async function handler(req, res) {
             });
           }
 
-          if (errorMessage.includes('image') && errorMessage.includes('format')) {
+          if (errorMessage.includes('video') && errorMessage.includes('format')) {
             return res.status(400).json({
-              error: 'Invalid image format',
-              message: 'Image must be JPEG, PNG, or WebP format',
+              error: 'Invalid video format',
+              message: 'Video must be MP4, WebM, MOV, OGG, or H264 format',
+              details: data
+            });
+          }
+
+          if (errorMessage.includes('duration') || errorMessage.includes('length')) {
+            return res.status(400).json({
+              error: 'Invalid video duration',
+              message: 'Video duration may be outside acceptable limits',
               details: data
             });
           }
@@ -210,10 +226,17 @@ export default async function handler(req, res) {
           });
         }
 
+        if (response.status === 404) {
+          return res.status(404).json({
+            error: 'Video-to-video endpoint not found',
+            message: 'The video-to-video endpoint may not be available for your account tier'
+          });
+        }
+
         if (response.status === 429) {
           return res.status(429).json({
             error: 'Rate limit exceeded',
-            message: 'Too many requests. Please wait before trying again.',
+            message: 'Too many video-to-video requests. Please wait before trying again.',
             retryAfter: response.headers.get('Retry-After') || '60'
           });
         }
@@ -221,20 +244,20 @@ export default async function handler(req, res) {
         if (response.status >= 500) {
           return res.status(response.status).json({
             error: 'RunwayML server error',
-            message: 'RunwayML API is experiencing issues. This is usually temporary.',
+            message: 'RunwayML video-to-video API is experiencing issues. This is usually temporary.',
             status: response.status,
             retryable: true
           });
         }
 
         return res.status(response.status).json({
-          error: `RunwayML API Error (${response.status})`,
+          error: `RunwayML Video-to-Video API Error (${response.status})`,
           message: data.error || data.message || 'Unknown error',
           details: data
         });
       }
 
-      console.log('Success! Image-to-video task created:', data.id);
+      console.log('Success! Video-to-video task created:', data.id);
       res.status(200).json(data);
 
     } catch (fetchError) {
@@ -244,7 +267,7 @@ export default async function handler(req, res) {
       if (fetchError.name === 'AbortError') {
         return res.status(504).json({ 
           error: 'Request timeout',
-          message: 'RunwayML API took too long to respond (2 minutes)',
+          message: 'RunwayML video-to-video API took too long to respond (2 minutes)',
           retryable: true
         });
       }
@@ -252,8 +275,8 @@ export default async function handler(req, res) {
       // Handle network errors gracefully
       if (fetchError.code === 'ENOTFOUND' || fetchError.code === 'ECONNREFUSED') {
         return res.status(503).json({ 
-          error: 'Unable to connect to RunwayML API',
-          message: 'Network error while creating image-to-video generation',
+          error: 'Unable to connect to RunwayML video-to-video API',
+          message: 'Network error while creating video-to-video generation',
           retryable: true
         });
       }
@@ -262,12 +285,12 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('Image-to-video handler error:', error);
+    console.error('Video-to-video handler error:', error);
     
     // Handle network errors
     if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       return res.status(503).json({ 
-        error: 'Unable to connect to RunwayML API',
+        error: 'Unable to connect to RunwayML video-to-video API',
         message: 'Please check your internet connection and try again',
         retryable: true
       });
@@ -277,14 +300,14 @@ export default async function handler(req, res) {
     if (error.code === 'ETIMEDOUT') {
       return res.status(504).json({ 
         error: 'Request timeout',
-        message: 'RunwayML API took too long to respond'
+        message: 'RunwayML video-to-video API took too long to respond'
       });
     }
 
     // Handle other errors
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred while processing the image-to-video request',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred while processing the video-to-video request',
       retryable: true
     });
   }
