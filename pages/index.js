@@ -2795,7 +2795,7 @@ export default function RunwayAutomationApp() {
                           )}
                           
                           <button
-                            className="btn btn-outline-light shadow"
+                            className="btn btn-outline-light shadow" 
                             onClick={clearGeneratedVideos}
                             style={{ borderRadius: '8px', fontWeight: '600' }}
                           >
