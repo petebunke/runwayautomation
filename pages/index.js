@@ -1923,22 +1923,28 @@ export default function RunwayAutomationApp() {
         
         {/* Fix for Safari scrollbar layout shift */}
         <style jsx global>{`
+          /* Force consistent scrollbar behavior across all browsers */
           html {
-            overflow-y: scroll;
-            scrollbar-gutter: stable;
+            overflow-y: scroll !important;
+            scrollbar-gutter: stable both-edges;
           }
           
           body {
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
           }
           
+          /* Override Bootstrap container behavior */
           .container-fluid {
-            width: 100%;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            margin: 0 !important;
+            padding: 0 !important;
             box-sizing: border-box;
           }
           
-          /* Ensure consistent spacing regardless of scrollbar */
+          /* Consistent container for all content */
           .fixed-container {
             width: 100%;
             max-width: 1200px;
@@ -1947,6 +1953,32 @@ export default function RunwayAutomationApp() {
             padding-left: 12px;
             padding-right: 12px;
             box-sizing: border-box;
+          }
+          
+          /* Force stable layout */
+          .main-wrapper {
+            width: 100vw;
+            min-height: 100vh;
+            box-sizing: border-box;
+            position: relative;
+          }
+          
+          /* Prevent horizontal scrolling issues */
+          * {
+            box-sizing: border-box;
+          }
+          
+          /* Safari-specific fixes */
+          @supports (-webkit-appearance: none) {
+            html {
+              overflow-y: scroll !important;
+              width: 100vw;
+            }
+            
+            body {
+              width: 100vw;
+              overflow-x: hidden;
+            }
           }
         `}</style>
       </Head>
@@ -2020,10 +2052,10 @@ export default function RunwayAutomationApp() {
             </div>
           </div>
 
-          {activeTab === 'setup' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
-              <div className="col-lg-10 fixed-container">
-                <div className="row g-4">
+            {activeTab === 'setup' && (
+              <div className="row justify-content-center" style={{ margin: '0' }}>
+                <div className="col-lg-10 fixed-container">
+                  <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="card shadow-lg border-0 h-100" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                       <div 
@@ -2431,14 +2463,14 @@ export default function RunwayAutomationApp() {
                       </div>
                     </div>
                   </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'generation' && (
-            <div className="row justify-content-center" style={{ margin: '0' }}>
-              <div className="col-lg-10 fixed-container">
+            {activeTab === 'generation' && (
+              <div className="row justify-content-center" style={{ margin: '0' }}>
+                <div className="col-lg-10 fixed-container">
                 <div className="card shadow-lg border-0" style={{ borderRadius: '8px', overflow: 'hidden' }}>
                   <div 
                     className="bg-primary position-relative d-flex align-items-center justify-content-between" 
