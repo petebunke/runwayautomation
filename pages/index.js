@@ -3083,7 +3083,7 @@ export default function RunwayAutomationApp() {
                 <img 
                   src="https://runway-static-assets.s3.amazonaws.com/site/images/api-page/powered-by-runway-white.png" 
                   alt="Powered by Runway" 
-                  style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }} 
+                  style={{ height: '24px', opacity: '0.7', marginBottom:'20px' }}
                 />
               </a>
             </div>
