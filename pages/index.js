@@ -1920,6 +1920,14 @@ export default function RunwayAutomationApp() {
         <script 
           src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
         />
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-8ZV0SP66YN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8ZV0SP66YN');
+</script>
       </Head>
 
       <Modal
