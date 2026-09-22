@@ -34,13 +34,7 @@ export default function App({ Component, pageProps }) {
         <meta name="msapplication-navbutton-color" content="#667eea" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
-import Script from 'next/script';
-export default function Home() {
-  return (
-    <>
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-8ZV0SP66YN"
-        strategy="afterInteractive"
+<Script src="https://www.googletagmanager.com/gtag/js?id=G-8ZV0SP66YN" strategy="afterInteractive"
       />
       <Script id="google-analytics" strategy="afterInteractive">
         {`
@@ -50,9 +44,6 @@ export default function Home() {
           gtag('config', 'G-8ZV0SP66YN');
         `}
       </Script>
-    </>
-  );
-}
       <Component {...pageProps} />
     </>
   )
