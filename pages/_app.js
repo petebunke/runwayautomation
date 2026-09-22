@@ -34,6 +34,18 @@ export default function App({ Component, pageProps }) {
         <meta name="msapplication-navbutton-color" content="#667eea" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8ZV0SP66YN" />
+<script
+  dangerouslySetInnerHTML={{
+    __html: `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-8ZV0SP66YN');
+    `,
+  }}
+/>
      
       <Component {...pageProps} />
     </>
