@@ -37,9 +37,15 @@ export default function App({ Component, pageProps }) {
       </Head>
 
       {/* Google Analytics Scripts */}
-   <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-T58W6PBX"></script>
-     <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); </script>
-
+      <Script
+        src="https://www.googletagmanager.com/gtm.js?id=GTM-T58W6PBX"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+         window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); 
+        `}
+      </Script>
         
       <Component {...pageProps} />
     </>
