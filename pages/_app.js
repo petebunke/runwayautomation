@@ -38,7 +38,7 @@ export default function App({ Component, pageProps }) {
 
       {/* Google Analytics Scripts */}
       <Script async
-        src="https://www.googletagmanager.com/gtm.js?id=GTM-T58W6PBX"
+        src="https://www.googletagmanager.com/gtm.js?id=GTM-PLSX88PJ"
         strategy="afterInteractive"
       />
       <Script id="google-analytics" strategy="afterInteractive">
